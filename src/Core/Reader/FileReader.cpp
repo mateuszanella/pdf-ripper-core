@@ -1,13 +1,16 @@
 #include "Core/Reader/FileReader.hpp"
 
-#include <stdexcept>
-#include <utility>
 #include <filesystem>
+#include <stdexcept>
+#include <string_view>
+#include <utility>
 
 namespace Ripper::Core
 {
-    FileReader::FileReader(const std::filesystem::path &path)
-        : m_handle{path, std::ios::binary}
+    FileReader::FileReader(const std::filesystem::path path)
+        : m_path{std::move(path)},
+          m_canonicalPath{m_path.string()},
+          m_handle{m_path, std::ios::binary}
     {
         if (!m_handle.is_open())
         {
@@ -22,6 +25,11 @@ namespace Ripper::Core
 
     std::uint64_t FileReader::Size() const noexcept
     {
-        return 0;
+        return std::filesystem::file_size(m_path);
+    }
+
+    std::string_view FileReader::GetPath() const noexcept
+    {
+        return m_canonicalPath;
     }
 }

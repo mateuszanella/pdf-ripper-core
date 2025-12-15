@@ -1,8 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <fstream>
 #include <filesystem>
-#include <cstdint>
+#include <string_view>
 
 #include "Core/Reader/Reader.hpp"
 
@@ -11,7 +12,7 @@ namespace Ripper::Core
     class FileReader : public Reader
     {
     public:
-        explicit FileReader(const std::filesystem::path &path);
+        explicit FileReader(const std::filesystem::path path);
 
         ~FileReader() override = default;
 
@@ -24,7 +25,11 @@ namespace Ripper::Core
         [[nodiscard]] bool IsOpen() const noexcept override;
         [[nodiscard]] std::uint64_t Size() const noexcept override;
 
+        [[nodiscard]] std::string_view GetPath() const noexcept;
+
     private:
+        std::filesystem::path m_path;
+        std::string m_canonicalPath;
         std::ifstream m_handle;
     };
 }

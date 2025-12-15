@@ -14,6 +14,7 @@ int main(int argc, char **argv)
     }
 
     std::println("PDF size is: {}", reader.Size());
+    std::println("PDF path is: {}", reader.GetPath());
 
     return 0;
 }
