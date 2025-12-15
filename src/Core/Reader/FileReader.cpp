@@ -9,7 +9,7 @@ namespace Ripper::Core
 {
     FileReader::FileReader(const std::filesystem::path path)
         : m_path{std::move(path)},
-          m_canonicalPath{m_path.string()},
+          m_canonicalPath{std::filesystem::canonical(m_path).string()},
           m_handle{m_path, std::ios::binary}
     {
         if (!m_handle.is_open())
