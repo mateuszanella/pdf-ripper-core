@@ -9,12 +9,19 @@ int main(int argc, char **argv)
 
     Ripper::Core::FileReader reader{path};
 
-    if (reader.IsOpen()) {
+    if (reader.IsOpen())
+    {
         std::println("PDF file is open.");
     }
 
-    std::println("PDF size is: {}", reader.Size());
-    std::println("PDF path is: {}", reader.GetPath());
+    std::array<std::byte, 4096> buffer;
+
+    std::size_t bytesRead = 0;
+
+    while ((bytesRead = reader.Read(buffer)))
+    {
+        std::println("Read {} bytes.", bytesRead);
+    }
 
     return 0;
 }
