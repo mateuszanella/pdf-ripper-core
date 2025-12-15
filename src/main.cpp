@@ -1,13 +1,19 @@
 #include <print>
 #include <filesystem>
 
-#include "Core/PDF.hpp"
+#include "Core/Reader/FileReader.hpp"
 
 int main(int argc, char **argv)
 {
-    Ripper::Core::PDF pdf{std::filesystem::current_path() / "../example/pdfa-1a.pdf"};
+    std::filesystem::path path = std::filesystem::current_path() / "../example/pdfa-1a.pdf";
 
-    std::println("PDF path is: {}", pdf.GetPath());
+    Ripper::Core::FileReader reader{path};
+
+    if (reader.IsOpen()) {
+        std::println("PDF file is open.");
+    }
+
+    std::println("PDF size is: {}", reader.Size());
 
     return 0;
 }

@@ -11,8 +11,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(PDF_RIPPER_BUILD_EXAMPLES "Build example executables" ON)
 
+file(GLOB_RECURSE PDF_RIPPER_CORE_SOURCES
+    CONFIGURE_DEPENDS
+    src/*.cpp
+)
+
 add_library(pdf_ripper_core
-    src/Core/PDF.cpp
+    ${PDF_RIPPER_CORE_SOURCES}
 )
 
 target_compile_features(pdf_ripper_core PUBLIC cxx_std_23)
