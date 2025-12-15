@@ -50,4 +50,49 @@ namespace Ripper::Core
 
         return bytesRead;
     }
+
+    std::size_t FileReader::ReadAt(std::span<std::byte> buffer, const std::uint64_t offset)
+    {
+        if (!IsOpen())
+        {
+            return 0;
+        }
+
+        m_handle.seekg(offset, std::ios::beg);
+        m_handle.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
+
+        std::size_t bytesRead = static_cast<std::size_t>(m_handle.gcount());
+
+        m_currentOffset = offset + bytesRead;
+
+        return bytesRead;
+    }
+
+    std::size_t FileReader::ReadLine(std::span<std::byte> buffer)
+    {
+        if (!IsOpen())
+        {
+            return 0;
+        }
+
+        m_handle.getline(reinterpret_cast<char *>(buffer.data()), buffer.size());
+
+        std::size_t bytesRead = static_cast<std::size_t>(m_handle.gcount());
+
+        m_currentOffset += bytesRead;
+
+        return bytesRead;
+    }
+
+    void FileReader::Seek(std::uint64_t offset)
+    {
+        if (!IsOpen())
+        {
+            return;
+        }
+
+        m_handle.seekg(offset, std::ios::beg);
+
+        m_currentOffset = offset;
+    }
 }
