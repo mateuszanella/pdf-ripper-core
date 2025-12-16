@@ -25,6 +25,11 @@ namespace Ripper::Core
         return m_handle.is_open();
     }
 
+    bool FileReader::Eof() const noexcept
+    {
+        return m_handle.eof();
+    }
+
     std::uint64_t FileReader::Size() const noexcept
     {
         return std::filesystem::file_size(m_path);
@@ -38,6 +43,23 @@ namespace Ripper::Core
     std::size_t FileReader::Tell() const noexcept
     {
         return m_currentOffset;
+    }
+
+    std::byte FileReader::Peek()
+    {
+        if (!IsOpen() || Eof())
+        {
+            return std::byte{0};
+        }
+
+        const std::streampos currentPos = m_handle.tellg();
+
+        char ch = '\0';
+
+        m_handle.get(ch);
+        m_handle.seekg(currentPos);
+
+        return std::byte{static_cast<unsigned char>(ch)};
     }
 
     std::size_t FileReader::Read(std::span<std::byte> buffer)
@@ -99,5 +121,17 @@ namespace Ripper::Core
         m_handle.seekg(offset, std::ios::beg);
 
         m_currentOffset = offset;
+    }
+
+    void FileReader::Skip(std::size_t n)
+    {
+        if (!IsOpen())
+        {
+            return;
+        }
+
+        m_handle.seekg(static_cast<std::streamoff>(n), std::ios::cur);
+
+        m_currentOffset += n;
     }
 }
