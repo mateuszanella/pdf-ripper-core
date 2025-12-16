@@ -1,14 +1,16 @@
 #include <print>
 #include <filesystem>
 
-#include "Core/Reader/FileReader.hpp"
+#include "Core/PDF.hpp"
 #include "Core/Parser/Parser.hpp"
 
 int main(int argc, char **argv)
 {
     std::filesystem::path path = std::filesystem::current_path() / "../example/pdfa-1a.pdf";
 
-    Ripper::Core::FileReader reader{path};
+    Ripper::Core::PDF pdf{path};
+
+    auto &reader = pdf.GetReader();
 
     if (reader.IsOpen())
     {
