@@ -35,6 +35,11 @@ namespace Ripper::Core
         return m_canonicalPath;
     }
 
+    std::size_t FileReader::Tell() const noexcept
+    {
+        return m_currentOffset;
+    }
+
     std::size_t FileReader::Read(std::span<std::byte> buffer)
     {
         if (!IsOpen())

@@ -15,13 +15,11 @@ int main(int argc, char **argv)
     }
 
     std::array<std::byte, 4096> buffer;
+    std::size_t bytesRead = reader.ReadLine(buffer);
 
-    std::size_t bytesRead = 0;
-
-    while ((bytesRead = reader.Read(buffer)))
-    {
-        std::println("Read {} bytes.", bytesRead);
-    }
+    std::println("Bytes read: {}", bytesRead);
+    std::println("Content: {}", std::string_view{reinterpret_cast<const char*>(buffer.data()), bytesRead});
+    std::println("Current offset: {}", reader.Tell());
 
     return 0;
 }

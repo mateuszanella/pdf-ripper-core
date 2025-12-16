@@ -24,6 +24,7 @@ namespace Ripper::Core
 
         [[nodiscard]] bool IsOpen() const noexcept override;
         [[nodiscard]] std::uint64_t Size() const noexcept override;
+        [[nodiscard]] std::size_t Tell() const noexcept override;
 
         [[nodiscard]] std::size_t Read(std::span<std::byte> buffer) override;
         [[nodiscard]] std::size_t ReadAt(std::span<std::byte> buffer, const std::uint64_t offset) override;
