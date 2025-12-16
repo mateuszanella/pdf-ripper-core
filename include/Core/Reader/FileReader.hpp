@@ -39,10 +39,10 @@ namespace Ripper::Core
         [[nodiscard]] std::string_view GetPath() const noexcept;
 
     private:
-        std::filesystem::path m_path;
-        std::string m_canonicalPath;
-        std::ifstream m_handle;
+        std::filesystem::path _path;
+        std::string _canonicalPath;
+        std::ifstream _handle;
 
-        std::uint64_t m_currentOffset{0};
+        std::uint64_t _currentOffset{0};
     };
 }

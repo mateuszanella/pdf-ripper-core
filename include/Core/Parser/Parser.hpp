@@ -16,6 +16,6 @@ namespace Ripper::Core
         [[nodiscard]] std::expected<std::string, ParserError> ReadHeader();
 
     private:
-        Reader& m_reader;
+        Reader& _reader;
     };
 }

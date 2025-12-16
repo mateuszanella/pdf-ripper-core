@@ -10,7 +10,7 @@
 namespace Ripper::Core
 {
     Parser::Parser(Reader &reader)
-        : m_reader{reader}
+        : _reader{reader}
     {
     }
 
@@ -24,9 +24,9 @@ namespace Ripper::Core
 
         std::array<std::byte, kMaxHeaderLineLength> buffer{};
 
-        m_reader.Seek(0);
+        _reader.Seek(0);
 
-        const std::size_t read = m_reader.ReadLine(buffer);
+        const std::size_t read = _reader.ReadLine(buffer);
         if (read == 0)
         {
             return std::unexpected(ParserError::UnexpectedEOF);

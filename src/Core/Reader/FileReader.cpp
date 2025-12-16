@@ -10,11 +10,11 @@
 namespace Ripper::Core
 {
     FileReader::FileReader(const std::filesystem::path path)
-        : m_path{std::move(path)},
-          m_canonicalPath{std::filesystem::canonical(m_path).string()},
-          m_handle{m_path, std::ios::binary}
+        : _path{std::move(path)},
+          _canonicalPath{std::filesystem::canonical(_path).string()},
+          _handle{_path, std::ios::binary}
     {
-        if (!m_handle.is_open())
+        if (!_handle.is_open())
         {
             throw std::runtime_error{"Failed to open PDF file: " + path.string()};
         }
@@ -22,27 +22,27 @@ namespace Ripper::Core
 
     bool FileReader::IsOpen() const noexcept
     {
-        return m_handle.is_open();
+        return _handle.is_open();
     }
 
     bool FileReader::Eof() const noexcept
     {
-        return m_handle.eof();
+        return _handle.eof();
     }
 
     std::uint64_t FileReader::Size() const noexcept
     {
-        return std::filesystem::file_size(m_path);
+        return std::filesystem::file_size(_path);
     }
 
     std::string_view FileReader::GetPath() const noexcept
     {
-        return m_canonicalPath;
+        return _canonicalPath;
     }
 
     std::size_t FileReader::Tell() const noexcept
     {
-        return m_currentOffset;
+        return _currentOffset;
     }
 
     std::byte FileReader::Peek()
@@ -52,12 +52,12 @@ namespace Ripper::Core
             return std::byte{0};
         }
 
-        const std::streampos currentPos = m_handle.tellg();
+        const std::streampos currentPos = _handle.tellg();
 
         char ch = '\0';
 
-        m_handle.get(ch);
-        m_handle.seekg(currentPos);
+        _handle.get(ch);
+        _handle.seekg(currentPos);
 
         return std::byte{static_cast<unsigned char>(ch)};
     }
@@ -69,11 +69,11 @@ namespace Ripper::Core
             return 0;
         }
 
-        m_handle.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
+        _handle.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
 
-        std::size_t bytesRead = static_cast<std::size_t>(m_handle.gcount());
+        std::size_t bytesRead = static_cast<std::size_t>(_handle.gcount());
 
-        m_currentOffset += bytesRead;
+        _currentOffset += bytesRead;
 
         return bytesRead;
     }
@@ -85,12 +85,12 @@ namespace Ripper::Core
             return 0;
         }
 
-        m_handle.seekg(offset, std::ios::beg);
-        m_handle.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
+        _handle.seekg(offset, std::ios::beg);
+        _handle.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
 
-        std::size_t bytesRead = static_cast<std::size_t>(m_handle.gcount());
+        std::size_t bytesRead = static_cast<std::size_t>(_handle.gcount());
 
-        m_currentOffset = offset + bytesRead;
+        _currentOffset = offset + bytesRead;
 
         return bytesRead;
     }
@@ -102,11 +102,11 @@ namespace Ripper::Core
             return 0;
         }
 
-        m_handle.getline(reinterpret_cast<char *>(buffer.data()), buffer.size());
+        _handle.getline(reinterpret_cast<char *>(buffer.data()), buffer.size());
 
-        std::size_t bytesRead = static_cast<std::size_t>(m_handle.gcount());
+        std::size_t bytesRead = static_cast<std::size_t>(_handle.gcount());
 
-        m_currentOffset += bytesRead;
+        _currentOffset += bytesRead;
 
         return bytesRead;
     }
@@ -118,9 +118,9 @@ namespace Ripper::Core
             return;
         }
 
-        m_handle.seekg(offset, std::ios::beg);
+        _handle.seekg(offset, std::ios::beg);
 
-        m_currentOffset = offset;
+        _currentOffset = offset;
     }
 
     void FileReader::Skip(std::size_t n)
@@ -130,8 +130,8 @@ namespace Ripper::Core
             return;
         }
 
-        m_handle.seekg(static_cast<std::streamoff>(n), std::ios::cur);
+        _handle.seekg(static_cast<std::streamoff>(n), std::ios::cur);
 
-        m_currentOffset += n;
+        _currentOffset += n;
     }
 }
