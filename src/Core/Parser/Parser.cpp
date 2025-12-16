@@ -14,6 +14,9 @@ namespace Ripper::Core
     {
     }
 
+    /**
+     * @todo this should be delegated to another class
+     */
     std::expected<std::string, ParserError> Parser::ReadHeader()
     {
         constexpr std::string_view kMagic = "%PDF-";

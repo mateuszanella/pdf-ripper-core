@@ -1,22 +1,22 @@
 #pragma once
 
-#include <string>
-#include <string_view>
-#include <fstream>
 #include <filesystem>
+#include <memory>
+
+#include "Core/Reader/Reader.hpp"
 
 namespace Ripper::Core
 {
     class PDF
     {
     public:
-        explicit PDF(std::filesystem::path path);
+        explicit PDF(std::unique_ptr<Ripper::Core::Reader> reader);
+        explicit PDF(const std::filesystem::path path);
 
-        [[nodiscard]] std::string_view GetPath() const noexcept;
-        [[nodiscard]] bool IsOpen() const noexcept;
+        [[nodiscard]] Ripper::Core::Reader &GetReader() noexcept;
+        [[nodiscard]] const Ripper::Core::Reader &GetReader() const noexcept;
 
     private:
-        std::string   m_path;
-        std::ifstream m_file;
+        std::unique_ptr<Ripper::Core::Reader> _reader;
     };
 }

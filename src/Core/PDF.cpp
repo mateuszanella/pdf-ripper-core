@@ -1,38 +1,29 @@
 #include "Core/PDF.hpp"
 
-#include <stdexcept>
-#include <utility>
 #include <filesystem>
+#include <memory>
+
+#include "Core/Reader/FileReader.hpp"
 
 namespace Ripper::Core
 {
-    namespace
+    PDF::PDF(std::unique_ptr<Ripper::Core::Reader> reader)
+        : _reader(std::move(reader))
     {
-        std::string CanonicalizePath(std::filesystem::path path)
-        {
-            auto canonicalPath = std::filesystem::weakly_canonical(path);
-
-            return canonicalPath.generic_string();
-        }
     }
 
-    PDF::PDF(std::filesystem::path path)
-        : m_path{CanonicalizePath(std::move(path))},
-          m_file{m_path, std::ios::binary}
+    PDF::PDF(const std::filesystem::path path)
+        : PDF(std::make_unique<Ripper::Core::FileReader>(path))
     {
-        if (!m_file.is_open())
-        {
-            throw std::runtime_error{"Failed to open PDF file: " + m_path};
-        }
     }
 
-    std::string_view PDF::GetPath() const noexcept
+    Ripper::Core::Reader &PDF::GetReader() noexcept
     {
-        return m_path;
+        return *_reader;
     }
 
-    bool PDF::IsOpen() const noexcept
+    const Ripper::Core::Reader &PDF::GetReader() const noexcept
     {
-        return m_file.is_open();
+        return *_reader;
     }
 }
