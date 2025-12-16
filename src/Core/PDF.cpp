@@ -8,7 +8,8 @@
 namespace Ripper::Core
 {
     PDF::PDF(std::unique_ptr<Ripper::Core::Reader> reader)
-        : _reader(std::move(reader))
+        : _reader(std::move(reader)),
+          _parser(std::make_unique<Ripper::Core::Parser>(*_reader))
     {
     }
 
@@ -32,5 +33,15 @@ namespace Ripper::Core
     const Ripper::Core::Reader &PDF::GetReader() const noexcept
     {
         return *_reader;
+    }
+
+    Ripper::Core::Parser &PDF::GetParser() noexcept
+    {
+        return *_parser;
+    }
+
+    const Ripper::Core::Parser &PDF::GetParser() const noexcept
+    {
+        return *_parser;
     }
 }

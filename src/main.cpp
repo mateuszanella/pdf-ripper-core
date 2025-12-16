@@ -2,11 +2,10 @@
 #include <filesystem>
 
 #include "Core/PDF.hpp"
-#include "Core/Parser/Parser.hpp"
 
 int main(int argc, char **argv)
 {
-    std::filesystem::path path = std::filesystem::current_path() / "../example/pdfa-1a.pdf";
+    std::filesystem::path path = std::filesystem::current_path() / "../example/test.pdf";
 
     Ripper::Core::PDF pdf{path};
 
@@ -17,8 +16,7 @@ int main(int argc, char **argv)
         std::println("PDF file is open.");
     }
 
-    Ripper::Core::Parser parser{reader};
-    const auto headerResult = parser.ReadHeader();
+    const auto headerResult = pdf.GetParser().ReadHeader();
     if (headerResult)
     {
         std::println("PDF Header Version: {}", *headerResult);
