@@ -13,6 +13,8 @@ namespace Ripper::Core
         explicit PDF(std::unique_ptr<Ripper::Core::Reader> reader);
         explicit PDF(const std::filesystem::path path);
 
+        static PDF Open(const std::filesystem::path path);
+
         [[nodiscard]] Ripper::Core::Reader &GetReader() noexcept;
         [[nodiscard]] const Ripper::Core::Reader &GetReader() const noexcept;
 

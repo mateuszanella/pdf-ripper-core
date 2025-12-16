@@ -17,6 +17,13 @@ namespace Ripper::Core
     {
     }
 
+    PDF PDF::Open(const std::filesystem::path path)
+    {
+        PDF pdf(path);
+
+        return pdf;
+    }
+
     Ripper::Core::Reader &PDF::GetReader() noexcept
     {
         return *_reader;
