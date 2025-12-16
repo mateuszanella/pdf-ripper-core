@@ -2,6 +2,7 @@
 #include <filesystem>
 
 #include "Core/Reader/FileReader.hpp"
+#include "Core/Parser/Parser.hpp"
 
 int main(int argc, char **argv)
 {
@@ -14,12 +15,16 @@ int main(int argc, char **argv)
         std::println("PDF file is open.");
     }
 
-    std::array<std::byte, 4096> buffer;
-    std::size_t bytesRead = reader.ReadLine(buffer);
-
-    std::println("Bytes read: {}", bytesRead);
-    std::println("Content: {}", std::string_view{reinterpret_cast<const char*>(buffer.data()), bytesRead});
-    std::println("Current offset: {}", reader.Tell());
+    Ripper::Core::Parser parser{reader};
+    const auto headerResult = parser.ReadHeader();
+    if (headerResult)
+    {
+        std::println("PDF Header Version: {}", *headerResult);
+    }
+    else
+    {
+        std::println("Failed to read PDF header. Error code: {}", static_cast<int>(headerResult.error()));
+    }
 
     return 0;
 }
