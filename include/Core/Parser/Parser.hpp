@@ -14,7 +14,7 @@ namespace Ripper::Core
         explicit Parser(Reader& reader);
 
         [[nodiscard]] std::expected<std::string, ParserError> ReadHeader();
-
+        [[nodiscard]] std::expected<std::string, ParserError> ReadCrossReferenceTable();
     private:
         Reader& _reader;
     };

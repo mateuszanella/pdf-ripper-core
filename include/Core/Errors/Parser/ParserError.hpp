@@ -7,6 +7,8 @@ namespace Ripper::Core
         None = 0,
         UnexpectedEOF,
         CorruptedHeader,
-        MissingHeader
+        MissingHeader,
+        MissingCrossReferenceTable,
+        CorruptedCrossReferenceTable
     };
 }

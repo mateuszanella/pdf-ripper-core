@@ -16,7 +16,7 @@ namespace Ripper::Core
     {
         if (!_handle.is_open())
         {
-            throw std::runtime_error{"Failed to open PDF file: " + path.string()};
+            throw std::runtime_error{"Failed to open PDF file: " + _path.string()};
         }
     }
 
@@ -85,6 +85,7 @@ namespace Ripper::Core
             return 0;
         }
 
+        _handle.clear();
         _handle.seekg(offset, std::ios::beg);
         _handle.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
 
@@ -100,6 +101,11 @@ namespace Ripper::Core
         if (!IsOpen())
         {
             return 0;
+        }
+
+        if (_handle.fail())
+        {
+            _handle.clear();
         }
 
         _handle.getline(reinterpret_cast<char *>(buffer.data()), buffer.size());
@@ -118,6 +124,7 @@ namespace Ripper::Core
             return;
         }
 
+        _handle.clear();
         _handle.seekg(offset, std::ios::beg);
 
         _currentOffset = offset;
@@ -130,6 +137,7 @@ namespace Ripper::Core
             return;
         }
 
+        _handle.clear();
         _handle.seekg(static_cast<std::streamoff>(n), std::ios::cur);
 
         _currentOffset += n;
