@@ -5,6 +5,8 @@
 #include <expected>
 #include <string_view>
 #include <stdexcept>
+#include <mutex>
+#include <unordered_map>
 
 #include "Core/Reader/Reader.hpp"
 #include "Core/Util/Text.hpp"
@@ -63,7 +65,12 @@ namespace Ripper::Core
         return std::string{rest.substr(0, len)};
     }
 
-    std::expected<std::string, ParserError> Parser::ReadCrossReferenceTable()
+    const Parser::Breakpoints& Parser::GetBreakpoints() const
+    {
+        return _breakpoints;
+    }
+
+    std::expected<std::size_t, ParserError> Parser::FindLastStartXrefOffset()
     {
         constexpr std::size_t kMaxLineLength = 8192;
         std::array<std::byte, kMaxLineLength> buffer{};
@@ -72,6 +79,9 @@ namespace Ripper::Core
 
         std::optional<std::size_t> lastXrefOffset;
         bool awaitingOffsetLine = false;
+
+        std::size_t curPos = 0;
+        std::size_t maybeStartKeywordPos = 0;
 
         while (true)
         {
@@ -85,51 +95,74 @@ namespace Ripper::Core
 
             const std::string_view line = Text::TrimAscii(Text::StripLineEndings(rawLine));
 
-            // Typical layout:
-            // startxref
-            // 12345
-            // %%EOF
             if (awaitingOffsetLine)
             {
+                _breakpoints.lastStartXrefOffsetLinePos = curPos;
                 if (auto off = Text::ParseSizeT(line))
+                {
                     lastXrefOffset = *off;
+                    _breakpoints.lastStartXrefKeywordPos = maybeStartKeywordPos;
+                }
                 awaitingOffsetLine = false;
+                curPos += read;
                 continue;
             }
 
-            // Handle exact "startxref" line
             if (line == "startxref")
             {
+                maybeStartKeywordPos = curPos;
                 awaitingOffsetLine = true;
+                curPos += read;
                 continue;
             }
 
-            // (Optional) handle "startxref 12345" (non-standard, but cheap to support)
-            const std::string_view kStart = "startxref";
+            constexpr std::string_view kStart = "startxref";
             const auto pos = line.find(kStart);
             if (pos != std::string_view::npos)
             {
+                maybeStartKeywordPos = curPos;
+
                 std::string_view rest = line.substr(pos + kStart.size());
                 if (auto off = Text::ParseSizeT(rest))
+                {
                     lastXrefOffset = *off;
+                    _breakpoints.lastStartXrefKeywordPos = curPos;
+                    _breakpoints.lastStartXrefOffsetLinePos = curPos;
+                }
                 else
+                {
                     awaitingOffsetLine = true;
+                }
             }
+
+            curPos += read;
         }
+
+        _breakpoints.eofPos = curPos;
 
         if (!lastXrefOffset.has_value())
         {
-            // If you have a better error enum value (e.g., MissingStartXref), use it here.
             return std::unexpected(ParserError::UnexpectedEOF);
         }
 
-        // Phase 2: seek to xref offset and copy bytes until "trailer"
-        _reader.Seek(*lastXrefOffset);
+        _breakpoints.xrefOffset = *lastXrefOffset;
+        return *lastXrefOffset;
+    }
+
+    std::expected<std::string, ParserError> Parser::ReadXrefTableAtOffset(std::size_t xrefOffset)
+    {
+        constexpr std::size_t kMaxLineLength = 8192;
+        std::array<std::byte, kMaxLineLength> buffer{};
+
+        _reader.Seek(xrefOffset);
 
         std::string out;
         out.reserve(4096);
 
         bool firstLine = true;
+        std::size_t curPos = xrefOffset;
+
+        _breakpoints.xrefStartPos = xrefOffset;
 
         while (true)
         {
@@ -148,8 +181,6 @@ namespace Ripper::Core
                 firstLine = false;
                 if (!Text::StartsWithToken(rawLine, "xref"))
                 {
-                    // This likely means it's an xref stream, or the file is corrupted.
-                    // If you have a better error enum value (e.g., CorruptedXref), use it here.
                     return std::unexpected(ParserError::CorruptedHeader);
                 }
             }
@@ -157,14 +188,33 @@ namespace Ripper::Core
             {
                 if (Text::StartsWithToken(rawLine, "trailer"))
                 {
-                    // Stop BEFORE trailer: caller asked for xref table bytes only.
+                    _breakpoints.xrefEndPos = curPos;
+                    _breakpoints.trailerKeywordPos = curPos;
                     break;
                 }
             }
 
             out.append(rawLine.data(), rawLine.size());
+            curPos += read;
         }
 
         return out;
+    }
+
+    std::expected<std::string, ParserError> Parser::ReadCrossReferenceTable()
+    {
+        auto offExp = FindLastStartXrefOffset();
+        if (!offExp)
+        {
+            return std::unexpected(offExp.error());
+        }
+
+        auto tableExp = ReadXrefTableAtOffset(*offExp);
+        if (!tableExp)
+        {
+            return std::unexpected(tableExp.error());
+        }
+
+        return *tableExp;
     }
 }
