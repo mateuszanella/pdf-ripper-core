@@ -219,6 +219,6 @@ namespace Ripper::Core
             return std::unexpected(tableExp.error());
         }
 
-        return *tableExp;
+        return tableExp.value();
     }
 }
