@@ -70,6 +70,10 @@ namespace Ripper::Core
         return _breakpoints;
     }
 
+    /**
+     * @todo should handle multiple xrefs, not this method, just this in general
+     * @todo this looks shit
+     */
     std::expected<std::size_t, ParserError> Parser::FindLastStartXrefOffset()
     {
         constexpr std::size_t kMaxLineLength = 8192;
@@ -100,7 +104,7 @@ namespace Ripper::Core
                 _breakpoints.lastStartXrefOffsetLinePos = curPos;
                 if (auto off = Text::ParseSizeT(line))
                 {
-                    lastXrefOffset = *off;
+                    lastXrefOffset = off.value();
                     _breakpoints.lastStartXrefKeywordPos = maybeStartKeywordPos;
                 }
                 awaitingOffsetLine = false;
@@ -125,7 +129,7 @@ namespace Ripper::Core
                 std::string_view rest = line.substr(pos + kStart.size());
                 if (auto off = Text::ParseSizeT(rest))
                 {
-                    lastXrefOffset = *off;
+                    lastXrefOffset = off.value();
                     _breakpoints.lastStartXrefKeywordPos = curPos;
                     _breakpoints.lastStartXrefOffsetLinePos = curPos;
                 }
@@ -209,7 +213,7 @@ namespace Ripper::Core
             return std::unexpected(offExp.error());
         }
 
-        auto tableExp = ReadXrefTableAtOffset(*offExp);
+        auto tableExp = ReadXrefTableAtOffset(offExp.value());
         if (!tableExp)
         {
             return std::unexpected(tableExp.error());
