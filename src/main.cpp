@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
     auto parser = pdf.Parser();
 
-    const auto header = parser.ParseHeader();
+    const auto header = parser.Header();
     if (header)
     {
         std::println("PDF Header Version: {}", header.value().Version());
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
         std::println("Failed to read PDF header. Error code: {}", static_cast<int>(header.error()));
     }
 
-    const auto xrefTable = parser.ParseCrossReferenceTable();
+    const auto xrefTable = parser.CrossReferenceTable();
     if (xrefTable)
     {
         std::println("\nCross-Reference Table parsed successfully.");

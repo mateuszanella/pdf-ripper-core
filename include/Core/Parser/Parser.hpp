@@ -19,28 +19,30 @@ namespace Ripper::Core
         explicit Parser(Reader &reader);
 
         /**
-         * @brief Parses the PDF header from the underlying reader.
+         * @brief Force parsing of the PDF header from the underlying reader.
          *
          * @return The parsed Header on success, or a ParserError on failure.
          */
         [[nodiscard]] std::expected<Header, ParserError> ParseHeader();
 
         /**
-         * @brief Parses the cross-reference table from the underlying reader.
+         * @brief Force parsing of the cross-reference table from the underlying reader.
          *
          * @return The parsed CrossReferenceTable on success, or a ParserError on failure.
          */
         [[nodiscard]] std::expected<CrossReferenceTable, ParserError> ParseCrossReferenceTable();
 
         /**
-         * @brief Returns the last parsed header, if any.
+         * @brief Returns the last computed header for this parser instance.
+         * If the header has not been parsed yet, it triggers parsing.
          */
-        [[nodiscard]] const std::optional<Header> &Header() const;
+        [[nodiscard]] std::expected<Header, ParserError> Header();
 
         /**
-         * @brief Returns the last parsed cross-reference table, if any.
+         * @brief Returns the last computed cross-reference table for this parser instance.
+         * If the table has not been parsed yet, it triggers parsing.
          */
-        [[nodiscard]] const std::optional<CrossReferenceTable> &CrossReferenceTable() const;
+        [[nodiscard]] std::expected<CrossReferenceTable, ParserError> CrossReferenceTable();
 
         /**
          * @brief Returns the last computed breakpoints for this parser instance.
