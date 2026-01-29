@@ -7,12 +7,12 @@ namespace Ripper::Core
     {
     }
 
-    std::size_t Breakpoint::GetPosition() const
+    std::size_t Breakpoint::Position() const
     {
         return _position;
     }
 
-    BreakpointType Breakpoint::GetType() const
+    BreakpointType Breakpoint::Type() const
     {
         return _type;
     }

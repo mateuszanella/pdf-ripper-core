@@ -14,12 +14,12 @@ namespace Ripper::Core
         /**
          * @brief Returns the byte offset position of this breakpoint in the PDF file.
          */
-        [[nodiscard]] std::size_t GetPosition() const;
+        [[nodiscard]] std::size_t Position() const;
 
         /**
          * @brief Returns the type of this breakpoint.
          */
-        [[nodiscard]] BreakpointType GetType() const;
+        [[nodiscard]] BreakpointType Type() const;
 
         /**
          * @brief Checks if this breakpoint is of the given type.
@@ -32,7 +32,7 @@ namespace Ripper::Core
     private:
         std::size_t _position;
         BreakpointType _type;
-    }
+    };
 
     enum class BreakpointType {
         HeaderStart,

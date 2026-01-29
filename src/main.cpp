@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 
     auto pdf = Ripper::Core::PDF::Open(path);
 
-    const auto &reader = pdf.GetReader();
+    const auto &reader = pdf.Reader();
 
     if (reader.IsOpen())
     {
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    auto parser = pdf.GetParser();
+    auto parser = pdf.Parser();
 
     const auto headerResult = parser.ReadHeader();
     if (headerResult)
@@ -32,16 +32,6 @@ int main(int argc, char **argv)
     else
     {
         std::println("Failed to read PDF header. Error code: {}", static_cast<int>(headerResult.error()));
-    }
-
-    const auto xrefResult = parser.ReadCrossReferenceTable();
-    if (xrefResult)
-    {
-        std::println("Cross-Reference Table Entries: \n{}", *xrefResult);
-    }
-    else
-    {
-        std::println("Failed to read Cross-Reference Table. Error code: {}", static_cast<int>(xrefResult.error()));
     }
 
     return 0;

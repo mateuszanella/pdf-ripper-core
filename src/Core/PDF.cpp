@@ -25,22 +25,22 @@ namespace Ripper::Core
         return pdf;
     }
 
-    Ripper::Core::Reader &PDF::GetReader() noexcept
+    Ripper::Core::Reader &PDF::Reader() noexcept
     {
         return *_reader;
     }
 
-    const Ripper::Core::Reader &PDF::GetReader() const noexcept
+    const Ripper::Core::Reader &PDF::Reader() const noexcept
     {
         return *_reader;
     }
 
-    Ripper::Core::Parser &PDF::GetParser() noexcept
+    Ripper::Core::Parser &PDF::Parser() noexcept
     {
         return *_parser;
     }
 
-    const Ripper::Core::Parser &PDF::GetParser() const noexcept
+    const Ripper::Core::Parser &PDF::Parser() const noexcept
     {
         return *_parser;
     }
