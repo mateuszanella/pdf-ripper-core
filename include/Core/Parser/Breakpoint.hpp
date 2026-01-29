@@ -6,6 +6,20 @@
 
 namespace Ripper::Core
 {
+    enum class BreakpointType
+    {
+        HeaderStart,
+        HeaderEnd,
+        XrefKeyword,
+        XrefStart,
+        XrefEnd,
+        TrailerKeyword,
+        TrailerStart,
+        TrailerEnd,
+        StartXrefKeyword,
+        EOFMarker
+    };
+
     class Breakpoint
     {
     public:
@@ -33,18 +47,4 @@ namespace Ripper::Core
         std::size_t _position;
         BreakpointType _type;
     };
-
-    enum class BreakpointType {
-        HeaderStart,
-        HeaderEnd,
-        XrefKeyword,
-        XrefStart,
-        XrefEnd,
-        TrailerKeyword,
-        TrailerStart,
-        TrailerEnd,
-        StartXrefKeyword,
-        EOF
-    };
-
 }

@@ -3,10 +3,12 @@
 #include <expected>
 #include <string>
 #include <optional>
+#include <vector>
 
+#include "Core/Document/Header.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
+#include "Core/Parser/Breakpoint.hpp"
 #include "Core/Reader/Reader.hpp"
-#include "Core/Parser/CrossReference/XrefTable.hpp"
 
 namespace Ripper::Core
 {
@@ -15,17 +17,27 @@ namespace Ripper::Core
     public:
         explicit Parser(Reader &reader);
 
-        [[nodiscard]] std::expected<std::string, ParserError> ReadHeader();
-        [[nodiscard]] std::expected<std::string, ParserError> ReadCrossReferenceTable();
-        [[nodiscard]] std::expected<XrefTable, ParserError> ParseCrossReferenceTable();
+        /**
+         * @brief Parses the PDF header from the underlying reader.
+         *
+         * @return The parsed Header on success, or a ParserError on failure.
+         */
+        [[nodiscard]] std::expected<Header, ParserError> ParseHeader();
+
+        /**
+         * @brief Returns the last parsed header, if any.
+         */
+        [[nodiscard]] const std::optional<Header> &Header() const;
 
         /**
          * @brief Returns the last computed breakpoints for this parser instance.
          */
-        [[nodiscard]] const std::vector<Breakpoint> &GetBreakpoints() const;
+        [[nodiscard]] const std::vector<Breakpoint> &Breakpoints() const;
 
     private:
         Reader &_reader;
         std::vector<Breakpoint> _breakpoints{};
+
+        std::optional<class Header> _header;
     };
 }

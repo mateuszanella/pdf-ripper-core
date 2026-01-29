@@ -8,217 +8,47 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "Core/Document/Header.hpp"
+#include "Core/Errors/Parser/ParserError.hpp"
 #include "Core/Reader/Reader.hpp"
-#include "Core/Util/Text.hpp"
+#include "Core/Parser/Header/HeaderParser.hpp"
+#include "Core/Parser/Breakpoint.hpp"
 
 namespace Ripper::Core
 {
     Parser::Parser(Reader &reader)
         : _reader{reader}
     {
+        _breakpoints.reserve(10);
     }
 
-    /**
-     * @todo this should be delegated to another class
-     */
-    std::expected<std::string, ParserError> Parser::ReadHeader()
+    std::expected<Header, ParserError> Parser::ParseHeader()
     {
-        constexpr std::string_view kMagic = "%PDF-";
-        constexpr std::size_t kMaxHeaderLineLength = 256;
-
-        std::array<std::byte, kMaxHeaderLineLength> buffer{};
-
-        _reader.Seek(0);
-
-        const std::size_t read = _reader.ReadLine(buffer);
-        if (read == 0)
+        if (_header)
         {
-            return std::unexpected(ParserError::UnexpectedEOF);
+            return *_header;
         }
 
-        const std::string_view line{
-            reinterpret_cast<const char *>(buffer.data()),
-            read};
-
-        const std::size_t pos = line.find(kMagic);
-        if (pos == std::string_view::npos)
+        HeaderParser headerParser{_reader};
+        auto result = headerParser.Parse();
+        if (!result)
         {
-            return std::unexpected(ParserError::MissingHeader);
+            return std::unexpected(result.error());
         }
 
-        const std::string_view rest = line.substr(pos + kMagic.size());
+        _breakpoints.append_range(std::move(result->breakpoints));
+        _header = std::move(result->header);
 
-        std::size_t len = 0;
-        while (len < rest.size())
-        {
-            const unsigned char ch = static_cast<unsigned char>(rest[len]);
-            if (!(std::isdigit(ch) || ch == '.'))
-                break;
-            ++len;
-        }
-
-        if (len == 0)
-        {
-            return std::unexpected(ParserError::CorruptedHeader);
-        }
-
-        return std::string{rest.substr(0, len)};
+        return *_header;
     }
 
-    const Parser::Breakpoints& Parser::GetBreakpoints() const
+    const std::vector<Breakpoint> &Parser::Breakpoints() const
     {
         return _breakpoints;
     }
 
-    /**
-     * @todo should handle multiple xrefs, not this method, just this in general
-     * @todo this looks shit
-     */
-    std::expected<std::size_t, ParserError> Parser::FindLastStartXrefOffset()
+    const std::optional<Header> &Parser::Header() const
     {
-        constexpr std::size_t kMaxLineLength = 8192;
-        std::array<std::byte, kMaxLineLength> buffer{};
-
-        _reader.Seek(0);
-
-        std::optional<std::size_t> lastXrefOffset;
-        bool awaitingOffsetLine = false;
-
-        std::size_t curPos = 0;
-        std::size_t maybeStartKeywordPos = 0;
-
-        while (true)
-        {
-            const std::size_t read = _reader.ReadLine(buffer);
-            if (read == 0)
-                break;
-
-            const std::string_view rawLine{
-                reinterpret_cast<const char *>(buffer.data()),
-                read};
-
-            const std::string_view line = Text::TrimAscii(Text::StripLineEndings(rawLine));
-
-            if (awaitingOffsetLine)
-            {
-                _breakpoints.lastStartXrefOffsetLinePos = curPos;
-                if (auto off = Text::ParseSizeT(line))
-                {
-                    lastXrefOffset = off.value();
-                    _breakpoints.lastStartXrefKeywordPos = maybeStartKeywordPos;
-                }
-                awaitingOffsetLine = false;
-                curPos += read;
-                continue;
-            }
-
-            if (line == "startxref")
-            {
-                maybeStartKeywordPos = curPos;
-                awaitingOffsetLine = true;
-                curPos += read;
-                continue;
-            }
-
-            constexpr std::string_view kStart = "startxref";
-            const auto pos = line.find(kStart);
-            if (pos != std::string_view::npos)
-            {
-                maybeStartKeywordPos = curPos;
-
-                std::string_view rest = line.substr(pos + kStart.size());
-                if (auto off = Text::ParseSizeT(rest))
-                {
-                    lastXrefOffset = off.value();
-                    _breakpoints.lastStartXrefKeywordPos = curPos;
-                    _breakpoints.lastStartXrefOffsetLinePos = curPos;
-                }
-                else
-                {
-                    awaitingOffsetLine = true;
-                }
-            }
-
-            curPos += read;
-        }
-
-        _breakpoints.eofPos = curPos;
-
-        if (!lastXrefOffset.has_value())
-        {
-            return std::unexpected(ParserError::UnexpectedEOF);
-        }
-
-        _breakpoints.xrefOffset = *lastXrefOffset;
-        return *lastXrefOffset;
-    }
-
-    std::expected<std::string, ParserError> Parser::ReadXrefTableAtOffset(std::size_t xrefOffset)
-    {
-        constexpr std::size_t kMaxLineLength = 8192;
-        std::array<std::byte, kMaxLineLength> buffer{};
-
-        _reader.Seek(xrefOffset);
-
-        std::string out;
-        out.reserve(4096);
-
-        bool firstLine = true;
-        std::size_t curPos = xrefOffset;
-
-        _breakpoints.xrefStartPos = xrefOffset;
-
-        while (true)
-        {
-            const std::size_t read = _reader.ReadLine(buffer);
-            if (read == 0)
-            {
-                return std::unexpected(ParserError::UnexpectedEOF);
-            }
-
-            const std::string_view rawLine{
-                reinterpret_cast<const char *>(buffer.data()),
-                read};
-
-            if (firstLine)
-            {
-                firstLine = false;
-                if (!Text::StartsWithToken(rawLine, "xref"))
-                {
-                    return std::unexpected(ParserError::CorruptedHeader);
-                }
-            }
-            else
-            {
-                if (Text::StartsWithToken(rawLine, "trailer"))
-                {
-                    _breakpoints.xrefEndPos = curPos;
-                    _breakpoints.trailerKeywordPos = curPos;
-                    break;
-                }
-            }
-
-            out.append(rawLine.data(), rawLine.size());
-            curPos += read;
-        }
-
-        return out;
-    }
-
-    std::expected<std::string, ParserError> Parser::ReadCrossReferenceTable()
-    {
-        auto offExp = FindLastStartXrefOffset();
-        if (!offExp)
-        {
-            return std::unexpected(offExp.error());
-        }
-
-        auto tableExp = ReadXrefTableAtOffset(offExp.value());
-        if (!tableExp)
-        {
-            return std::unexpected(tableExp.error());
-        }
-
-        return tableExp.value();
+        return _header;
     }
 }

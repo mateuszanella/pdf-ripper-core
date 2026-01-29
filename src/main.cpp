@@ -24,14 +24,22 @@ int main(int argc, char **argv)
 
     auto parser = pdf.Parser();
 
-    const auto headerResult = parser.ReadHeader();
-    if (headerResult)
+    const auto header = parser.ParseHeader();
+    if (header)
     {
-        std::println("PDF Header Version: {}", *headerResult);
+        std::println("PDF Header Version: {}", header.value().Version());
     }
     else
     {
-        std::println("Failed to read PDF header. Error code: {}", static_cast<int>(headerResult.error()));
+        std::println("Failed to read PDF header. Error code: {}", static_cast<int>(header.error()));
+    }
+
+    auto breakpoints = parser.Breakpoints();
+
+    std::println("Found {} breakpoints:", breakpoints.size());
+    for (const auto &bp : breakpoints)
+    {
+        std::println(" - Position: {}, Type: {}", bp.Position(), static_cast<int>(bp.Type()));
     }
 
     return 0;

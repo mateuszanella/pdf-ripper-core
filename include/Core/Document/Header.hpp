@@ -13,7 +13,7 @@ namespace Ripper::Core
         {
         }
 
-        [[nodiscard]] const std::string_view &Version() const
+        [[nodiscard]] std::string_view Version() const
         {
             return _version;
         }
