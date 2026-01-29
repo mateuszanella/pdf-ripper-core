@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     std::println("Found {} breakpoints:", breakpoints.size());
     for (const auto &bp : breakpoints)
     {
-        std::println(" - Position: {}, Type: {}", bp.Position(), static_cast<int>(bp.Type()));
+        std::println(" - Position: {}, Type: {}", bp.Position(), bp.ToString());
     }
 
     return 0;

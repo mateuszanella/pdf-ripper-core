@@ -40,6 +40,27 @@ namespace Ripper::Core
          */
         [[nodiscard]] bool Is(BreakpointType type) const;
 
+        /**
+         * @brief Returns a string representation of this breakpoint.
+         */
+        [[nodiscard]] inline std::string ToString() const
+        {
+            switch (_type)
+            {
+                case BreakpointType::HeaderStart: return "Header Start";
+                case BreakpointType::HeaderEnd: return "Header End";
+                case BreakpointType::XrefKeyword: return "Xref Keyword";
+                case BreakpointType::XrefStart: return "Xref Start";
+                case BreakpointType::XrefEnd: return "Xref End";
+                case BreakpointType::TrailerKeyword: return "Trailer Keyword";
+                case BreakpointType::TrailerStart: return "Trailer Start";
+                case BreakpointType::TrailerEnd: return "Trailer End";
+                case BreakpointType::StartXrefKeyword: return "StartXref Keyword";
+                case BreakpointType::EOFMarker: return "EOF Marker";
+                default: return "Unknown";
+            }
+        }
+
         [[nodiscard]] bool operator!=(const Breakpoint &other) const;
         [[nodiscard]] bool operator==(const Breakpoint &other) const;
 
