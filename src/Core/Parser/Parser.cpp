@@ -13,6 +13,7 @@
 #include "Core/Reader/Reader.hpp"
 #include "Core/Parser/Header/HeaderParser.hpp"
 #include "Core/Parser/Breakpoint.hpp"
+#include "Core/Parser/CrossReferenceTable/AggregateCrossReferenceTableParser.hpp"
 
 namespace Ripper::Core
 {
@@ -42,6 +43,26 @@ namespace Ripper::Core
         return *_header;
     }
 
+    std::expected<CrossReferenceTable, ParserError> Parser::ParseCrossReferenceTable()
+    {
+        if (_crossReferenceTable)
+        {
+            return *_crossReferenceTable;
+        }
+
+        AggregateCrossReferenceTableParser parser{_reader};
+        auto result = parser.Parse();
+        if (!result)
+        {
+            return std::unexpected(result.error());
+        }
+
+        _breakpoints.append_range(std::move(result->breakpoints));
+        _crossReferenceTable = std::move(result->table);
+
+        return *_crossReferenceTable;
+    }
+
     const std::vector<Breakpoint> &Parser::Breakpoints() const
     {
         return _breakpoints;
@@ -50,5 +71,10 @@ namespace Ripper::Core
     const std::optional<Header> &Parser::Header() const
     {
         return _header;
+    }
+
+    const std::optional<CrossReferenceTable> &Parser::CrossReferenceTable() const
+    {
+        return _crossReferenceTable;
     }
 }

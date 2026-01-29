@@ -34,9 +34,21 @@ int main(int argc, char **argv)
         std::println("Failed to read PDF header. Error code: {}", static_cast<int>(header.error()));
     }
 
+    const auto xrefTable = parser.ParseCrossReferenceTable();
+    if (xrefTable)
+    {
+        std::println("\nCross-Reference Table parsed successfully.");
+        std::println("Found {} entries", xrefTable.value().Size());
+    }
+    else
+    {
+        std::println("\nFailed to parse cross-reference table. Error code: {}", static_cast<int>(xrefTable.error()));
+    }
+
     auto breakpoints = parser.Breakpoints();
 
     std::println("Found {} breakpoints:", breakpoints.size());
+
     for (const auto &bp : breakpoints)
     {
         std::println(" - Position: {}, Type: {}", bp.Position(), bp.ToString());
