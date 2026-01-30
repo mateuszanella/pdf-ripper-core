@@ -1,7 +1,6 @@
 #pragma once
 
 #include <expected>
-#include <string>
 #include <optional>
 #include <vector>
 
@@ -9,66 +8,66 @@
 #include "Core/Document/CrossReferenceTable.hpp"
 #include "Core/Document/Trailer.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
-#include "Core/Parser/Breakpoint.hpp"
 #include "Core/Reader/Reader.hpp"
 
 namespace Ripper::Core
 {
+    /**
+     * @brief High-level parser orchestrator for PDF documents.
+     *
+     * Provides lazy-loading accessors for document components.
+     * Parsing is deferred until first access unless EnsureParsed() is called.
+     */
     class Parser
     {
     public:
         explicit Parser(Reader &reader);
 
         /**
-         * @brief Force parsing of the PDF header from the underlying reader.
-         *
-         * @return The parsed Header on success, or a ParserError on failure.
+         * @brief Ensures all PDF structures are parsed.
+         * Safe to call multiple times - parsing only happens once.
          */
-        [[nodiscard]] std::expected<Header, ParserError> ParseHeader();
+        [[nodiscard]] std::expected<void, ParserError> EnsureParsed();
 
         /**
-         * @brief Force parsing of the cross-reference table from the underlying reader.
-         *
-         * @return The parsed CrossReferenceTable on success, or a ParserError on failure.
-         */
-        [[nodiscard]] std::expected<CrossReferenceTable, ParserError> ParseCrossReferenceTable();
-
-        /**
-         * @brief Force parsing of the trailer from the underlying reader.
-         *
-         * @return The parsed Trailer on success, or a ParserError on failure.
-         */
-        [[nodiscard]] std::expected<Trailer, ParserError> ParseTrailer();
-
-        /**
-         * @brief Returns the last computed header for this parser instance.
-         * If the header has not been parsed yet, it triggers parsing.
+         * @brief Returns the PDF header. Triggers parsing if not yet done.
          */
         [[nodiscard]] std::expected<Header, ParserError> Header();
 
         /**
-         * @brief Returns the last computed cross-reference table for this parser instance.
-         * If the table has not been parsed yet, it triggers parsing.
+         * @brief Returns the compiled cross-reference table. Triggers parsing if not yet done.
          */
         [[nodiscard]] std::expected<CrossReferenceTable, ParserError> CrossReferenceTable();
 
         /**
-         * @brief Returns the last computed trailer for this parser instance.
-         * If the trailer has not been parsed yet, it triggers parsing.
+         * @brief Returns all cross-reference tables found in the document (newest to oldest).
+         * Triggers parsing if not yet done.
+         */
+        [[nodiscard]] std::expected<std::vector<class CrossReferenceTable>, ParserError> CrossReferenceTableHistory();
+
+        /**
+         * @brief Returns the compiled trailer. Triggers parsing if not yet done.
          */
         [[nodiscard]] std::expected<Trailer, ParserError> Trailer();
 
         /**
-         * @brief Returns the last computed breakpoints for this parser instance.
+         * @brief Returns all trailers found in the document (newest to oldest).
+         * Triggers parsing if not yet done.
          */
-        [[nodiscard]] const std::vector<Breakpoint> &Breakpoints() const;
+        [[nodiscard]] std::expected<std::vector<class Trailer>, ParserError> TrailerHistory();
 
     private:
         Reader &_reader;
-        std::vector<Breakpoint> _breakpoints{};
 
         std::optional<class Header> _header;
-        std::optional<class CrossReferenceTable> _crossReferenceTable;
-        std::optional<class Trailer> _trailer;
+        std::optional<class CrossReferenceTable> _compiledXrefTable;
+        std::optional<std::vector<class CrossReferenceTable>> _xrefTableHistory;
+        std::optional<class Trailer> _compiledTrailer;
+        std::optional<std::vector<class Trailer>> _trailerHistory;
+
+        bool _structureParsed = false;
+
+        [[nodiscard]] std::expected<void, ParserError> ParseHeaderIfNeeded();
+        [[nodiscard]] std::expected<void, ParserError> ParseStructureIfNeeded();
     };
 }

@@ -4,7 +4,6 @@
 
 #include "Core/Document/Trailer.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
-#include "Core/Parser/Breakpoint.hpp"
 #include "Core/Parser/Trailer/TrailerParser.hpp"
 #include "Core/Reader/Reader.hpp"
 
@@ -24,9 +23,7 @@ namespace Ripper::Core
     private:
         Reader &_reader;
 
-        [[nodiscard]] std::expected<void, ParserError> ParseDictionary(
-            Trailer &trailer,
-            std::vector<Breakpoint> &breakpoints);
+        [[nodiscard]] std::expected<void, ParserError> ParseDictionary(Trailer &trailer);
 
         [[nodiscard]] std::expected<std::pair<std::uint32_t, std::uint16_t>, ParserError>
             ParseIndirectReference(std::string_view line);

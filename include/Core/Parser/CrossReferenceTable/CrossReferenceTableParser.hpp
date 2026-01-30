@@ -1,23 +1,20 @@
 #pragma once
 
 #include <expected>
-#include <vector>
 
 #include "Core/Document/CrossReferenceTable.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
-#include "Core/Parser/Breakpoint.hpp"
 
 namespace Ripper::Core
 {
     struct CrossReferenceTableParseResult
     {
         CrossReferenceTable table;
-        std::vector<Breakpoint> breakpoints;
     };
 
     /**
      * @brief Interface for parsing cross-reference tables.
-     * Implementations may parse a single table or aggregate multiple tables.
+     * Implementations handle different xref formats (traditional, compressed streams).
      */
     class CrossReferenceTableParser
     {
@@ -25,7 +22,8 @@ namespace Ripper::Core
         virtual ~CrossReferenceTableParser() = default;
 
         /**
-         * @brief Parses cross-reference table(s) and returns the result.
+         * @brief Parses a single cross-reference table.
+         * Reader should be positioned at the start of the xref section.
          */
         [[nodiscard]] virtual std::expected<CrossReferenceTableParseResult, ParserError> Parse() = 0;
     };

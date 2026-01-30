@@ -14,8 +14,7 @@ namespace Ripper::Core
     }
 
     std::expected<void, ParserError> DefaultCrossReferenceTableParser::ParseSubsection(
-        CrossReferenceTable &table,
-        std::vector<Breakpoint> &breakpoints)
+        CrossReferenceTable &table)
     {
         constexpr std::size_t kLineBufferSize = 256;
         constexpr std::size_t kXrefEntryLength = 20; // "nnnnnnnnnn ggggg n/f \n"
@@ -50,7 +49,6 @@ namespace Ripper::Core
         }
 
         const std::size_t subsectionStart = _reader.Tell();
-        breakpoints.emplace_back(subsectionStart, BreakpointType::XrefStart);
 
         // Parse entries
         for (std::size_t i = 0; i < *count; ++i)
@@ -108,9 +106,6 @@ namespace Ripper::Core
             table.AddEntry(objectNumber, CrossReferenceEntry{offset, generation, inUse});
         }
 
-        const std::size_t subsectionEnd = _reader.Tell();
-        breakpoints.emplace_back(subsectionEnd, BreakpointType::XrefEnd);
-
         return {};
     }
 
@@ -119,12 +114,8 @@ namespace Ripper::Core
         constexpr std::size_t kLineBufferSize = 256;
 
         CrossReferenceTable table;
-        std::vector<Breakpoint> breakpoints;
-        breakpoints.reserve(10);
-
         std::array<std::byte, kLineBufferSize> buffer{};
 
-        const std::size_t xrefKeywordPos = _reader.Tell();
         std::size_t bytesRead = _reader.ReadLine(buffer);
         if (bytesRead == 0)
         {
@@ -139,8 +130,6 @@ namespace Ripper::Core
         {
             return std::unexpected(ParserError::MissingCrossReferenceTable);
         }
-
-        breakpoints.emplace_back(xrefKeywordPos, BreakpointType::XrefKeyword);
 
         while (true)
         {
@@ -158,12 +147,13 @@ namespace Ripper::Core
 
             if (Text::StartsWithToken(line, "trailer"))
             {
-                breakpoints.emplace_back(lineStart, BreakpointType::TrailerKeyword);
+                // Rewind so trailer parser can find the keyword
+                _reader.Seek(lineStart);
                 break;
             }
 
             _reader.Seek(lineStart);
-            auto result = ParseSubsection(table, breakpoints);
+            auto result = ParseSubsection(table);
             if (!result)
             {
                 return std::unexpected(result.error());
@@ -171,8 +161,7 @@ namespace Ripper::Core
         }
 
         return CrossReferenceTableParseResult{
-            .table = std::move(table),
-            .breakpoints = std::move(breakpoints)
+            .table = std::move(table)
         };
     }
 }

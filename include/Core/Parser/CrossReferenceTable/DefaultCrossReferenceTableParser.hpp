@@ -4,7 +4,6 @@
 
 #include "Core/Document/CrossReferenceTable.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
-#include "Core/Parser/Breakpoint.hpp"
 #include "Core/Parser/CrossReferenceTable/CrossReferenceTableParser.hpp"
 #include "Core/Reader/Reader.hpp"
 
@@ -24,8 +23,6 @@ namespace Ripper::Core
     private:
         Reader &_reader;
 
-        [[nodiscard]] std::expected<void, ParserError> ParseSubsection(
-            CrossReferenceTable &table,
-            std::vector<Breakpoint> &breakpoints);
+        [[nodiscard]] std::expected<void, ParserError> ParseSubsection(CrossReferenceTable &table);
     };
 }

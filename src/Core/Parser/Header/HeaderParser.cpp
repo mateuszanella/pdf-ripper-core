@@ -14,7 +14,7 @@ namespace Ripper::Core
     {
     }
 
-    std::expected<HeaderParseResult, ParserError> HeaderParser::Parse()
+    std::expected<Header, ParserError> HeaderParser::Parse()
     {
         constexpr std::string_view kMagic = "%PDF-";
         constexpr std::size_t kMaxHeaderLineLength = 256;
@@ -22,9 +22,6 @@ namespace Ripper::Core
         std::array<std::byte, kMaxHeaderLineLength> buffer{};
 
         _reader.Seek(0);
-
-        std::vector<Breakpoint> breakpoints;
-        breakpoints.reserve(2);
 
         const std::size_t headerStartPos = _reader.Tell();
 
@@ -44,8 +41,6 @@ namespace Ripper::Core
             return std::unexpected(ParserError::MissingHeader);
         }
 
-        breakpoints.emplace_back(headerStartPos + pos, BreakpointType::HeaderStart);
-
         const std::string_view rest = line.substr(pos + kMagic.size());
 
         std::size_t len = 0;
@@ -63,11 +58,7 @@ namespace Ripper::Core
         }
 
         const std::size_t headerEndPos = headerStartPos + pos + kMagic.size() + len;
-        breakpoints.emplace_back(headerEndPos, BreakpointType::HeaderEnd);
 
-        return HeaderParseResult{
-            .header = Header{std::string{rest.substr(0, len)}},
-            .breakpoints = std::move(breakpoints)
-        };
+        return Header{std::string{rest.substr(0, len)}};
     }
 }

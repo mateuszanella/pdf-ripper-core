@@ -37,11 +37,17 @@ namespace
         {
             std::println("\nCross-Reference Table parsed successfully.");
             std::println("Found {} entries", xrefTable.value().Size());
+
+            const auto history = parser.CrossReferenceTableHistory();
+            if (history)
+            {
+                std::println("Found {} xref tables in document", history.value().size());
+            }
         }
         else
         {
             std::println("\nFailed to parse cross-reference table. Error code: {}",
-                static_cast<int>(xrefTable.error()));
+                         static_cast<int>(xrefTable.error()));
         }
     }
 
@@ -51,45 +57,13 @@ namespace
         if (!trailer)
         {
             std::println("\nFailed to parse trailer. Error code: {}",
-                static_cast<int>(trailer.error()));
+                         static_cast<int>(trailer.error()));
             return;
         }
 
         std::println("\nTrailer parsed successfully.");
 
-        if (trailer->Size())
-        {
-            std::println("Size: {}", *trailer->Size());
-        }
-
-        if (trailer->RootObjectNumber())
-        {
-            std::println("Root: {} {} R", *trailer->RootObjectNumber(),
-                trailer->RootGeneration().value_or(0));
-        }
-
-        if (trailer->InfoObjectNumber())
-        {
-            std::println("Info: {} {} R", *trailer->InfoObjectNumber(),
-                trailer->InfoGeneration().value_or(0));
-        }
-
-        if (trailer->Prev())
-        {
-            std::println("Prev: {}", *trailer->Prev());
-        }
-    }
-
-    void DisplayBreakpoints(Ripper::Core::Parser &parser)
-    {
-        const auto &breakpoints = parser.Breakpoints();
-
-        std::println("\nFound {} breakpoints:", breakpoints.size());
-
-        for (const auto &bp : breakpoints)
-        {
-            std::println(" - Position: {}, Type: {}", bp.Position(), bp.ToString());
-        }
+        std::println(" - Size: {}", trailer.value().Size().value_or(0));
     }
 }
 
@@ -106,10 +80,18 @@ int main(int argc, char **argv)
 
     auto parser = pdf.Parser();
 
+    // Option 1: Lazy load (parse on demand)
     CheckHeader(parser);
     CheckCrossReferenceTable(parser);
     CheckTrailer(parser);
-    DisplayBreakpoints(parser);
+
+    // Option 2: Pre-load everything
+    // auto result = parser.EnsureParsed();
+    // if (result) {
+    //     CheckHeader(parser);
+    //     CheckCrossReferenceTable(parser);
+    //     CheckTrailer(parser);
+    // }
 
     return 0;
 }

@@ -1,129 +1,122 @@
 #include "Core/Parser/Parser.hpp"
 
-#include <array>
-#include <cctype>
-#include <expected>
-#include <string_view>
-#include <stdexcept>
-#include <mutex>
-#include <unordered_map>
-
-#include "Core/Document/Header.hpp"
-#include "Core/Errors/Parser/ParserError.hpp"
-#include "Core/Reader/Reader.hpp"
 #include "Core/Parser/Header/HeaderParser.hpp"
-#include "Core/Parser/Breakpoint.hpp"
-#include "Core/Parser/CrossReferenceTable/AggregateCrossReferenceTableParser.hpp"
-#include "Core/Parser/CrossReferenceTable/CrossReferenceTableLocator.hpp"
-#include "Core/Parser/Trailer/AggregateTrailerParser.hpp"
+#include "Core/Parser/DocumentStructure/DocumentStructureParser.hpp"
 
 namespace Ripper::Core
 {
     Parser::Parser(Reader &reader)
         : _reader{reader}
     {
-        _breakpoints.reserve(10);
     }
 
-    std::expected<Header, ParserError> Parser::ParseHeader()
+    std::expected<void, ParserError> Parser::ParseHeaderIfNeeded()
     {
+        if (_header.has_value())
+        {
+            return {};
+        }
+
         HeaderParser headerParser{_reader};
+
         auto result = headerParser.Parse();
         if (!result)
         {
             return std::unexpected(result.error());
         }
 
-        _breakpoints.append_range(std::move(result->breakpoints));
-        _header = std::move(result->header);
+        _header = std::move(result.value());
 
-        return _header.value();
+        return {};
     }
 
-    std::expected<CrossReferenceTable, ParserError> Parser::ParseCrossReferenceTable()
+    std::expected<void, ParserError> Parser::ParseStructureIfNeeded()
     {
-        AggregateCrossReferenceTableParser parser{_reader};
-        auto result = parser.Parse();
+        if (_structureParsed)
+        {
+            return {};
+        }
+
+        DocumentStructureParser structureParser{_reader};
+
+        auto result = structureParser.Parse();
         if (!result)
         {
             return std::unexpected(result.error());
         }
 
-        _breakpoints.append_range(std::move(result->breakpoints));
-        _crossReferenceTable = std::move(result->table);
+        _compiledXrefTable = std::move(result->compiledXrefTable);
+        _xrefTableHistory = std::move(result->xrefTableHistory);
+        _compiledTrailer = std::move(result->compiledTrailer);
+        _trailerHistory = std::move(result->trailerHistory);
+        _structureParsed = true;
 
-        return _crossReferenceTable.value();
+        return {};
     }
 
-    std::expected<Trailer, ParserError> Parser::ParseTrailer()
+    std::expected<void, ParserError> Parser::EnsureParsed()
     {
-        // Extract xref offsets from breakpoints
-        std::vector<std::size_t> xrefOffsets;
-        for (const auto &bp : _breakpoints)
+        auto headerResult = ParseHeaderIfNeeded();
+        if (!headerResult)
         {
-            if (bp.Is(BreakpointType::XrefKeyword))
-            {
-                xrefOffsets.push_back(bp.Position());
-            }
+            return headerResult;
         }
 
-        // If no xref breakpoints exist yet, we need to locate them first
-        if (xrefOffsets.empty())
-        {
-            CrossReferenceTableLocator locator{_reader};
-            auto offsetsResult = locator.FindAllXrefOffsets();
-            if (!offsetsResult)
-            {
-                return std::unexpected(offsetsResult.error());
-            }
-            xrefOffsets = std::move(offsetsResult.value());
-        }
-
-        AggregateTrailerParser parser{_reader, xrefOffsets};
-        auto result = parser.Parse();
-        if (!result)
-        {
-            return std::unexpected(result.error());
-        }
-
-        _breakpoints.append_range(std::move(result->breakpoints));
-        _trailer = std::move(result->trailer);
-
-        return _trailer.value();
+        return ParseStructureIfNeeded();
     }
 
     std::expected<Header, ParserError> Parser::Header()
     {
-        if (_header.has_value())
+        auto result = ParseHeaderIfNeeded();
+        if (!result)
         {
-            return _header.value();
+            return std::unexpected(result.error());
         }
 
-        return ParseHeader();
+        return _header.value();
     }
 
     std::expected<CrossReferenceTable, ParserError> Parser::CrossReferenceTable()
     {
-        if (_crossReferenceTable.has_value())
+        auto result = ParseStructureIfNeeded();
+        if (!result)
         {
-            return _crossReferenceTable.value();
+            return std::unexpected(result.error());
         }
 
-        return ParseCrossReferenceTable();
+        return _compiledXrefTable.value();
+    }
+
+    std::expected<std::vector<CrossReferenceTable>, ParserError> Parser::CrossReferenceTableHistory()
+    {
+        auto result = ParseStructureIfNeeded();
+        if (!result)
+        {
+            return std::unexpected(result.error());
+        }
+
+        return _xrefTableHistory.value();
     }
 
     std::expected<Trailer, ParserError> Parser::Trailer()
     {
-        if (_trailer.has_value())
+        auto result = ParseStructureIfNeeded();
+        if (!result)
         {
-            return _trailer.value();
+            return std::unexpected(result.error());
         }
 
-        return ParseTrailer();
+        return _compiledTrailer.value();
     }
 
-    const std::vector<Breakpoint> &Parser::Breakpoints() const
+    std::expected<std::vector<Trailer>, ParserError> Parser::TrailerHistory()
     {
-        return _breakpoints;
+        auto result = ParseStructureIfNeeded();
+        if (!result)
+        {
+            return std::unexpected(result.error());
+        }
+
+        return _trailerHistory.value();
     }
 }

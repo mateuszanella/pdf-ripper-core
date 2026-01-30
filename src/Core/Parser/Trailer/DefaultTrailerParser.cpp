@@ -51,43 +51,30 @@ namespace Ripper::Core
     }
 
     std::expected<void, ParserError> DefaultTrailerParser::ParseDictionary(
-        Trailer &trailer,
-        std::vector<Breakpoint> &breakpoints)
+        Trailer &trailer)
     {
         constexpr std::size_t kLineBufferSize = 512;
         std::array<std::byte, kLineBufferSize> buffer{};
 
-        const std::size_t dictStart = _reader.Tell();
-        bool foundDictStart = false;
-        bool foundDictEnd = false;
-
-        // Find dictionary start "<<"
-        for (std::size_t i = 0; i < 10; ++i)
+        // Expect dictionary start "<<" on next line after "trailer"
+        std::size_t bytesRead = _reader.ReadLine(buffer);
+        if (bytesRead == 0)
         {
-            const std::size_t bytesRead = _reader.ReadLine(buffer);
-            if (bytesRead == 0)
-            {
-                return std::unexpected(ParserError::UnexpectedEOF);
-            }
-
-            std::string_view line{
-                reinterpret_cast<const char *>(buffer.data()),
-                bytesRead};
-
-            if (line.find("<<") != std::string_view::npos)
-            {
-                foundDictStart = true;
-                breakpoints.emplace_back(_reader.Tell() - bytesRead, BreakpointType::TrailerStart);
-                break;
-            }
+            return std::unexpected(ParserError::UnexpectedEOF);
         }
 
-        if (!foundDictStart)
+        std::string_view line{
+            reinterpret_cast<const char *>(buffer.data()),
+            bytesRead};
+
+        if (line.find("<<") == std::string_view::npos)
         {
             return std::unexpected(ParserError::CorruptedTrailer);
         }
 
-        // Parse dictionary entries
+        // Parse dictionary entries until we find >>
+        std::string accumulatedLine;
+
         for (std::size_t i = 0; i < 50; ++i)
         {
             const std::size_t bytesRead = _reader.ReadLine(buffer);
@@ -99,89 +86,101 @@ namespace Ripper::Core
             std::string_view line{
                 reinterpret_cast<const char *>(buffer.data()),
                 bytesRead};
-            line = Text::TrimAscii(line);
 
-            if (line.find(">>") != std::string_view::npos)
+            accumulatedLine += std::string(line);
+
+            // Check if we found the end
+            if (accumulatedLine.find(">>") != std::string::npos)
             {
-                foundDictEnd = true;
-                breakpoints.emplace_back(_reader.Tell(), BreakpointType::TrailerEnd);
                 break;
-            }
-
-            // Parse /Size
-            if (line.find("/Size") != std::string_view::npos)
-            {
-                const std::size_t pos = line.find("/Size");
-                std::string_view rest = line.substr(pos + 5);
-                rest = Text::TrimAscii(rest);
-
-                const auto size = Text::ParseSizeT(rest);
-                if (size)
-                {
-                    trailer.SetSize(static_cast<std::uint32_t>(*size));
-                }
-            }
-
-            // Parse /Prev
-            if (line.find("/Prev") != std::string_view::npos)
-            {
-                const std::size_t pos = line.find("/Prev");
-                std::string_view rest = line.substr(pos + 5);
-                rest = Text::TrimAscii(rest);
-
-                const auto prev = Text::ParseSizeT(rest);
-                if (prev)
-                {
-                    trailer.SetPrev(*prev);
-                }
-            }
-
-            // Parse /Root
-            if (line.find("/Root") != std::string_view::npos)
-            {
-                const std::size_t pos = line.find("/Root");
-                std::string_view rest = line.substr(pos + 5);
-                rest = Text::TrimAscii(rest);
-
-                auto ref = ParseIndirectReference(rest);
-                if (ref)
-                {
-                    trailer.SetRoot(ref->first, ref->second);
-                }
-            }
-
-            // Parse /Info
-            if (line.find("/Info") != std::string_view::npos)
-            {
-                const std::size_t pos = line.find("/Info");
-                std::string_view rest = line.substr(pos + 5);
-                rest = Text::TrimAscii(rest);
-
-                auto ref = ParseIndirectReference(rest);
-                if (ref)
-                {
-                    trailer.SetInfo(ref->first, ref->second);
-                }
-            }
-
-            // Parse /Encrypt
-            if (line.find("/Encrypt") != std::string_view::npos)
-            {
-                const std::size_t pos = line.find("/Encrypt");
-                std::string_view rest = line.substr(pos + 8);
-                rest = Text::TrimAscii(rest);
-
-                auto ref = ParseIndirectReference(rest);
-                if (ref)
-                {
-                    trailer.SetEncrypt(ref->first, ref->second);
-                }
             }
         }
 
-        if (!foundDictEnd)
+        // Now parse the accumulated dictionary content
+        std::string_view dictContent = accumulatedLine;
+
+        std::printf("Trailer Dictionary Content: %s\n", dictContent.data());
+
+        // Parse /Size
+        if (const std::size_t sizePos = dictContent.find("/Size"); sizePos != std::string_view::npos)
         {
-            return std::unexpected(ParserError::CorruptedTrailer);
+            std::string_view rest = dictContent.substr(sizePos + 5);
+            rest = Text::TrimAscii(rest);
+
+            const auto size = Text::ParseSizeT(rest);
+            if (size)
+            {
+                trailer.SetSize(static_cast<std::uint32_t>(*size));
+            }
+        }
+
+        // Parse /Prev
+        if (const std::size_t prevPos = dictContent.find("/Prev"); prevPos != std::string_view::npos)
+        {
+            std::string_view rest = dictContent.substr(prevPos + 5);
+            rest = Text::TrimAscii(rest);
+
+            const auto prev = Text::ParseSizeT(rest);
+            if (prev)
+            {
+                trailer.SetPrev(*prev);
+            }
+        }
+
+        // Parse /Root
+        if (const std::size_t rootPos = dictContent.find("/Root"); rootPos != std::string_view::npos)
+        {
+            std::string_view rest = dictContent.substr(rootPos + 5);
+            rest = Text::TrimAscii(rest);
+
+            auto ref = ParseIndirectReference(rest);
+            if (ref)
+            {
+                trailer.SetRoot(ref->first, ref->second);
+            }
+        }
+
+        // Parse /Info
+        if (const std::size_t infoPos = dictContent.find("/Info"); infoPos != std::string_view::npos)
+        {
+            std::string_view rest = dictContent.substr(infoPos + 5);
+            rest = Text::TrimAscii(rest);
+
+            auto ref = ParseIndirectReference(rest);
+            if (ref)
+            {
+                trailer.SetInfo(ref->first, ref->second);
+            }
+        }
+
+        // Parse /Encrypt
+        if (const std::size_t encryptPos = dictContent.find("/Encrypt"); encryptPos != std::string_view::npos)
+        {
+            std::string_view rest = dictContent.substr(encryptPos + 8);
+            rest = Text::TrimAscii(rest);
+
+            auto ref = ParseIndirectReference(rest);
+            if (ref)
+            {
+                trailer.SetEncrypt(ref->first, ref->second);
+            }
+        }
+
+        // Parse /ID
+        if (const std::size_t idPos = dictContent.find("/ID"); idPos != std::string_view::npos)
+        {
+            std::string_view rest = dictContent.substr(idPos + 3);
+            rest = Text::TrimAscii(rest);
+
+            // Simple extraction of ID (just get the hex string content for now)
+            if (const std::size_t hexStart = rest.find('<'); hexStart != std::string_view::npos)
+            {
+                if (const std::size_t hexEnd = rest.find('>', hexStart + 1); hexEnd != std::string_view::npos)
+                {
+                    std::string idValue{rest.substr(hexStart + 1, hexEnd - hexStart - 1)};
+                    trailer.SetID(idValue);
+                }
+            }
         }
 
         return {};
@@ -193,16 +192,12 @@ namespace Ripper::Core
         std::array<std::byte, kLineBufferSize> buffer{};
 
         Trailer trailer;
-        std::vector<Breakpoint> breakpoints;
-        breakpoints.reserve(5);
 
         // Find "trailer" keyword
         bool foundKeyword = false;
-        std::size_t keywordPos = 0;
 
-        for (std::size_t i = 0; i < 20; ++i)
+        for (std::size_t i = 0; i < 100; ++i)
         {
-            keywordPos = _reader.Tell();
             const std::size_t bytesRead = _reader.ReadLine(buffer);
             if (bytesRead == 0)
             {
@@ -216,7 +211,6 @@ namespace Ripper::Core
             if (Text::StartsWithToken(line, "trailer"))
             {
                 foundKeyword = true;
-                breakpoints.emplace_back(keywordPos, BreakpointType::TrailerKeyword);
                 break;
             }
         }
@@ -227,15 +221,14 @@ namespace Ripper::Core
         }
 
         // Parse dictionary
-        auto result = ParseDictionary(trailer, breakpoints);
+        auto result = ParseDictionary(trailer);
         if (!result)
         {
             return std::unexpected(result.error());
         }
 
         return TrailerParseResult{
-            .trailer = std::move(trailer),
-            .breakpoints = std::move(breakpoints)
+            .trailer = std::move(trailer)
         };
     }
 }
