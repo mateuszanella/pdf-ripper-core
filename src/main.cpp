@@ -87,7 +87,7 @@ namespace
 
 int main(int argc, char **argv)
 {
-    const std::filesystem::path path = std::filesystem::current_path() / "../example/test.pdf";
+    const std::filesystem::path path = std::filesystem::current_path() / "../example/pades.pdf";
 
     auto pdf = Ripper::Core::PDF::Open(path);
 
