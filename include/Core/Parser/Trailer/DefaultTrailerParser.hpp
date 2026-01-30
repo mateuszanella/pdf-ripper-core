@@ -18,14 +18,14 @@ namespace Ripper::Core
     public:
         explicit DefaultTrailerParser(Reader &reader);
 
-        [[nodiscard]] std::expected<TrailerParseResult, ParserError> Parse() override;
+        [[nodiscard]] std::expected<Trailer, ParserError> Parse() override;
 
     private:
         Reader &_reader;
 
-        [[nodiscard]] std::expected<void, ParserError> ParseDictionary(Trailer &trailer);
+        [[nodiscard]] static std::expected<Trailer, ParserError> ParseDictionary(std::string_view content);
 
-        [[nodiscard]] std::expected<std::pair<std::uint32_t, std::uint16_t>, ParserError>
+        [[nodiscard]] static std::expected<std::pair<std::uint32_t, std::uint16_t>, ParserError>
             ParseIndirectReference(std::string_view line);
     };
 }

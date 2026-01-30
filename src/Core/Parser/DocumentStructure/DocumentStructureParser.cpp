@@ -136,10 +136,10 @@ namespace Ripper::Core
                 break;
             }
 
-            result.trailerHistory.push_back(trailerResult->trailer);
+            result.trailerHistory.push_back(trailerResult.value());
 
             // Check for /Prev entry to continue chain
-            auto prevOffsetResult = ExtractPrevOffset(trailerResult->trailer);
+            auto prevOffsetResult = ExtractPrevOffset(trailerResult.value());
             if (!prevOffsetResult)
             {
                 break;

@@ -50,61 +50,15 @@ namespace Ripper::Core
         );
     }
 
-    std::expected<void, ParserError> DefaultTrailerParser::ParseDictionary(
-        Trailer &trailer)
+    std::expected<Trailer, ParserError> DefaultTrailerParser::ParseDictionary(
+        std::string_view content)
     {
-        constexpr std::size_t kLineBufferSize = 512;
-        std::array<std::byte, kLineBufferSize> buffer{};
-
-        // Expect dictionary start "<<" on next line after "trailer"
-        std::size_t bytesRead = _reader.ReadLine(buffer);
-        if (bytesRead == 0)
-        {
-            return std::unexpected(ParserError::UnexpectedEOF);
-        }
-
-        std::string_view line{
-            reinterpret_cast<const char *>(buffer.data()),
-            bytesRead};
-
-        if (line.find("<<") == std::string_view::npos)
-        {
-            return std::unexpected(ParserError::CorruptedTrailer);
-        }
-
-        // Parse dictionary entries until we find >>
-        std::string accumulatedLine;
-
-        for (std::size_t i = 0; i < 50; ++i)
-        {
-            const std::size_t bytesRead = _reader.ReadLine(buffer);
-            if (bytesRead == 0)
-            {
-                return std::unexpected(ParserError::UnexpectedEOF);
-            }
-
-            std::string_view line{
-                reinterpret_cast<const char *>(buffer.data()),
-                bytesRead};
-
-            accumulatedLine += std::string(line);
-
-            // Check if we found the end
-            if (accumulatedLine.find(">>") != std::string::npos)
-            {
-                break;
-            }
-        }
-
-        // Now parse the accumulated dictionary content
-        std::string_view dictContent = accumulatedLine;
-
-        std::printf("Trailer Dictionary Content: %s\n", dictContent.data());
+        Trailer trailer;
 
         // Parse /Size
-        if (const std::size_t sizePos = dictContent.find("/Size"); sizePos != std::string_view::npos)
+        if (const std::size_t sizePos = content.find("/Size"); sizePos != std::string_view::npos)
         {
-            std::string_view rest = dictContent.substr(sizePos + 5);
+            std::string_view rest = content.substr(sizePos + 5);
             rest = Text::TrimAscii(rest);
 
             const auto size = Text::ParseSizeT(rest);
@@ -115,9 +69,9 @@ namespace Ripper::Core
         }
 
         // Parse /Prev
-        if (const std::size_t prevPos = dictContent.find("/Prev"); prevPos != std::string_view::npos)
+        if (const std::size_t prevPos = content.find("/Prev"); prevPos != std::string_view::npos)
         {
-            std::string_view rest = dictContent.substr(prevPos + 5);
+            std::string_view rest = content.substr(prevPos + 5);
             rest = Text::TrimAscii(rest);
 
             const auto prev = Text::ParseSizeT(rest);
@@ -128,9 +82,9 @@ namespace Ripper::Core
         }
 
         // Parse /Root
-        if (const std::size_t rootPos = dictContent.find("/Root"); rootPos != std::string_view::npos)
+        if (const std::size_t rootPos = content.find("/Root"); rootPos != std::string_view::npos)
         {
-            std::string_view rest = dictContent.substr(rootPos + 5);
+            std::string_view rest = content.substr(rootPos + 5);
             rest = Text::TrimAscii(rest);
 
             auto ref = ParseIndirectReference(rest);
@@ -141,9 +95,9 @@ namespace Ripper::Core
         }
 
         // Parse /Info
-        if (const std::size_t infoPos = dictContent.find("/Info"); infoPos != std::string_view::npos)
+        if (const std::size_t infoPos = content.find("/Info"); infoPos != std::string_view::npos)
         {
-            std::string_view rest = dictContent.substr(infoPos + 5);
+            std::string_view rest = content.substr(infoPos + 5);
             rest = Text::TrimAscii(rest);
 
             auto ref = ParseIndirectReference(rest);
@@ -154,9 +108,9 @@ namespace Ripper::Core
         }
 
         // Parse /Encrypt
-        if (const std::size_t encryptPos = dictContent.find("/Encrypt"); encryptPos != std::string_view::npos)
+        if (const std::size_t encryptPos = content.find("/Encrypt"); encryptPos != std::string_view::npos)
         {
-            std::string_view rest = dictContent.substr(encryptPos + 8);
+            std::string_view rest = content.substr(encryptPos + 8);
             rest = Text::TrimAscii(rest);
 
             auto ref = ParseIndirectReference(rest);
@@ -167,12 +121,11 @@ namespace Ripper::Core
         }
 
         // Parse /ID
-        if (const std::size_t idPos = dictContent.find("/ID"); idPos != std::string_view::npos)
+        if (const std::size_t idPos = content.find("/ID"); idPos != std::string_view::npos)
         {
-            std::string_view rest = dictContent.substr(idPos + 3);
+            std::string_view rest = content.substr(idPos + 3);
             rest = Text::TrimAscii(rest);
 
-            // Simple extraction of ID (just get the hex string content for now)
             if (const std::size_t hexStart = rest.find('<'); hexStart != std::string_view::npos)
             {
                 if (const std::size_t hexEnd = rest.find('>', hexStart + 1); hexEnd != std::string_view::npos)
@@ -183,20 +136,18 @@ namespace Ripper::Core
             }
         }
 
-        return {};
+        return trailer;
     }
 
-    std::expected<TrailerParseResult, ParserError> DefaultTrailerParser::Parse()
+    std::expected<Trailer, ParserError> DefaultTrailerParser::Parse()
     {
-        constexpr std::size_t kLineBufferSize = 256;
+        constexpr std::size_t kLineBufferSize = 512;
         std::array<std::byte, kLineBufferSize> buffer{};
-
-        Trailer trailer;
 
         // Find "trailer" keyword
         bool foundKeyword = false;
 
-        for (std::size_t i = 0; i < 100; ++i)
+        while (!_reader.Eof())
         {
             const std::size_t bytesRead = _reader.ReadLine(buffer);
             if (bytesRead == 0)
@@ -220,15 +171,66 @@ namespace Ripper::Core
             return std::unexpected(ParserError::MissingTrailer);
         }
 
-        // Parse dictionary
-        auto result = ParseDictionary(trailer);
-        if (!result)
+        // Read and accumulate dictionary content until we find both << and >>
+        std::string accumulatedContent;
+        bool foundStart = false;
+        bool foundEnd = false;
+
+        while (!_reader.Eof() && !foundEnd)
         {
-            return std::unexpected(result.error());
+            const std::size_t bytesRead = _reader.ReadLine(buffer);
+            if (bytesRead == 0)
+            {
+                return std::unexpected(ParserError::UnexpectedEOF);
+            }
+
+            std::string_view line{
+                reinterpret_cast<const char *>(buffer.data()),
+                bytesRead};
+
+            accumulatedContent += std::string(line) + " ";
+
+            if (!foundStart && accumulatedContent.find("<<") != std::string::npos)
+            {
+                foundStart = true;
+            }
+
+            if (foundStart && accumulatedContent.find(">>") != std::string::npos)
+            {
+                foundEnd = true;
+            }
         }
 
-        return TrailerParseResult{
-            .trailer = std::move(trailer)
-        };
+        if (!foundStart || !foundEnd)
+        {
+            return std::unexpected(ParserError::CorruptedTrailer);
+        }
+
+        // Extract content between << and >>
+        const std::size_t startPos = accumulatedContent.find("<<");
+        const std::size_t endPos = accumulatedContent.find(">>");
+
+        if (startPos == std::string::npos || endPos == std::string::npos || endPos <= startPos)
+        {
+            return std::unexpected(ParserError::CorruptedTrailer);
+        }
+
+        std::string_view dictContent = std::string_view(accumulatedContent).substr(
+            startPos + 2,
+            endPos - startPos - 2
+        );
+
+        std::printf("Trailer Dictionary Content: %.*s\n",
+                    static_cast<int>(dictContent.size()),
+                    dictContent.data());
+
+        // Parse the dictionary
+        auto trailerResult = ParseDictionary(dictContent);
+        if (!trailerResult)
+        {
+            return std::unexpected(trailerResult.error());
+        }
+
+        return std::move(trailerResult.value());
     }
 }

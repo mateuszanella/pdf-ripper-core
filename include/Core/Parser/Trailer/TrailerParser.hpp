@@ -7,11 +7,6 @@
 
 namespace Ripper::Core
 {
-    struct TrailerParseResult
-    {
-        Trailer trailer;
-    };
-
     /**
      * @brief Interface for parsing trailer dictionaries.
      */
@@ -24,6 +19,6 @@ namespace Ripper::Core
          * @brief Parses a single trailer dictionary.
          * Reader should be positioned at or before the "trailer" keyword.
          */
-        [[nodiscard]] virtual std::expected<TrailerParseResult, ParserError> Parse() = 0;
+        [[nodiscard]] virtual std::expected<Trailer, ParserError> Parse() = 0;
     };
 }
