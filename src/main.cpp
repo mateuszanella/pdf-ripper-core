@@ -45,9 +45,37 @@ int main(int argc, char **argv)
         std::println("\nFailed to parse cross-reference table. Error code: {}", static_cast<int>(xrefTable.error()));
     }
 
+    const auto trailer = parser.Trailer();
+    if (trailer)
+    {
+        std::println("\nTrailer parsed successfully.");
+        if (trailer->Size())
+        {
+            std::println("Size: {}", *trailer->Size());
+        }
+        if (trailer->RootObjectNumber())
+        {
+            std::println("Root: {} {} R", *trailer->RootObjectNumber(),
+                         trailer->RootGeneration().value_or(0));
+        }
+        if (trailer->InfoObjectNumber())
+        {
+            std::println("Info: {} {} R", *trailer->InfoObjectNumber(),
+                         trailer->InfoGeneration().value_or(0));
+        }
+        if (trailer->Prev())
+        {
+            std::println("Prev: {}", *trailer->Prev());
+        }
+    }
+    else
+    {
+        std::println("\nFailed to parse trailer. Error code: {}", static_cast<int>(trailer.error()));
+    }
+
     auto breakpoints = parser.Breakpoints();
 
-    std::println("Found {} breakpoints:", breakpoints.size());
+    std::println("\nFound {} breakpoints:", breakpoints.size());
 
     for (const auto &bp : breakpoints)
     {

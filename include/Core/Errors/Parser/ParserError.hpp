@@ -9,6 +9,8 @@ namespace Ripper::Core
         CorruptedHeader,
         MissingHeader,
         MissingCrossReferenceTable,
-        CorruptedCrossReferenceTable
+        CorruptedCrossReferenceTable,
+        MissingTrailer,
+        CorruptedTrailer,
     };
 }

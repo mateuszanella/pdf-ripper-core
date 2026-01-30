@@ -7,6 +7,7 @@
 
 #include "Core/Document/Header.hpp"
 #include "Core/Document/CrossReferenceTable.hpp"
+#include "Core/Document/Trailer.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
 #include "Core/Parser/Breakpoint.hpp"
 #include "Core/Reader/Reader.hpp"
@@ -33,6 +34,13 @@ namespace Ripper::Core
         [[nodiscard]] std::expected<CrossReferenceTable, ParserError> ParseCrossReferenceTable();
 
         /**
+         * @brief Force parsing of the trailer from the underlying reader.
+         *
+         * @return The parsed Trailer on success, or a ParserError on failure.
+         */
+        [[nodiscard]] std::expected<Trailer, ParserError> ParseTrailer();
+
+        /**
          * @brief Returns the last computed header for this parser instance.
          * If the header has not been parsed yet, it triggers parsing.
          */
@@ -45,6 +53,12 @@ namespace Ripper::Core
         [[nodiscard]] std::expected<CrossReferenceTable, ParserError> CrossReferenceTable();
 
         /**
+         * @brief Returns the last computed trailer for this parser instance.
+         * If the trailer has not been parsed yet, it triggers parsing.
+         */
+        [[nodiscard]] std::expected<Trailer, ParserError> Trailer();
+
+        /**
          * @brief Returns the last computed breakpoints for this parser instance.
          */
         [[nodiscard]] const std::vector<Breakpoint> &Breakpoints() const;
@@ -55,5 +69,6 @@ namespace Ripper::Core
 
         std::optional<class Header> _header;
         std::optional<class CrossReferenceTable> _crossReferenceTable;
+        std::optional<class Trailer> _trailer;
     };
 }
