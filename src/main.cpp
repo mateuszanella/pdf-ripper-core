@@ -63,7 +63,25 @@ namespace
 
         std::println("\nTrailer parsed successfully.");
 
-        std::println(" - Size: {}", trailer.value().Size().value_or(0));
+        // Size
+        if (trailer.value().Size())
+        {
+            std::println("/Size: {}", *trailer.value().Size());
+        }
+
+        // Root
+        if (trailer.value().RootObjectNumber() && trailer.value().RootGeneration())
+        {
+            std::println("/Root: {} {}",
+                         *trailer.value().RootObjectNumber(),
+                         *trailer.value().RootGeneration());
+        }
+
+        // ID
+        if (trailer.value().ID())
+        {
+            std::println("/ID: {}", *trailer.value().ID());
+        }
     }
 }
 
@@ -80,18 +98,13 @@ int main(int argc, char **argv)
 
     auto parser = pdf.Parser();
 
-    // Option 1: Lazy load (parse on demand)
-    CheckHeader(parser);
-    CheckCrossReferenceTable(parser);
-    CheckTrailer(parser);
-
-    // Option 2: Pre-load everything
-    // auto result = parser.EnsureParsed();
-    // if (result) {
-    //     CheckHeader(parser);
-    //     CheckCrossReferenceTable(parser);
-    //     CheckTrailer(parser);
-    // }
+    auto result = parser.EnsureParsed();
+    if (result)
+    {
+        CheckHeader(parser);
+        CheckCrossReferenceTable(parser);
+        CheckTrailer(parser);
+    }
 
     return 0;
 }

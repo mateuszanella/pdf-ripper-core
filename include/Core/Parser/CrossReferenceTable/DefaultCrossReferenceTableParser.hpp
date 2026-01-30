@@ -1,6 +1,7 @@
 #pragma once
 
 #include <expected>
+#include <string_view>
 
 #include "Core/Document/CrossReferenceTable.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
@@ -11,18 +12,18 @@ namespace Ripper::Core
 {
     /**
      * @brief Parses a single traditional (non-compressed) cross-reference table.
-     * Expects the reader to be positioned at the start of an "xref" keyword.
+     * Expects content starting with the "xref" keyword.
      */
     class DefaultCrossReferenceTableParser : public CrossReferenceTableParser
     {
     public:
-        explicit DefaultCrossReferenceTableParser(Reader &reader);
+        DefaultCrossReferenceTableParser() = default;
 
-        [[nodiscard]] std::expected<CrossReferenceTableParseResult, ParserError> Parse() override;
+        [[nodiscard]] std::expected<CrossReferenceTableParseResult, ParserError> Parse(std::string_view content) override;
 
     private:
-        Reader &_reader;
-
-        [[nodiscard]] std::expected<void, ParserError> ParseSubsection(CrossReferenceTable &table);
+        [[nodiscard]] static std::expected<void, ParserError> ParseSubsection(
+            CrossReferenceTable &table,
+            std::string_view &content);
     };
 }

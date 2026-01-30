@@ -1,6 +1,7 @@
 #pragma once
 
 #include <expected>
+#include <string_view>
 
 #include "Core/Document/CrossReferenceTable.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
@@ -22,9 +23,9 @@ namespace Ripper::Core
         virtual ~CrossReferenceTableParser() = default;
 
         /**
-         * @brief Parses a single cross-reference table.
-         * Reader should be positioned at the start of the xref section.
+         * @brief Parses a cross-reference table from raw content.
+         * @param content The raw xref content (starting with "xref" keyword)
          */
-        [[nodiscard]] virtual std::expected<CrossReferenceTableParseResult, ParserError> Parse() = 0;
+        [[nodiscard]] virtual std::expected<CrossReferenceTableParseResult, ParserError> Parse(std::string_view content) = 0;
     };
 }

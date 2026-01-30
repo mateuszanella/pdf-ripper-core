@@ -1,6 +1,5 @@
 #include "Core/Parser/CrossReferenceTable/DefaultCrossReferenceTableParser.hpp"
 
-#include <array>
 #include <charconv>
 #include <string_view>
 
@@ -8,30 +7,20 @@
 
 namespace Ripper::Core
 {
-    DefaultCrossReferenceTableParser::DefaultCrossReferenceTableParser(Reader &reader)
-        : _reader{reader}
-    {
-    }
-
     std::expected<void, ParserError> DefaultCrossReferenceTableParser::ParseSubsection(
-        CrossReferenceTable &table)
+        CrossReferenceTable &table,
+        std::string_view &content)
     {
-        constexpr std::size_t kLineBufferSize = 256;
-        constexpr std::size_t kXrefEntryLength = 20; // "nnnnnnnnnn ggggg n/f \n"
-
-        std::array<std::byte, kLineBufferSize> buffer{};
-
-        // Read subsection header: "startObj count"
-        std::size_t bytesRead = _reader.ReadLine(buffer);
-        if (bytesRead == 0)
+        // Find next newline to get header line
+        const std::size_t newlinePos = content.find('\n');
+        if (newlinePos == std::string_view::npos)
         {
             return std::unexpected(ParserError::UnexpectedEOF);
         }
 
-        std::string_view headerLine{
-            reinterpret_cast<const char *>(buffer.data()),
-            bytesRead};
+        std::string_view headerLine = content.substr(0, newlinePos);
         headerLine = Text::TrimAscii(Text::StripLineEndings(headerLine));
+        content = content.substr(newlinePos + 1);
 
         // Parse start object number and count
         const std::size_t spacePos = headerLine.find(' ');
@@ -48,23 +37,20 @@ namespace Ripper::Core
             return std::unexpected(ParserError::CorruptedCrossReferenceTable);
         }
 
-        const std::size_t subsectionStart = _reader.Tell();
-
         // Parse entries
         for (std::size_t i = 0; i < *count; ++i)
         {
-            bytesRead = _reader.ReadLine(buffer);
-            if (bytesRead == 0)
+            const std::size_t entryNewline = content.find('\n');
+            if (entryNewline == std::string_view::npos)
             {
                 return std::unexpected(ParserError::UnexpectedEOF);
             }
 
-            std::string_view entryLine{
-                reinterpret_cast<const char *>(buffer.data()),
-                bytesRead};
+            std::string_view entryLine = content.substr(0, entryNewline);
             entryLine = Text::TrimAscii(Text::StripLineEndings(entryLine));
+            content = content.substr(entryNewline + 1);
 
-            if (entryLine.size() < 18) // Minimum: "0000000000 00000 n"
+            if (entryLine.size() < 18)
             {
                 return std::unexpected(ParserError::CorruptedCrossReferenceTable);
             }
@@ -94,11 +80,6 @@ namespace Ripper::Core
             }
 
             // Parse in-use flag (position 17)
-            if (entryLine.size() <= 17)
-            {
-                return std::unexpected(ParserError::CorruptedCrossReferenceTable);
-            }
-
             const char flag = entryLine[17];
             const bool inUse = (flag == 'n');
 
@@ -109,51 +90,36 @@ namespace Ripper::Core
         return {};
     }
 
-    std::expected<CrossReferenceTableParseResult, ParserError> DefaultCrossReferenceTableParser::Parse()
+    std::expected<CrossReferenceTableParseResult, ParserError> DefaultCrossReferenceTableParser::Parse(
+        std::string_view content)
     {
-        constexpr std::size_t kLineBufferSize = 256;
-
         CrossReferenceTable table;
-        std::array<std::byte, kLineBufferSize> buffer{};
 
-        std::size_t bytesRead = _reader.ReadLine(buffer);
-        if (bytesRead == 0)
+        // Find first newline to get xref keyword line
+        const std::size_t firstNewline = content.find('\n');
+        if (firstNewline == std::string_view::npos)
         {
             return std::unexpected(ParserError::UnexpectedEOF);
         }
 
-        const std::string_view xrefLine{
-            reinterpret_cast<const char *>(buffer.data()),
-            bytesRead};
-
+        const std::string_view xrefLine = content.substr(0, firstNewline);
         if (!Text::StartsWithToken(xrefLine, "xref"))
         {
             return std::unexpected(ParserError::MissingCrossReferenceTable);
         }
 
-        while (true)
+        content = content.substr(firstNewline + 1);
+
+        // Parse subsections until we hit "trailer"
+        while (!content.empty())
         {
-            const std::size_t lineStart = _reader.Tell();
-            bytesRead = _reader.ReadLine(buffer);
-
-            if (bytesRead == 0)
+            // Check if we've reached the trailer
+            if (Text::StartsWithToken(content, "trailer"))
             {
-                return std::unexpected(ParserError::UnexpectedEOF);
-            }
-
-            std::string_view line{
-                reinterpret_cast<const char *>(buffer.data()),
-                bytesRead};
-
-            if (Text::StartsWithToken(line, "trailer"))
-            {
-                // Rewind so trailer parser can find the keyword
-                _reader.Seek(lineStart);
                 break;
             }
 
-            _reader.Seek(lineStart);
-            auto result = ParseSubsection(table);
+            auto result = ParseSubsection(table, content);
             if (!result)
             {
                 return std::unexpected(result.error());

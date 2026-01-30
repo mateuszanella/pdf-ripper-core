@@ -84,6 +84,7 @@ namespace Ripper::Core
 
     std::expected<DocumentStructureResult, ParserError> DocumentStructureParser::Parse()
     {
+        // Step 1: Find startxref
         auto startXrefResult = FindStartXrefOffset();
         if (!startXrefResult)
         {
@@ -94,7 +95,6 @@ namespace Ripper::Core
         std::unordered_set<std::size_t> visitedOffsets;
         std::size_t currentOffset = *startXrefResult;
 
-        // Parse xref/trailer pairs following the chain
         while (true)
         {
             if (visitedOffsets.contains(currentOffset))
@@ -103,43 +103,75 @@ namespace Ripper::Core
             }
             visitedOffsets.insert(currentOffset);
 
-            // Seek to xref table position
+            // Step 2: Collect xref and trailer bytes
             _reader.Seek(currentOffset);
 
-            // Parse xref table
-            DefaultCrossReferenceTableParser xrefParser{_reader};
-            auto xrefResult = xrefParser.Parse();
+            // Collect bytes until we find the end of trailer (>>)
+            std::string collectedContent;
+            constexpr std::size_t kBufferSize = 4096;
+            std::array<std::byte, kBufferSize> buffer{};
+            bool foundTrailerEnd = false;
+
+            while (!_reader.Eof() && !foundTrailerEnd)
+            {
+                const std::size_t bytesRead = _reader.Read(buffer);
+                if (bytesRead == 0)
+                {
+                    break;
+                }
+
+                std::string_view chunk{
+                    reinterpret_cast<const char *>(buffer.data()),
+                    bytesRead};
+                collectedContent += chunk;
+
+                // Check if we've collected the complete trailer
+                if (collectedContent.find("trailer") != std::string::npos &&
+                    collectedContent.find(">>") != std::string::npos)
+                {
+                    foundTrailerEnd = true;
+                }
+            }
+
+            if (!foundTrailerEnd)
+            {
+                if (result.xrefTableHistory.empty())
+                {
+                    return std::unexpected(ParserError::MissingTrailer);
+                }
+                break;
+            }
+
+            // Step 3: Parse xref from collected bytes
+            DefaultCrossReferenceTableParser xrefParser;
+            auto xrefResult = xrefParser.Parse(collectedContent);
             if (!xrefResult)
             {
-                // If this isn't the first table, we can tolerate failure
                 if (result.xrefTableHistory.empty())
                 {
                     return std::unexpected(xrefResult.error());
                 }
-
                 break;
             }
 
-            result.xrefTableHistory.push_back(xrefResult->table);
+            result.xrefTableHistory.push_back(std::move(xrefResult->table));
 
-            // Parse trailer (reader should already be positioned after xref)
-            DefaultTrailerParser trailerParser{_reader};
-            auto trailerResult = trailerParser.Parse();
+            // Step 5: Parse trailer from collected bytes
+            DefaultTrailerParser trailerParser;
+            auto trailerResult = trailerParser.Parse(collectedContent);
             if (!trailerResult)
             {
-                // If this isn't the first trailer, we can tolerate failure
                 if (result.trailerHistory.empty())
                 {
                     return std::unexpected(trailerResult.error());
                 }
-
                 break;
             }
 
-            result.trailerHistory.push_back(trailerResult.value());
+            result.trailerHistory.push_back(std::move(trailerResult.value()));
 
-            // Check for /Prev entry to continue chain
-            auto prevOffsetResult = ExtractPrevOffset(trailerResult.value());
+            // Step 6: Check for /Prev to repeat
+            auto prevOffsetResult = ExtractPrevOffset(result.trailerHistory.back());
             if (!prevOffsetResult)
             {
                 break;
@@ -149,7 +181,6 @@ namespace Ripper::Core
         }
 
         // Compile merged view (newer entries override older ones)
-        // History is in newest-to-oldest order, so merge in reverse
         for (auto it = result.xrefTableHistory.rbegin(); it != result.xrefTableHistory.rend(); ++it)
         {
             for (const auto &[objectNum, entry] : it->Entries())
