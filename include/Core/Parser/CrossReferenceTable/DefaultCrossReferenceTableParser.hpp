@@ -3,7 +3,7 @@
 #include <expected>
 #include <string_view>
 
-#include "Core/Document/CrossReferenceTable.hpp"
+#include "Core/Document/CrossReferenceTable/CrossReferenceTable.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
 #include "Core/Parser/CrossReferenceTable/CrossReferenceTableParser.hpp"
 #include "Core/Reader/Reader.hpp"

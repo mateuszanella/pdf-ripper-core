@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Core/Document/CrossReferenceEntry.hpp"
+#include "Core/Document/CrossReferenceTable/CrossReferenceEntry.hpp"
 
 namespace Ripper::Core
 {

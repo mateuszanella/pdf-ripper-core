@@ -1,4 +1,4 @@
-#include "Core/Document/Trailer.hpp"
+#include "Core/Document/Trailer/Trailer.hpp"
 
 namespace Ripper::Core
 {

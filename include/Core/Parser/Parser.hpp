@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "Core/Document/Header.hpp"
-#include "Core/Document/CrossReferenceTable.hpp"
-#include "Core/Document/Trailer.hpp"
+#include "Core/Document/CrossReferenceTable/CrossReferenceTable.hpp"
+#include "Core/Document/Trailer/Trailer.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
 #include "Core/Reader/Reader.hpp"
 

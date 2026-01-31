@@ -1,6 +1,4 @@
-#include "Core/Document/CrossReferenceTable.hpp"
-
-#include "Core/Document/CrossReferenceEntry.hpp"
+#include "Core/Document/CrossReferenceTable/CrossReferenceTable.hpp"
 
 namespace Ripper::Core
 {

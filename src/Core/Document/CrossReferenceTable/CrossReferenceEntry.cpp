@@ -1,4 +1,4 @@
-#include "Core/Document/CrossReferenceEntry.hpp"
+#include "Core/Document/CrossReferenceTable/CrossReferenceEntry.hpp"
 
 namespace Ripper::Core
 {

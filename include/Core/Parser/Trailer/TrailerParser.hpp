@@ -3,7 +3,7 @@
 #include <expected>
 #include <string_view>
 
-#include "Core/Document/Trailer.hpp"
+#include "Core/Document/Trailer/Trailer.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
 
 namespace Ripper::Core
