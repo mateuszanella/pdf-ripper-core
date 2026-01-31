@@ -4,15 +4,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Core/Document/CrossReferenceEntry.hpp"
+
 namespace Ripper::Core
 {
-    struct CrossReferenceEntry
-    {
-        std::uint64_t offset;
-        std::uint16_t generation;
-        bool inUse;
-    };
-
     class CrossReferenceTable
     {
     public:
@@ -27,7 +22,7 @@ namespace Ripper::Core
         /**
          * @brief Retrieves an entry for the given object number.
          */
-        [[nodiscard]] const CrossReferenceEntry* GetEntry(std::uint32_t objectNumber) const;
+        [[nodiscard]] const std::optional<CrossReferenceEntry> GetEntry(std::uint32_t objectNumber) const;
 
         /**
          * @brief Returns all entries in the table.

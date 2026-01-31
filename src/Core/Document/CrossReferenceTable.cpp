@@ -1,5 +1,7 @@
 #include "Core/Document/CrossReferenceTable.hpp"
 
+#include "Core/Document/CrossReferenceEntry.hpp"
+
 namespace Ripper::Core
 {
     void CrossReferenceTable::AddEntry(std::uint32_t objectNumber, CrossReferenceEntry entry)
@@ -7,14 +9,15 @@ namespace Ripper::Core
         _entries[objectNumber] = entry;
     }
 
-    const CrossReferenceEntry* CrossReferenceTable::GetEntry(std::uint32_t objectNumber) const
+    const std::optional<CrossReferenceEntry> CrossReferenceTable::GetEntry(std::uint32_t objectNumber) const
     {
         auto it = _entries.find(objectNumber);
         if (it == _entries.end())
         {
-            return nullptr;
+            return std::nullopt;
         }
-        return &it->second;
+
+        return it->second;
     }
 
     const std::unordered_map<std::uint32_t, CrossReferenceEntry>& CrossReferenceTable::Entries() const

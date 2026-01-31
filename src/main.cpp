@@ -43,6 +43,15 @@ namespace
             {
                 std::println("Found {} xref tables in document", history.value().size());
             }
+
+            // for (const auto& [objNum, entry] : xrefTable.value().Entries())
+            // {
+            //     std::println("Object {}: offset={}, generation={}, inUse={}",
+            //                  objNum,
+            //                  entry.Offset(),
+            //                  entry.Generation(),
+            //                  entry.InUse() ? "yes" : "no");
+            // }
         }
         else
         {
