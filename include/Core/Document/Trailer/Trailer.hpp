@@ -4,6 +4,7 @@
 #include <optional>
 #include <unordered_map>
 #include <string>
+#include <utility>
 
 namespace Ripper::Core
 {
@@ -85,13 +86,16 @@ namespace Ripper::Core
 
         /**
          * @brief Sets the /ID array (file identifier).
+         * @param ids Pair of byte strings. First is the original document ID (required),
+         *            second is the current revision ID (optional).
          */
-        void SetID(const std::string &id);
+        void SetID(const std::pair<std::string, std::optional<std::string>> &ids);
 
         /**
-         * @brief Gets the /ID entry.
+         * @brief Gets the /ID array.
+         * @return Pair containing original ID and optional current revision ID.
          */
-        [[nodiscard]] const std::optional<std::string> &ID() const;
+        [[nodiscard]] const std::optional<std::pair<std::string, std::optional<std::string>>> &ID() const;
 
         /**
          * @brief Merges another trailer into this one.
@@ -108,6 +112,6 @@ namespace Ripper::Core
         std::optional<std::uint16_t> _infoGeneration;
         std::optional<std::uint32_t> _encryptObjectNumber;
         std::optional<std::uint16_t> _encryptGeneration;
-        std::optional<std::string> _id;
+        std::optional<std::pair<std::string, std::optional<std::string>>> _id;
     };
 }

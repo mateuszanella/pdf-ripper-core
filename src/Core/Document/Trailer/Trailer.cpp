@@ -70,12 +70,12 @@ namespace Ripper::Core
         return _encryptGeneration;
     }
 
-    void Trailer::SetID(const std::string &id)
+    void Trailer::SetID(const std::pair<std::string, std::optional<std::string>> &ids)
     {
-        _id = id;
+        _id = ids;
     }
 
-    const std::optional<std::string> &Trailer::ID() const
+    const std::optional<std::pair<std::string, std::optional<std::string>>> &Trailer::ID() const
     {
         return _id;
     }

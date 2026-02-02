@@ -89,7 +89,12 @@ namespace
         // ID
         if (trailer.value().ID())
         {
-            std::println("/ID: {}", *trailer.value().ID());
+            const auto& [originalId, currentId] = *trailer.value().ID();
+            std::println("/ID[0] (original): {}", originalId);
+            if (currentId)
+            {
+                std::println("/ID[1] (current):  {}", *currentId);
+            }
         }
     }
 }

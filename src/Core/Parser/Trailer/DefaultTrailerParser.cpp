@@ -119,12 +119,38 @@ namespace Ripper::Core
             std::string_view rest = content.substr(idPos + 3);
             rest = Text::TrimAscii(rest);
 
-            if (const std::size_t hexStart = rest.find('<'); hexStart != std::string_view::npos)
+            // Look for array opening bracket
+            if (const std::size_t arrayStart = rest.find('['); arrayStart != std::string_view::npos)
             {
-                if (const std::size_t hexEnd = rest.find('>', hexStart + 1); hexEnd != std::string_view::npos)
+                rest = rest.substr(arrayStart + 1);
+
+                std::string firstId;
+                std::optional<std::string> secondId;
+
+                // Parse first hex string (required)
+                rest = Text::TrimAscii(rest);
+                if (const std::size_t hexStart = rest.find('<'); hexStart != std::string_view::npos)
                 {
-                    std::string idValue{rest.substr(hexStart + 1, hexEnd - hexStart - 1)};
-                    trailer.SetID(idValue);
+                    if (const std::size_t hexEnd = rest.find('>', hexStart + 1); hexEnd != std::string_view::npos)
+                    {
+                        firstId = std::string{rest.substr(hexStart + 1, hexEnd - hexStart - 1)};
+                        rest = rest.substr(hexEnd + 1);
+                    }
+                }
+
+                // Parse second hex string (optional)
+                rest = Text::TrimAscii(rest);
+                if (const std::size_t hexStart = rest.find('<'); hexStart != std::string_view::npos)
+                {
+                    if (const std::size_t hexEnd = rest.find('>', hexStart + 1); hexEnd != std::string_view::npos)
+                    {
+                        secondId = std::string{rest.substr(hexStart + 1, hexEnd - hexStart - 1)};
+                    }
+                }
+
+                if (!firstId.empty())
+                {
+                    trailer.SetID({firstId, secondId});
                 }
             }
         }
