@@ -12,5 +12,7 @@ namespace Ripper::Core
         CorruptedCrossReferenceTable,
         MissingTrailer,
         CorruptedTrailer,
+        MissingCatalog,
+        CorruptedCatalog,
     };
 }

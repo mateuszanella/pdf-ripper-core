@@ -97,6 +97,31 @@ namespace
             }
         }
     }
+
+    void CheckCatalog(Ripper::Core::Parser &parser)
+    {
+        const auto catalog = parser.Catalog();
+        if (!catalog)
+        {
+            std::println("\nFailed to parse catalog. Error code: {}",
+                         static_cast<int>(catalog.error()));
+            return;
+        }
+
+        std::println("\nCatalog parsed successfully.");
+
+        if (catalog.value().PagesObjectNumber() && catalog.value().PagesGeneration())
+        {
+            std::println("/Pages: {} {}",
+                         *catalog.value().PagesObjectNumber(),
+                         *catalog.value().PagesGeneration());
+        }
+
+        if (catalog.value().Lang())
+        {
+            std::println("/Lang: {}", *catalog.value().Lang());
+        }
+    }
 }
 
 int main(int argc, char **argv)
@@ -118,6 +143,7 @@ int main(int argc, char **argv)
         CheckHeader(parser);
         CheckCrossReferenceTable(parser);
         CheckTrailer(parser);
+        CheckCatalog(parser);
     }
 
     return 0;

@@ -7,6 +7,7 @@
 #include "Core/Document/Header.hpp"
 #include "Core/Document/CrossReferenceTable/CrossReferenceTable.hpp"
 #include "Core/Document/Trailer/Trailer.hpp"
+#include "Core/Document/Catalog/Catalog.hpp"
 #include "Core/Errors/Parser/ParserError.hpp"
 #include "Core/Reader/Reader.hpp"
 
@@ -56,6 +57,11 @@ namespace Ripper::Core
          */
         [[nodiscard]] std::expected<std::vector<class Trailer>, ParserError> TrailerHistory();
 
+        /**
+         * @brief Returns the document catalog. Triggers parsing if not yet done.
+         */
+        [[nodiscard]] std::expected<Catalog, ParserError> Catalog();
+
     private:
         Reader &_reader;
 
@@ -64,10 +70,12 @@ namespace Ripper::Core
         std::optional<std::vector<class CrossReferenceTable>> _xrefTableHistory;
         std::optional<class Trailer> _compiledTrailer;
         std::optional<std::vector<class Trailer>> _trailerHistory;
+        std::optional<class Catalog> _catalog;
 
         bool _structureParsed = false;
 
         [[nodiscard]] std::expected<void, ParserError> ParseHeaderIfNeeded();
         [[nodiscard]] std::expected<void, ParserError> ParseStructureIfNeeded();
+        [[nodiscard]] std::expected<void, ParserError> ParseCatalogIfNeeded();
     };
 }
