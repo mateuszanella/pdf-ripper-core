@@ -11,6 +11,20 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(PDF_RIPPER_BUILD_EXAMPLES "Build example executables" ON)
 
+include(FetchContent)
+
+FetchContent_Declare(
+    zlib-ng
+    GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng.git
+    GIT_TAG        2.3.2
+)
+
+set(ZLIB_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+set(ZLIBNG_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+set(ZLIB_COMPAT ON CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(zlib-ng)
+
 file(GLOB_RECURSE PDF_RIPPER_CORE_SOURCES
     CONFIGURE_DEPENDS
     src/*.cpp
@@ -27,6 +41,8 @@ target_include_directories(pdf_ripper_core
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
+
+target_link_libraries(pdf_ripper_core PUBLIC zlib-ng)
 
 if(PDF_RIPPER_BUILD_EXAMPLES)
     add_executable(test
