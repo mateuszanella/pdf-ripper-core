@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-#include "core/Util/Text.hpp"
+#include "core/util/text.hpp"
 
 namespace ripper::core
 {
@@ -47,7 +47,6 @@ namespace ripper::core
     {
         catalog catalog;
 
-        // parse /Pages
         if (const std::size_t pagesPos = content.find("/Pages"); pagesPos != std::string_view::npos)
         {
             std::string_view rest = content.substr(pagesPos + 6);
@@ -57,48 +56,6 @@ namespace ripper::core
             if (ref)
             {
                 catalog.set_pages(ref->first, ref->second);
-            }
-        }
-
-        // parse /Outlines
-        if (const std::size_t outlinesPos = content.find("/Outlines"); outlinesPos != std::string_view::npos)
-        {
-            std::string_view rest = content.substr(outlinesPos + 9);
-            rest = text::trim_ascii(rest);
-
-            auto ref = parse_indirect_reference(rest);
-            if (ref)
-            {
-                catalog.set_outlines(ref->first, ref->second);
-            }
-        }
-
-        // parse /Metadata
-        if (const std::size_t metadataPos = content.find("/Metadata"); metadataPos != std::string_view::npos)
-        {
-            std::string_view rest = content.substr(metadataPos + 9);
-            rest = text::trim_ascii(rest);
-
-            auto ref = parse_indirect_reference(rest);
-            if (ref)
-            {
-                catalog.set_metadata(ref->first, ref->second);
-            }
-        }
-
-        // parse /lang (string value)
-        if (const std::size_t langPos = content.find("/Lang"); langPos != std::string_view::npos)
-        {
-            std::string_view rest = content.substr(langPos + 5);
-            rest = text::trim_ascii(rest);
-
-            // Look for literal string (...)
-            if (const std::size_t strStart = rest.find('('); strStart != std::string_view::npos)
-            {
-                if (const std::size_t strEnd = rest.find(')', strStart + 1); strEnd != std::string_view::npos)
-                {
-                    catalog.set_lang(std::string{rest.substr(strStart + 1, strEnd - strStart - 1)});
-                }
             }
         }
 
@@ -118,9 +75,9 @@ namespace ripper::core
 
         std::string_view dictContent = content.substr(startPos + 2, endPos - startPos - 2);
 
-        // Verify /Type /catalog (optional but recommended)
+        // Verify /Type /Catalog (optional but recommended)
         if (dictContent.find("/Type") != std::string_view::npos &&
-            dictContent.find("/catalog") == std::string_view::npos)
+            dictContent.find("/Catalog") == std::string_view::npos)
         {
             return std::unexpected(parser_error::corrupted_catalog);
         }

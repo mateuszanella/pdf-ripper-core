@@ -116,11 +116,6 @@ namespace
                          *catalog.value().pages_object_number(),
                          *catalog.value().pages_generation());
         }
-
-        if (catalog.value().lang())
-        {
-            std::println("/Lang: {}", *catalog.value().lang());
-        }
     }
 }
 
