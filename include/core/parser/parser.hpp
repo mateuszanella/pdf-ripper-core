@@ -4,7 +4,7 @@
 #include <optional>
 #include <vector>
 
-#include "core/document/Header.hpp"
+#include "core/document/header.hpp"
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/document/catalog/catalog.hpp"
