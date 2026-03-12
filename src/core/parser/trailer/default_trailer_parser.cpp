@@ -46,9 +46,9 @@ namespace ripper::core
     std::expected<trailer, parser_error> default_trailer_parser::parse_dictionary(
         std::string_view content)
     {
-        trailer trailer;
+        trailer::builder trailer_builder{};
 
-        // parse /size
+        // parse /Size
         if (const std::size_t sizePos = content.find("/Size"); sizePos != std::string_view::npos)
         {
             std::string_view rest = content.substr(sizePos + 5);
@@ -57,11 +57,11 @@ namespace ripper::core
             const auto size = text::parse_size_t(rest);
             if (size)
             {
-                trailer.set_size(static_cast<std::uint32_t>(*size));
+                trailer_builder.size = static_cast<std::uint64_t>(*size);
             }
         }
 
-        // parse /prev
+        // parse /Prev
         if (const std::size_t prevPos = content.find("/Prev"); prevPos != std::string_view::npos)
         {
             std::string_view rest = content.substr(prevPos + 5);
@@ -70,7 +70,7 @@ namespace ripper::core
             const auto prev = text::parse_size_t(rest);
             if (prev)
             {
-                trailer.set_prev(*prev);
+                trailer_builder.prev = static_cast<std::uint64_t>(*prev);
             }
         }
 
@@ -83,79 +83,12 @@ namespace ripper::core
             auto ref = parse_indirect_reference(rest);
             if (ref)
             {
-                trailer.set_root(ref->first, ref->second);
+                trailer_builder.root = indirect_reference{ref->first, ref->second};
             }
         }
 
-        // parse /Info
-        if (const std::size_t infoPos = content.find("/Info"); infoPos != std::string_view::npos)
-        {
-            std::string_view rest = content.substr(infoPos + 5);
-            rest = text::trim_ascii(rest);
-
-            auto ref = parse_indirect_reference(rest);
-            if (ref)
-            {
-                trailer.set_info(ref->first, ref->second);
-            }
-        }
-
-        // parse /Encrypt
-        if (const std::size_t encryptPos = content.find("/Encrypt"); encryptPos != std::string_view::npos)
-        {
-            std::string_view rest = content.substr(encryptPos + 8);
-            rest = text::trim_ascii(rest);
-
-            auto ref = parse_indirect_reference(rest);
-            if (ref)
-            {
-                trailer.set_encrypt(ref->first, ref->second);
-            }
-        }
-
-        // parse /id
-        if (const std::size_t idPos = content.find("/ID"); idPos != std::string_view::npos)
-        {
-            std::string_view rest = content.substr(idPos + 3);
-            rest = text::trim_ascii(rest);
-
-            // Look for array opening bracket
-            if (const std::size_t arrayStart = rest.find('['); arrayStart != std::string_view::npos)
-            {
-                rest = rest.substr(arrayStart + 1);
-
-                std::string firstId;
-                std::optional<std::string> secondId;
-
-                // parse first hex string (required)
-                rest = text::trim_ascii(rest);
-                if (const std::size_t hexStart = rest.find('<'); hexStart != std::string_view::npos)
-                {
-                    if (const std::size_t hexEnd = rest.find('>', hexStart + 1); hexEnd != std::string_view::npos)
-                    {
-                        firstId = std::string{rest.substr(hexStart + 1, hexEnd - hexStart - 1)};
-                        rest = rest.substr(hexEnd + 1);
-                    }
-                }
-
-                // parse second hex string (optional)
-                rest = text::trim_ascii(rest);
-                if (const std::size_t hexStart = rest.find('<'); hexStart != std::string_view::npos)
-                {
-                    if (const std::size_t hexEnd = rest.find('>', hexStart + 1); hexEnd != std::string_view::npos)
-                    {
-                        secondId = std::string{rest.substr(hexStart + 1, hexEnd - hexStart - 1)};
-                    }
-                }
-
-                if (!firstId.empty())
-                {
-                    trailer.set_id({firstId, secondId});
-                }
-            }
-        }
-
-        return trailer;
+        // /Info, /Encrypt and /ID parsing intentionally deferred (not in trailer model yet).
+        return trailer_builder.build();
     }
 
     std::expected<trailer, parser_error> default_trailer_parser::parse(std::string_view content)

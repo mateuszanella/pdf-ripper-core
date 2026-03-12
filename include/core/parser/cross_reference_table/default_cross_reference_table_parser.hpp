@@ -23,7 +23,7 @@ namespace ripper::core
 
     private:
         [[nodiscard]] static std::expected<void, parser_error> parse_subsection(
-            cross_reference_table &table,
+            cross_reference_table::entry_map &entries,
             std::string_view &content);
     };
 }

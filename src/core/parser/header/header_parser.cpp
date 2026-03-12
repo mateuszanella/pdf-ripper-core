@@ -3,6 +3,7 @@
 #include <array>
 #include <cctype>
 #include <expected>
+#include <string>
 #include <string_view>
 
 #include "core/reader/reader.hpp"
@@ -22,8 +23,6 @@ namespace ripper::core
         std::array<std::byte, kMaxHeaderLineLength> buffer{};
 
         _reader.seek(0);
-
-        const std::size_t headerStartPos = _reader.tell();
 
         const std::size_t read = _reader.read_line(buffer);
         if (read == 0)
@@ -56,8 +55,6 @@ namespace ripper::core
         {
             return std::unexpected(parser_error::corrupted_header);
         }
-
-        const std::size_t headerEndPos = headerStartPos + pos + kMagic.size() + len;
 
         return header{std::string{rest.substr(0, len)}};
     }

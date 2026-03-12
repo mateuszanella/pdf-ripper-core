@@ -14,5 +14,10 @@ namespace ripper::core
         corrupted_trailer,
         missing_catalog,
         corrupted_catalog,
+        invalid_header,
+        missing_xref,
+        corrupted_xref,
+        corrupted_object,
+        object_not_found,
     };
 }

@@ -91,7 +91,8 @@ namespace ripper::core
             return std::unexpected(startXrefResult.error());
         }
 
-        document_structure_result result;
+        std::vector<cross_reference_table> xrefTableHistory;
+        std::vector<trailer> trailerHistory;
         std::unordered_set<std::size_t> visitedOffsets;
         std::size_t currentOffset = *startXrefResult;
 
@@ -135,7 +136,7 @@ namespace ripper::core
 
             if (!foundTrailerEnd)
             {
-                if (result.xrefTableHistory.empty())
+                if (xrefTableHistory.empty())
                 {
                     return std::unexpected(parser_error::missing_trailer);
                 }
@@ -147,31 +148,31 @@ namespace ripper::core
             auto xrefResult = xrefParser.parse(collectedContent);
             if (!xrefResult)
             {
-                if (result.xrefTableHistory.empty())
+                if (xrefTableHistory.empty())
                 {
                     return std::unexpected(xrefResult.error());
                 }
                 break;
             }
 
-            result.xrefTableHistory.push_back(std::move(xrefResult->table));
+            xrefTableHistory.push_back(std::move(xrefResult->table));
 
             // Step 5: parse trailer from collected bytes
             default_trailer_parser trailerParser;
             auto trailerResult = trailerParser.parse(collectedContent);
             if (!trailerResult)
             {
-                if (result.trailerHistory.empty())
+                if (trailerHistory.empty())
                 {
                     return std::unexpected(trailerResult.error());
                 }
                 break;
             }
 
-            result.trailerHistory.push_back(std::move(trailerResult.value()));
+            trailerHistory.push_back(std::move(trailerResult.value()));
 
             // Step 6: Check for /prev to repeat
-            auto prevOffsetResult = extract_prev_offset(result.trailerHistory.back());
+            auto prevOffsetResult = extract_prev_offset(trailerHistory.back());
             if (!prevOffsetResult)
             {
                 break;
@@ -180,20 +181,40 @@ namespace ripper::core
             currentOffset = *prevOffsetResult;
         }
 
-        // Compile merged view (newer entries override older ones)
-        for (auto it = result.xrefTableHistory.rbegin(); it != result.xrefTableHistory.rend(); ++it)
+        // Compile merged xref (oldest -> newest so newer overrides)
+        cross_reference_table::entry_map compiledEntries;
+        for (auto it = xrefTableHistory.rbegin(); it != xrefTableHistory.rend(); ++it)
         {
             for (const auto &[objectNum, entry] : it->entries())
             {
-                result.compiledXrefTable.add_entry(objectNum, entry);
+                compiledEntries.insert_or_assign(objectNum, entry);
             }
         }
 
-        for (auto it = result.trailerHistory.rbegin(); it != result.trailerHistory.rend(); ++it)
+        // Compile merged trailer (oldest -> newest, set only when present)
+        trailer::builder compiledTrailerBuilder{};
+
+        for (auto it = trailerHistory.rbegin(); it != trailerHistory.rend(); ++it)
         {
-            result.compiledTrailer.merge(*it);
+            if (it->size() != 0)
+            {
+                compiledTrailerBuilder.size = it->size();
+            }
+            if (it->root().has_value())
+            {
+                compiledTrailerBuilder.root = it->root();
+            }
+            if (it->prev().has_value())
+            {
+                compiledTrailerBuilder.prev = it->prev();
+            }
         }
 
-        return result;
+        return document_structure_result{
+            .compiledXrefTable = cross_reference_table{std::move(compiledEntries)},
+            .xrefTableHistory = std::move(xrefTableHistory),
+            .compiledTrailer = compiledTrailerBuilder.build(),
+            .trailerHistory = std::move(trailerHistory),
+        };
     }
 }

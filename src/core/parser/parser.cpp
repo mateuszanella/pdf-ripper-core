@@ -1,144 +1,72 @@
 #include "core/parser/parser.hpp"
 
+#include <functional>
+#include <utility>
+
+#include "core/document.hpp"
+#include "core/document/catalog/entities/pages.hpp"
 #include "core/parser/header/header_parser.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
-#include "core/parser/catalog/default_catalog_parser.hpp"
+#include "core/parser/catalog/default_catalog_resolver.hpp"
 
 namespace ripper::core
 {
-    parser::parser(reader &reader)
-        : _reader{reader}
+    parser::parser(const document &doc, reader &reader)
+        : document_{doc}, reader_{reader}
     {
     }
 
     std::expected<void, parser_error> parser::parse_header_if_needed()
     {
-        if (_header.has_value())
-        {
+        if (header_.has_value())
             return {};
-        }
 
-        header_parser headerParser{_reader};
+        header_parser hp{reader_};
 
-        auto result = headerParser.parse();
+        auto result = hp.parse();
+
         if (!result)
         {
             return std::unexpected(result.error());
         }
 
-        _header = std::move(result.value());
+        header_ = std::move(*result);
 
         return {};
     }
 
     std::expected<void, parser_error> parser::parse_structure_if_needed()
     {
-        if (_structureParsed)
+        if (structure_parsed_)
         {
             return {};
         }
 
-        document_structure_parser structureParser{_reader};
+        document_structure_parser sp{reader_};
 
-        auto result = structureParser.parse();
+        auto result = sp.parse();
+
         if (!result)
         {
             return std::unexpected(result.error());
         }
 
-        _compiledXrefTable = std::move(result->compiledXrefTable);
-        _xrefTableHistory = std::move(result->xrefTableHistory);
-        _compiledTrailer = std::move(result->compiledTrailer);
-        _trailerHistory = std::move(result->trailerHistory);
-        _structureParsed = true;
+        xref_table_ = std::move(result->compiledXrefTable);
+        xref_history_ = std::move(result->xrefTableHistory);
+        trailer_ = std::move(result->compiledTrailer);
+        trailer_history_ = std::move(result->trailerHistory);
+        structure_parsed_ = true;
 
         return {};
     }
 
-    std::expected<void, parser_error> parser::parse_catalog_if_needed()
+    std::expected<void, parser_error> parser::ensure_structure()
     {
-        if (_catalog.has_value())
+        auto hr = parse_header_if_needed();
+
+        if (!hr)
         {
-            return {};
-        }
-
-        // Ensure structure is parsed first to get trailer
-        auto structureResult = parse_structure_if_needed();
-        if (!structureResult)
-        {
-            return structureResult;
-        }
-
-        // Get catalog object reference from trailer
-        if (!_compiledTrailer->root_object_number())
-        {
-            return std::unexpected(parser_error::missing_catalog);
-        }
-
-        const std::uint32_t catalogObjNum = *_compiledTrailer->root_object_number();
-        const std::uint16_t catalogGenNum = _compiledTrailer->root_generation().value_or(0);
-
-        // Find catalog object in xref table
-        const auto& entries = _compiledXrefTable->entries();
-        auto it = entries.find(catalogObjNum);
-        if (it == entries.end() || !it->second.in_use())
-        {
-            return std::unexpected(parser_error::missing_catalog);
-        }
-
-        const std::uint64_t catalogOffset = it->second.offset();
-
-        // read catalog object from file
-        _reader.seek(catalogOffset);
-
-        constexpr std::size_t kBufferSize = 4096;
-        std::array<std::byte, kBufferSize> buffer{};
-        std::string objectContent;
-
-        bool foundEndobj = false;
-        while (!_reader.eof() && !foundEndobj)
-        {
-            const std::size_t bytesRead = _reader.read(buffer);
-            if (bytesRead == 0)
-            {
-                break;
-            }
-
-            std::string_view chunk{
-                reinterpret_cast<const char*>(buffer.data()),
-                bytesRead};
-            objectContent += chunk;
-
-            if (objectContent.find("endobj") != std::string::npos)
-            {
-                foundEndobj = true;
-            }
-        }
-
-        if (!foundEndobj)
-        {
-            return std::unexpected(parser_error::corrupted_catalog);
-        }
-
-        // parse catalog
-        default_catalog_parser catalogParser;
-        auto catalogResult = catalogParser.parse(objectContent);
-        if (!catalogResult)
-        {
-            return std::unexpected(catalogResult.error());
-        }
-
-        _catalog = std::move(catalogResult.value());
-
-        return {};
-    }
-
-    std::expected<void, parser_error> parser::ensure_parsed()
-    {
-        auto headerResult = parse_header_if_needed();
-        if (!headerResult)
-        {
-            return headerResult;
+            return hr;
         }
 
         return parse_structure_if_needed();
@@ -146,67 +74,72 @@ namespace ripper::core
 
     std::expected<header, parser_error> parser::header()
     {
-        auto result = parse_header_if_needed();
-        if (!result)
+        auto r = parse_header_if_needed();
+
+        if (!r)
         {
-            return std::unexpected(result.error());
+            return std::unexpected(r.error());
         }
 
-        return _header.value();
+        return std::cref(*header_);
     }
 
     std::expected<cross_reference_table, parser_error> parser::cross_reference_table()
     {
-        auto result = parse_structure_if_needed();
-        if (!result)
+        auto r = parse_structure_if_needed();
+
+        if (!r)
         {
-            return std::unexpected(result.error());
+            return std::unexpected(r.error());
         }
 
-        return _compiledXrefTable.value();
-    }
-
-    std::expected<std::vector<cross_reference_table>, parser_error> parser::cross_reference_table_history()
-    {
-        auto result = parse_structure_if_needed();
-        if (!result)
-        {
-            return std::unexpected(result.error());
-        }
-
-        return _xrefTableHistory.value();
+        return std::cref(*xref_table_);
     }
 
     std::expected<trailer, parser_error> parser::trailer()
     {
-        auto result = parse_structure_if_needed();
-        if (!result)
+        auto r = parse_structure_if_needed();
+
+        if (!r)
         {
-            return std::unexpected(result.error());
+            return std::unexpected(r.error());
         }
 
-        return _compiledTrailer.value();
-    }
-
-    std::expected<std::vector<trailer>, parser_error> parser::trailer_history()
-    {
-        auto result = parse_structure_if_needed();
-        if (!result)
-        {
-            return std::unexpected(result.error());
-        }
-
-        return _trailerHistory.value();
+        return std::cref(*trailer_);
     }
 
     std::expected<catalog, parser_error> parser::catalog()
     {
-        auto result = parse_catalog_if_needed();
+        auto r = ensure_structure();
+
+        if (!r)
+        {
+            return std::unexpected(r.error());
+        }
+
+        if (catalog_.has_value())
+        {
+            return std::cref(*catalog_);
+        }
+
+        default_catalog_resolver resolver{};
+
+        auto result = resolver.parse(reader_, *xref_table_, *trailer_);
+
         if (!result)
         {
             return std::unexpected(result.error());
         }
 
-        return _catalog.value();
+        const auto entry = xref_table_->find(result->catalog_ref);
+
+        if (!entry.has_value() || !entry->in_use())
+        {
+            return std::unexpected(parser_error::object_not_found);
+        }
+
+        catalog_.emplace(document_, result->catalog_ref, entry->offset(), std::nullopt);
+
+        return std::cref(catalog_.value());
     }
 }

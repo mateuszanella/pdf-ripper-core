@@ -8,7 +8,7 @@
 namespace ripper::core
 {
     std::expected<void, parser_error> default_cross_reference_table_parser::parse_subsection(
-        cross_reference_table &table,
+        cross_reference_table::entry_map &entries,
         std::string_view &content)
     {
         // Find next newline to get header line
@@ -84,7 +84,9 @@ namespace ripper::core
             const bool inUse = (flag == 'n');
 
             const std::uint32_t objectNumber = static_cast<std::uint32_t>(*startObj + i);
-            table.add_entry(objectNumber, cross_reference_entry{offset, generation, inUse});
+            const indirect_reference ref{objectNumber, generation};
+
+            entries.insert_or_assign(objectNumber, cross_reference_entry{ref, offset, inUse});
         }
 
         return {};
@@ -93,7 +95,7 @@ namespace ripper::core
     std::expected<cross_reference_table_parse_result, parser_error> default_cross_reference_table_parser::parse(
         std::string_view content)
     {
-        cross_reference_table table;
+        cross_reference_table::entry_map entries;
 
         // Find first newline to get xref keyword line
         const std::size_t firstNewline = content.find('\n');
@@ -119,13 +121,14 @@ namespace ripper::core
                 break;
             }
 
-            auto result = parse_subsection(table, content);
+            auto result = parse_subsection(entries, content);
             if (!result)
             {
                 return std::unexpected(result.error());
             }
         }
 
+        cross_reference_table table{std::move(entries)};
         return cross_reference_table_parse_result{
             .table = std::move(table)
         };
