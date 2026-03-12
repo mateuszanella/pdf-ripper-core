@@ -57,52 +57,22 @@ namespace
         }
 
         std::println("\nTrailer parsed successfully.");
-
-        // // size
-        // if (trailer.value().size())
-        // {
-        //     std::println("/Size: {}", *trailer.value().size());
-        // }
-
-        // // Root
-        // if (trailer.value().root_object_number() && trailer.value().root_generation())
-        // {
-        //     std::println("/Root: {} {}",
-        //                  *trailer.value().root_object_number(),
-        //                  *trailer.value().root_generation());
-        // }
-
-        // // id
-        // if (trailer.value().id())
-        // {
-        //     const auto& [originalId, currentId] = *trailer.value().id();
-        //     std::println("/ID[0] (original): {}", originalId);
-        //     if (currentId)
-        //     {
-        //         std::println("/ID[1] (current):  {}", *currentId);
-        //     }
-        // }
     }
 
-    // void check_catalog(ripper::core::parser &parser)
-    // {
-    //     const auto catalog = parser.catalog();
-    //     if (!catalog)
-    //     {
-    //         std::println("\nFailed to parse catalog. Error code: {}",
-    //                      static_cast<int>(catalog.error()));
-    //         return;
-    //     }
+    void check_catalog(ripper::core::parser &parser)
+    {
+        const auto catalog = parser.catalog();
+        if (!catalog)
+        {
+            std::println("\nFailed to parse catalog. Error code: {}",
+                         static_cast<int>(catalog.error()));
+            return;
+        }
 
-    //     std::println("\nCatalog parsed successfully.");
+        std::println("\nCatalog parsed successfully.");
 
-    //     if (catalog.value().pages_object_number() && catalog.value().pages_generation())
-    //     {
-    //         std::println("/Pages: {} {}",
-    //                      *catalog.value().pages_object_number(),
-    //                      *catalog.value().pages_generation());
-    //     }
-    // }
+        std::println("\nCatalog offset: {}", catalog.value().offset());
+    }
 }
 
 int main(int argc, char **argv)
@@ -121,7 +91,7 @@ int main(int argc, char **argv)
     check_header(parser);
     check_cross_reference_table(parser);
     check_trailer(parser);
-    // check_catalog(parser);
+    check_catalog(parser);
 
     return 0;
 }

@@ -10,7 +10,7 @@ namespace ripper::core
 {
     document::document(std::unique_ptr<class reader> reader)
         : reader_(std::move(reader)),
-          parser_(std::make_unique<class parser>(*this, *reader_))
+          parser_(std::make_unique<class parser>(*this))
     {
     }
 

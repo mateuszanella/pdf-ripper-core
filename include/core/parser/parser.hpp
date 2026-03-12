@@ -25,25 +25,51 @@ namespace ripper::core
     class parser
     {
     public:
-        explicit parser(const document &doc, reader &reader);
+        explicit parser(const document &doc);
 
+        /**
+         * @brief Ensures that the PDF structure (header, xref, trailer) is parsed.
+         *
+         * This method is idempotent and can be called multiple times without adverse effects.
+         */
         [[nodiscard]] std::expected<void, parser_error> ensure_structure();
 
+        /**
+         * @brief Get the PDF header.
+         *
+         * @note This will trigger parsing of the PDF structure if it hasn't been parsed yet.
+         */
         [[nodiscard]] std::expected<header, parser_error> header();
+
+        /**
+         * @brief Get the cross-reference table.
+         *
+         * @note This will trigger parsing of the PDF structure if it hasn't been parsed yet.
+         */
         [[nodiscard]] std::expected<cross_reference_table, parser_error> cross_reference_table();
+
+        /**
+         * @brief Get the PDF trailer.
+         *
+         * @note This will trigger parsing of the PDF structure if it hasn't been parsed yet.
+         */
         [[nodiscard]] std::expected<trailer, parser_error> trailer();
+
+        /**
+         * @brief Get the PDF catalog.
+         *
+         * @note This will trigger parsing of the PDF structure if it hasn't been parsed yet.
+         */
         [[nodiscard]] std::expected<catalog, parser_error> catalog();
 
     private:
         const document &document_;
-        reader &reader_;
 
         std::optional<class header> header_;
         std::optional<class cross_reference_table> xref_table_;
         std::optional<std::vector<class cross_reference_table>> xref_history_;
         std::optional<class trailer> trailer_;
         std::optional<std::vector<class trailer>> trailer_history_;
-
         std::optional<class catalog> catalog_;
 
         bool structure_parsed_ = false;

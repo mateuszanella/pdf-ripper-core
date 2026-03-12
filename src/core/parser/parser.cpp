@@ -11,8 +11,8 @@
 
 namespace ripper::core
 {
-    parser::parser(const document &doc, reader &reader)
-        : document_{doc}, reader_{reader}
+    parser::parser(const document &doc)
+        : document_{doc}
     {
     }
 
@@ -21,7 +21,7 @@ namespace ripper::core
         if (header_.has_value())
             return {};
 
-        header_parser hp{reader_};
+        header_parser hp{document_.reader()};
 
         auto result = hp.parse();
 
@@ -42,7 +42,7 @@ namespace ripper::core
             return {};
         }
 
-        document_structure_parser sp{reader_};
+        document_structure_parser sp{document_.reader()};
 
         auto result = sp.parse();
 
@@ -62,11 +62,11 @@ namespace ripper::core
 
     std::expected<void, parser_error> parser::ensure_structure()
     {
-        auto hr = parse_header_if_needed();
+        auto err = parse_header_if_needed();
 
-        if (!hr)
+        if (!err)
         {
-            return hr;
+            return err;
         }
 
         return parse_structure_if_needed();
@@ -81,7 +81,7 @@ namespace ripper::core
             return std::unexpected(r.error());
         }
 
-        return std::cref(*header_);
+        return header_.value();
     }
 
     std::expected<cross_reference_table, parser_error> parser::cross_reference_table()
@@ -93,7 +93,7 @@ namespace ripper::core
             return std::unexpected(r.error());
         }
 
-        return std::cref(*xref_table_);
+        return xref_table_.value();
     }
 
     std::expected<trailer, parser_error> parser::trailer()
@@ -105,7 +105,7 @@ namespace ripper::core
             return std::unexpected(r.error());
         }
 
-        return std::cref(*trailer_);
+        return trailer_.value();
     }
 
     std::expected<catalog, parser_error> parser::catalog()
@@ -119,12 +119,12 @@ namespace ripper::core
 
         if (catalog_.has_value())
         {
-            return std::cref(*catalog_);
+            return catalog_.value();
         }
 
         default_catalog_resolver resolver{};
 
-        auto result = resolver.parse(reader_, *xref_table_, *trailer_);
+        auto result = resolver.parse(document_.reader(), *xref_table_, *trailer_);
 
         if (!result)
         {
@@ -140,6 +140,6 @@ namespace ripper::core
 
         catalog_.emplace(document_, result->catalog_ref, entry->offset(), std::nullopt);
 
-        return std::cref(catalog_.value());
+        return catalog_.value();
     }
 }
