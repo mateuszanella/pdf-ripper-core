@@ -6,19 +6,19 @@
 #include <utility>
 
 #include "core/parser/parser.hpp"
-#include "core/parser/indirect_object/indirect_object_resolution_context.hpp"
+#include "core/parser/indirect_object/resolution_context.hpp"
 
 namespace ripper::core
 {
-    class pdf_indirect_object_resolver
+    class resolver
     {
     public:
-        explicit pdf_indirect_object_resolver(indirect_object_resolution_context context)
+        explicit resolver(resolution_context context)
             : context_{context}
         {
         }
 
-        const indirect_object_resolution_context &context() const noexcept
+        const resolution_context &context() const noexcept
         {
             return context_;
         }
@@ -27,7 +27,7 @@ namespace ripper::core
         {
             const auto entry = context_.xref_table.find(reference);
 
-            if (!entry.has_value())
+            if (!entry.has_value() || !entry->in_use())
             {
                 return std::unexpected(parser_error::object_not_found);
             }
@@ -58,6 +58,6 @@ namespace ripper::core
         }
 
     private:
-        indirect_object_resolution_context context_;
+        resolution_context context_;
     };
 }

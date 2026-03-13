@@ -1,11 +1,7 @@
 #pragma once
 
-#include <array>
-#include <cstddef>
 #include <cstdint>
 #include <expected>
-#include <string>
-#include <string_view>
 
 #include "core/document.hpp"
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
@@ -13,7 +9,9 @@
 #include "core/document/trailer/trailer.hpp"
 #include "core/errors/parser/parser_error.hpp"
 #include "core/parser/catalog/default_catalog_parser.hpp"
-#include "core/reader/reader.hpp"
+#include "core/parser/indirect_object/content_reader.hpp"
+#include "core/parser/indirect_object/resolution_context.hpp"
+#include "core/parser/indirect_object/resolver.hpp"
 
 namespace ripper::core
 {
@@ -25,70 +23,39 @@ namespace ripper::core
             const cross_reference_table &xref_table,
             const trailer &trailer_obj) const
         {
-            if (!trailer_obj.root().has_value())
-                return std::unexpected(parser_error::missing_catalog);
+            resolution_context context{doc, xref_table, trailer_obj};
+            resolver object_resolver{context};
+            content_reader object_content_reader{};
 
-            const auto &catalog_ref = *trailer_obj.root();
+            return object_resolver.resolve<catalog>(
+                [&](const resolution_context &) -> std::expected<indirect_reference, parser_error>
+                {
+                    if (!trailer_obj.root().has_value())
+                    {
+                        return std::unexpected(parser_error::missing_catalog);
+                    }
 
-            auto offset_result = lookup_offset(xref_table, catalog_ref);
-            if (!offset_result)
-                return std::unexpected(offset_result.error());
+                    return *trailer_obj.root();
+                },
+                [&](const indirect_reference &catalog_ref, std::uint64_t offset) -> std::expected<catalog, parser_error>
+                {
+                    auto &doc_reader = doc.reader();
+                    auto content_result = object_content_reader.read(doc_reader, offset);
+                    if (!content_result)
+                    {
+                        return std::unexpected(content_result.error());
+                    }
 
-            reader &doc_reader = doc.reader();
+                    default_catalog_parser object_parser{};
 
-            auto content_result = read_object_content(doc_reader, *offset_result);
-            if (!content_result)
-                return std::unexpected(content_result.error());
+                    auto parsed_ref = object_parser.parse(*content_result, catalog_ref);
+                    if (!parsed_ref)
+                    {
+                        return std::unexpected(parsed_ref.error());
+                    }
 
-            default_catalog_parser object_parser{};
-
-            auto parsed_ref = object_parser.parse(*content_result, catalog_ref);
-            if (!parsed_ref)
-                return std::unexpected(parsed_ref.error());
-
-            return catalog{doc, *parsed_ref, *offset_result};
-        }
-
-    private:
-        [[nodiscard]] std::expected<std::string, parser_error> read_object_content(
-            reader &reader,
-            std::uint64_t offset) const
-        {
-            reader.seek(offset);
-
-            constexpr std::size_t kBufferSize = 4096;
-            std::array<std::byte, kBufferSize> buffer{};
-            std::string content;
-
-            bool found_endobj = false;
-            while (!reader.eof() && !found_endobj)
-            {
-                const std::size_t bytes_read = reader.read(buffer);
-                if (bytes_read == 0)
-                    break;
-
-                std::string_view chunk{reinterpret_cast<const char *>(buffer.data()), bytes_read};
-                content += chunk;
-
-                if (content.find("endobj") != std::string::npos)
-                    found_endobj = true;
-            }
-
-            if (!found_endobj)
-                return std::unexpected(parser_error::corrupted_object);
-
-            return content;
-        }
-
-        [[nodiscard]] std::expected<std::uint64_t, parser_error> lookup_offset(
-            const cross_reference_table &xref_table,
-            const indirect_reference &ref) const
-        {
-            auto entry = xref_table.find(ref);
-            if (!entry.has_value() || !entry->in_use())
-                return std::unexpected(parser_error::object_not_found);
-
-            return entry->offset();
+                    return catalog{doc, *parsed_ref, offset};
+                });
         }
     };
 }

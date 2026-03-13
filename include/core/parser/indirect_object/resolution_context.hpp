@@ -10,7 +10,7 @@ namespace ripper::core
     class cross_reference_table;
     class trailer;
 
-    struct indirect_object_resolution_context
+    struct resolution_context
     {
         const document &doc;
         const cross_reference_table &xref_table;
