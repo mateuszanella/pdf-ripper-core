@@ -7,10 +7,11 @@
 #include <string>
 #include <string_view>
 
+#include "core/document.hpp"
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/indirect_reference.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/errors/parser/parser_error.hpp"
-#include "core/parser/catalog/catalog_parser.hpp"
 #include "core/parser/catalog/default_catalog_parser.hpp"
 #include "core/reader/reader.hpp"
 
@@ -19,8 +20,8 @@ namespace ripper::core
     class default_catalog_resolver
     {
     public:
-        [[nodiscard]] std::expected<catalog_parse_result, parser_error> parse(
-            reader &reader,
+        [[nodiscard]] std::expected<catalog, parser_error> parse(
+            const document &doc,
             const cross_reference_table &xref_table,
             const trailer &trailer_obj) const
         {
@@ -33,12 +34,19 @@ namespace ripper::core
             if (!offset_result)
                 return std::unexpected(offset_result.error());
 
-            auto content_result = read_object_content(reader, *offset_result);
+            reader &doc_reader = doc.reader();
+
+            auto content_result = read_object_content(doc_reader, *offset_result);
             if (!content_result)
                 return std::unexpected(content_result.error());
 
             default_catalog_parser object_parser{};
-            return object_parser.parse(*content_result, catalog_ref);
+
+            auto parsed_ref = object_parser.parse(*content_result, catalog_ref);
+            if (!parsed_ref)
+                return std::unexpected(parsed_ref.error());
+
+            return catalog{doc, *parsed_ref, *offset_result};
         }
 
     private:

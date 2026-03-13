@@ -1,42 +1,32 @@
 #include "core/parser/catalog/default_catalog_parser.hpp"
 
-#include <optional>
+#include <cstddef>
 #include <string_view>
-
-#include "core/util/text.hpp"
 
 namespace ripper::core
 {
-    std::expected<catalog_parse_result, parser_error> default_catalog_parser::parse_dictionary(
-        std::string_view content,
-        indirect_reference catalog_ref)
-    {
-        (void)content; // /Pages parsing/construction deferred for now.
-        return catalog_parse_result{catalog_ref, std::nullopt};
-    }
-
-    std::expected<catalog_parse_result, parser_error> default_catalog_parser::parse(
+    std::expected<indirect_reference, parser_error> default_catalog_parser::parse(
         std::string_view content,
         indirect_reference catalog_ref) const
     {
         // Find dictionary delimiters
-        const std::size_t startPos = content.find("<<");
-        const std::size_t endPos = content.find(">>");
+        const std::size_t start_pos = content.find("<<");
+        const std::size_t end_pos = content.rfind(">>");
 
-        if (startPos == std::string_view::npos || endPos == std::string_view::npos || endPos <= startPos)
+        if (start_pos == std::string_view::npos || end_pos == std::string_view::npos || end_pos <= start_pos)
         {
             return std::unexpected(parser_error::corrupted_catalog);
         }
 
-        std::string_view dictContent = content.substr(startPos + 2, endPos - startPos - 2);
+        const std::string_view dict_content = content.substr(start_pos + 2, end_pos - start_pos - 2);
 
         // Verify /Type /Catalog (optional but recommended)
-        if (dictContent.find("/Type") != std::string_view::npos &&
-            dictContent.find("/Catalog") == std::string_view::npos)
+        if (dict_content.find("/Type") != std::string_view::npos &&
+            dict_content.find("/Catalog") == std::string_view::npos)
         {
             return std::unexpected(parser_error::corrupted_catalog);
         }
 
-        return parse_dictionary(dictContent, catalog_ref);
+        return catalog_ref;
     }
 }

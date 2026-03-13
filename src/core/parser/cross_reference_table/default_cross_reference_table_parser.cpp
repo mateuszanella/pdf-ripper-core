@@ -104,7 +104,8 @@ namespace ripper::core
             return std::unexpected(parser_error::unexpected_eof);
         }
 
-        const std::string_view xrefLine = content.substr(0, firstNewline);
+        std::string_view xrefLine = content.substr(0, firstNewline);
+        xrefLine = text::trim_ascii(text::strip_line_endings(xrefLine));
         if (!text::starts_with_token(xrefLine, "xref"))
         {
             return std::unexpected(parser_error::missing_cross_reference_table);
@@ -115,8 +116,8 @@ namespace ripper::core
         // parse subsections until we hit "trailer"
         while (!content.empty())
         {
-            // Check if we've reached the trailer
-            if (text::starts_with_token(content, "trailer"))
+            content = text::trim_ascii(content);
+            if (content.empty() || text::starts_with_token(content, "trailer"))
             {
                 break;
             }

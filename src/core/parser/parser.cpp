@@ -1,10 +1,8 @@
 #include "core/parser/parser.hpp"
 
-#include <functional>
 #include <utility>
 
 #include "core/document.hpp"
-#include "core/document/catalog/entities/pages.hpp"
 #include "core/parser/header/header_parser.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
 #include "core/parser/catalog/default_catalog_resolver.hpp"
@@ -122,23 +120,16 @@ namespace ripper::core
             return catalog_.value();
         }
 
-        default_catalog_resolver resolver{};
+        default_catalog_resolver catalog_resolver{};
 
-        auto result = resolver.parse(document_.reader(), *xref_table_, *trailer_);
+        auto resolved_catalog = catalog_resolver.parse(document_, *xref_table_, *trailer_);
 
-        if (!result)
+        if (!resolved_catalog)
         {
-            return std::unexpected(result.error());
+            return std::unexpected(resolved_catalog.error());
         }
 
-        const auto entry = xref_table_->find(result->catalog_ref);
-
-        if (!entry.has_value() || !entry->in_use())
-        {
-            return std::unexpected(parser_error::object_not_found);
-        }
-
-        catalog_.emplace(document_, result->catalog_ref, entry->offset(), std::nullopt);
+        catalog_.emplace(std::move(*resolved_catalog));
 
         return catalog_.value();
     }
