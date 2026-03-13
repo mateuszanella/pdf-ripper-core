@@ -18,9 +18,9 @@ namespace
         return false;
     }
 
-    void check_header(ripper::core::parser &parser)
+    void check_header(const ripper::core::document &document)
     {
-        const auto header = parser.header();
+        const auto header = document.header();
         if (header)
         {
             std::println("PDF Header Version: {}", header.value().version());
@@ -31,9 +31,9 @@ namespace
         }
     }
 
-    void check_cross_reference_table(ripper::core::parser &parser)
+    void check_cross_reference_table(const ripper::core::document &document)
     {
-        const auto xrefTable = parser.cross_reference_table();
+        const auto xrefTable = document.cross_reference_table();
         if (xrefTable)
         {
             std::println("\nCross-Reference Table parsed successfully.");
@@ -46,9 +46,9 @@ namespace
         }
     }
 
-    void check_trailer(ripper::core::parser &parser)
+    void check_trailer(const ripper::core::document &document)
     {
-        const auto trailer = parser.trailer();
+        const auto trailer = document.trailer();
         if (!trailer)
         {
             std::println("\nFailed to parse trailer. Error code: {}",
@@ -59,9 +59,9 @@ namespace
         std::println("\nTrailer parsed successfully.");
     }
 
-    void check_catalog(ripper::core::parser &parser)
+    void check_catalog(const ripper::core::document &document)
     {
-        const auto catalog = parser.catalog();
+        const auto catalog = document.catalog();
         if (!catalog)
         {
             std::println("\nFailed to parse catalog. Error code: {}",
@@ -86,12 +86,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    auto parser = document.parser();
-
-    check_header(parser);
-    check_cross_reference_table(parser);
-    check_trailer(parser);
-    check_catalog(parser);
+    check_header(document);
+    check_cross_reference_table(document);
+    check_trailer(document);
+    check_catalog(document);
 
     return 0;
 }
