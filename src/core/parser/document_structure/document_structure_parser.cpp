@@ -15,61 +15,67 @@ namespace ripper::core
     {
     }
 
+    /**
+     * @todo Technically, this implementation does not really get the last startxref,
+     *       since the startxref keyword could appear in the last 1024 bytes multiple times.
+     */
     std::expected<std::size_t, parser_error> document_structure_parser::find_start_xref_offset()
     {
-        constexpr std::string_view kStartXrefKeyword = "startxref";
-        constexpr std::size_t kLineBufferSize = 256;
-        constexpr std::size_t kSearchAreaSize = 1024;
+        constexpr std::string_view start_xref_keyword = "startxref";
+        constexpr std::size_t line_buffer_size = 256;
+        constexpr std::size_t search_area_size = 1024;
 
-        const std::uint64_t fileSize = _reader.size();
-        const std::size_t searchPos = fileSize > kSearchAreaSize ? fileSize - kSearchAreaSize : 0;
+        const std::uint64_t file_size = _reader.size();
+        const std::size_t search_pos = file_size > search_area_size
+                                           ? file_size - search_area_size
+                                           : 0;
 
-        _reader.seek(searchPos);
+        _reader.seek(search_pos);
 
-        std::array<std::byte, kLineBufferSize> buffer{};
-        bool foundKeyword = false;
+        std::array<std::byte, line_buffer_size> buffer{};
+        bool found_keyword = false;
 
         while (!_reader.eof())
         {
-            const std::size_t bytesRead = _reader.read_line(buffer);
-            if (bytesRead == 0)
+            const std::size_t bytes_read = _reader.read_line(buffer);
+            if (bytes_read == 0)
             {
                 break;
             }
 
             const std::string_view line{
                 reinterpret_cast<const char *>(buffer.data()),
-                bytesRead};
+                bytes_read};
 
-            if (text::starts_with_token(line, kStartXrefKeyword))
+            if (text::starts_with_token(line, start_xref_keyword))
             {
-                foundKeyword = true;
+                found_keyword = true;
                 break;
             }
         }
 
-        if (!foundKeyword)
+        if (!found_keyword)
         {
             return std::unexpected(parser_error::missing_cross_reference_table);
         }
 
-        const std::size_t bytesRead = _reader.read_line(buffer);
-        if (bytesRead == 0)
+        const std::size_t bytes_read = _reader.read_line(buffer);
+        if (bytes_read == 0)
         {
             return std::unexpected(parser_error::unexpected_eof);
         }
 
-        const std::string_view offsetLine{
+        const std::string_view offset_line{
             reinterpret_cast<const char *>(buffer.data()),
-            bytesRead};
+            bytes_read};
 
-        const auto offset = text::parse_size_t(offsetLine);
+        const auto offset = text::parse_size_t(offset_line);
         if (!offset)
         {
             return std::unexpected(parser_error::corrupted_cross_reference_table);
         }
 
-        return *offset;
+        return offset.value();
     }
 
     std::expected<std::size_t, parser_error> document_structure_parser::extract_prev_offset(const trailer &trailer)
@@ -79,142 +85,150 @@ namespace ripper::core
             return std::unexpected(parser_error::missing_cross_reference_table);
         }
 
-        return *trailer.prev();
+        return trailer.prev().value();
     }
 
     std::expected<document_structure_result, parser_error> document_structure_parser::parse()
     {
-        // Step 1: Find startxref
-        auto startXrefResult = find_start_xref_offset();
-        if (!startXrefResult)
+        // Step 1: Find the last occurence of startxref from the end of the file
+        auto start_xref_result = find_start_xref_offset();
+        if (!start_xref_result)
         {
-            return std::unexpected(startXrefResult.error());
+            return std::unexpected(start_xref_result.error());
         }
 
-        std::vector<cross_reference_table> xrefTableHistory;
-        std::vector<trailer> trailerHistory;
-        std::unordered_set<std::size_t> visitedOffsets;
-        std::size_t currentOffset = *startXrefResult;
+        std::vector<cross_reference_table> xref_history;
+        std::vector<trailer> trailer_history;
+        std::unordered_set<std::size_t> visited_offsets;
+        std::size_t current_offset = start_xref_result.value();
 
-        while (true)
+        // In this main loop, we iterate through the whole chain of xref/trailer
+        // pairs starting from the last one (pointed by startxref) and following
+        // /Prev links until we reach the end of the chain or encounter an error.
+        for (;;)
         {
-            if (visitedOffsets.contains(currentOffset))
+            // Ensure we don't loop infinitely in case of circular /Prev references
+            if (visited_offsets.contains(current_offset))
             {
                 break;
             }
-            visitedOffsets.insert(currentOffset);
 
-            // Step 2: Collect xref and trailer bytes
-            _reader.seek(currentOffset);
+            visited_offsets.insert(current_offset);
+
+            // Step 2: Seek to the startxref offset of the current xref/trailer pair
+            _reader.seek(current_offset);
 
             // Collect bytes until we find the end of trailer (>>)
-            std::string collectedContent;
-            constexpr std::size_t kBufferSize = 4096;
-            std::array<std::byte, kBufferSize> buffer{};
-            bool foundTrailerEnd = false;
+            std::string collected_content;
+            constexpr std::size_t k_buf_size = 4096;
+            std::array<std::byte, k_buf_size> buffer{};
+            bool has_trailer_end_been_found = false;
 
-            while (!_reader.eof() && !foundTrailerEnd)
+            while (!_reader.eof() && !has_trailer_end_been_found)
             {
-                const std::size_t bytesRead = _reader.read(buffer);
-                if (bytesRead == 0)
+                const std::size_t bytes_read = _reader.read(buffer);
+                if (bytes_read == 0)
                 {
                     break;
                 }
 
                 std::string_view chunk{
                     reinterpret_cast<const char *>(buffer.data()),
-                    bytesRead};
-                collectedContent += chunk;
+                    bytes_read};
+                collected_content += chunk;
 
                 // Check if we've collected the complete trailer
-                if (collectedContent.find("trailer") != std::string::npos &&
-                    collectedContent.find(">>") != std::string::npos)
+                if (collected_content.find("trailer") != std::string::npos &&
+                    collected_content.find(">>") != std::string::npos)
                 {
-                    foundTrailerEnd = true;
+                    has_trailer_end_been_found = true;
                 }
             }
 
-            if (!foundTrailerEnd)
+            // If we couldn't find a complete trailer, we can't continue parsing this pair.
+            // If it's the first pair, we consider this a fatal error, otherwise we just stop
+            // and return what we have so far.
+            if (!has_trailer_end_been_found)
             {
-                if (xrefTableHistory.empty())
+                if (xref_history.empty())
                 {
                     return std::unexpected(parser_error::missing_trailer);
                 }
                 break;
             }
 
-            // Step 3: parse xref from collected bytes
+            // Step 3: Parse xref from collected bytes
             default_cross_reference_table_parser xrefParser;
-            auto xrefResult = xrefParser.parse(collectedContent);
-            if (!xrefResult)
+            auto cross_reference_table = xrefParser.parse(collected_content);
+            if (!cross_reference_table)
             {
-                if (xrefTableHistory.empty())
+                if (xref_history.empty())
                 {
-                    return std::unexpected(xrefResult.error());
+                    return std::unexpected(cross_reference_table.error());
                 }
                 break;
             }
 
-            xrefTableHistory.push_back(std::move(xrefResult->table));
+            xref_history.push_back(std::move(cross_reference_table.value()));
 
-            // Step 5: parse trailer from collected bytes
-            default_trailer_parser trailerParser;
-            auto trailerResult = trailerParser.parse(collectedContent);
+            // Step 4: Parse trailer from collected bytes
+            default_trailer_parser trailer_parser;
+            auto trailerResult = trailer_parser.parse(collected_content);
             if (!trailerResult)
             {
-                if (trailerHistory.empty())
+                if (trailer_history.empty())
                 {
                     return std::unexpected(trailerResult.error());
                 }
                 break;
             }
 
-            trailerHistory.push_back(std::move(trailerResult.value()));
+            trailer_history.push_back(std::move(trailerResult.value()));
 
-            // Step 6: Check for /prev to repeat
-            auto prevOffsetResult = extract_prev_offset(trailerHistory.back());
-            if (!prevOffsetResult)
+            // Step 5: Check for /Prev to repeat
+            auto prev_offset_result = extract_prev_offset(trailer_history.back());
+            if (!prev_offset_result)
             {
                 break;
             }
 
-            currentOffset = *prevOffsetResult;
+            current_offset = *prev_offset_result;
         }
 
         // Compile merged xref (oldest -> newest so newer overrides)
-        cross_reference_table::entry_map compiledEntries;
-        for (auto it = xrefTableHistory.rbegin(); it != xrefTableHistory.rend(); ++it)
+        cross_reference_table::entry_map compiled_entries;
+        for (auto it = xref_history.rbegin(); it != xref_history.rend(); ++it)
         {
             for (const auto &[objectNum, entry] : it->entries())
             {
-                compiledEntries.insert_or_assign(objectNum, entry);
+                compiled_entries.insert_or_assign(objectNum, entry);
             }
         }
 
         // Compile merged trailer (oldest -> newest, set only when present)
-        trailer::builder compiledTrailerBuilder{};
+        trailer::builder compiled_trailer_builder{};
 
-        for (auto it = trailerHistory.rbegin(); it != trailerHistory.rend(); ++it)
+        for (auto it = trailer_history.rbegin(); it != trailer_history.rend(); ++it)
         {
             if (it->size() != 0)
             {
-                compiledTrailerBuilder.size = it->size();
+                compiled_trailer_builder.size = it->size();
             }
             if (it->root().has_value())
             {
-                compiledTrailerBuilder.root = it->root();
+                compiled_trailer_builder.root = it->root();
             }
             if (it->prev().has_value())
             {
-                compiledTrailerBuilder.prev = it->prev();
+                compiled_trailer_builder.prev = it->prev();
             }
         }
 
         return document_structure_result{
-            .compiledXrefTable = cross_reference_table{std::move(compiledEntries)},
-            .xrefTableHistory = std::move(xrefTableHistory),
-            .compiledTrailer = compiledTrailerBuilder.build(),
-            .trailerHistory = std::move(trailerHistory),
+            .compiledXrefTable = cross_reference_table{std::move(compiled_entries)},
+            .xref_history = std::move(xref_history),
+            .compiledTrailer = compiled_trailer_builder.build(),
+            .trailer_history = std::move(trailer_history),
         };
     }
 }

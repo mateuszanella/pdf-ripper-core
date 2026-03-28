@@ -13,16 +13,6 @@ namespace ripper::core
     class resolver
     {
     public:
-        explicit resolver(resolution_context context)
-            : context_{context}
-        {
-        }
-
-        const resolution_context &context() const noexcept
-        {
-            return context_;
-        }
-
         std::expected<std::uint64_t, parser_error> resolve_offset(const indirect_reference &reference) const
         {
             const auto entry = context_.xref_table.find(reference);

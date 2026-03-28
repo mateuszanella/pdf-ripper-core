@@ -77,7 +77,9 @@ namespace
 
 int main(int argc, char **argv)
 {
-    const std::filesystem::path path = std::filesystem::current_path() / "../example/test.pdf";
+    const std::filesystem::path path = (argc > 1)
+        ? std::filesystem::path{argv[1]}
+        : std::filesystem::current_path() / "../example/test.pdf";
 
     auto document = ripper::core::document::open(path);
 

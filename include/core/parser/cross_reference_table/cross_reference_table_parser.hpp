@@ -8,11 +8,6 @@
 
 namespace ripper::core
 {
-    struct cross_reference_table_parse_result
-    {
-        cross_reference_table table;
-    };
-
     /**
      * @brief Interface for parsing cross-reference tables.
      * Implementations handle different xref formats (traditional, compressed streams).
@@ -26,6 +21,6 @@ namespace ripper::core
          * @brief Parses a cross-reference table from raw content.
          * @param content The raw xref content (starting with "xref" keyword)
          */
-        [[nodiscard]] virtual std::expected<cross_reference_table_parse_result, parser_error> parse(std::string_view content) = 0;
+        [[nodiscard]] virtual std::expected<cross_reference_table, parser_error> parse(std::string_view content) = 0;
     };
 }

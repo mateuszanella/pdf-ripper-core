@@ -122,7 +122,7 @@ namespace ripper::core
 
         default_catalog_resolver catalog_resolver{};
 
-        auto resolved_catalog = catalog_resolver.parse(document_, *xref_table_, *trailer_);
+        auto resolved_catalog = catalog_resolver.parse(document_);
 
         if (!resolved_catalog)
         {

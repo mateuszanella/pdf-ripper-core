@@ -81,6 +81,11 @@ namespace ripper::core
 
             // parse in-use flag (position 17)
             const char flag = entryLine[17];
+            if (flag != 'n' && flag != 'f')
+            {
+                return std::unexpected(parser_error::corrupted_cross_reference_table);
+            }
+
             const bool inUse = (flag == 'n');
 
             const std::uint32_t objectNumber = static_cast<std::uint32_t>(*startObj + i);
@@ -92,7 +97,7 @@ namespace ripper::core
         return {};
     }
 
-    std::expected<cross_reference_table_parse_result, parser_error> default_cross_reference_table_parser::parse(
+    std::expected<cross_reference_table, parser_error> default_cross_reference_table_parser::parse(
         std::string_view content)
     {
         cross_reference_table::entry_map entries;
@@ -129,9 +134,6 @@ namespace ripper::core
             }
         }
 
-        cross_reference_table table{std::move(entries)};
-        return cross_reference_table_parse_result{
-            .table = std::move(table)
-        };
+        return cross_reference_table{std::move(entries)};
     }
 }

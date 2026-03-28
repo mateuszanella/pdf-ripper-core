@@ -56,6 +56,18 @@ namespace ripper::core
             return std::unexpected(parser_error::corrupted_header);
         }
 
-        return header{std::string{rest.substr(0, len)}};
+        const std::string_view version = rest.substr(0, len);
+        const std::size_t dotPos = version.find('.');
+        if (dotPos == std::string_view::npos || dotPos == 0 || dotPos + 1 >= version.size())
+        {
+            return std::unexpected(parser_error::corrupted_header);
+        }
+
+        if (version.find('.', dotPos + 1) != std::string_view::npos)
+        {
+            return std::unexpected(parser_error::corrupted_header);
+        }
+
+        return header{std::string{version}};
     }
 }

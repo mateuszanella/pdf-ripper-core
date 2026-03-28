@@ -1,99 +1,213 @@
 #include "core/parser/trailer/default_trailer_parser.hpp"
 
+#include <limits>
 #include <string_view>
 
+#include "core/parser/lexer/pdf_lexer.hpp"
+#include "core/parser/lexer/pdf_value_parser.hpp"
 #include "core/util/text.hpp"
 
 namespace ripper::core
 {
+    namespace
+    {
+        parser_error to_trailer_error(lexer_error error)
+        {
+            switch (error)
+            {
+            case lexer_error::unexpected_eof:
+            case lexer_error::unterminated_hex_string:
+            case lexer_error::unterminated_literal_string:
+                return parser_error::unexpected_eof;
+            default:
+                return parser_error::corrupted_trailer;
+            }
+        }
+    }
+
     std::expected<std::pair<std::uint32_t, std::uint16_t>, parser_error>
         default_trailer_parser::parse_indirect_reference(std::string_view line)
     {
-        // parse "objNum genNum R"
-        const std::size_t firstSpace = line.find(' ');
-        if (firstSpace == std::string_view::npos)
-        {
-            return std::unexpected(parser_error::corrupted_trailer);
-        }
-
-        const auto objNum = text::parse_size_t(line.substr(0, firstSpace));
-        if (!objNum)
-        {
-            return std::unexpected(parser_error::corrupted_trailer);
-        }
-
-        line = line.substr(firstSpace + 1);
-        line = text::trim_ascii(line);
-
-        const std::size_t secondSpace = line.find(' ');
-        if (secondSpace == std::string_view::npos)
-        {
-            return std::unexpected(parser_error::corrupted_trailer);
-        }
-
-        const auto genNum = text::parse_size_t(line.substr(0, secondSpace));
-        if (!genNum)
-        {
-            return std::unexpected(parser_error::corrupted_trailer);
-        }
-
-        return std::make_pair(
-            static_cast<std::uint32_t>(*objNum),
-            static_cast<std::uint16_t>(*genNum)
-        );
+        pdf_lexer lexer{line};
+        return pdf_value_parser::parse_reference_tokens(lexer, parser_error::corrupted_trailer);
     }
 
     std::expected<trailer, parser_error> default_trailer_parser::parse_dictionary(
         std::string_view content)
     {
         trailer::builder trailer_builder{};
+        pdf_lexer lexer{content};
 
-        // parse /Size
-        if (const std::size_t sizePos = content.find("/Size"); sizePos != std::string_view::npos)
+        bool found_dictionary = false;
+        while (!found_dictionary)
         {
-            std::string_view rest = content.substr(sizePos + 5);
-            rest = text::trim_ascii(rest);
-
-            const auto size = text::parse_size_t(rest);
-            if (size)
+            auto token_result = lexer.next();
+            if (!token_result)
             {
-                trailer_builder.size = static_cast<std::uint64_t>(*size);
+                return std::unexpected(to_trailer_error(token_result.error()));
+            }
+
+            const auto token = *token_result;
+            if (token.type == lexer_token_type::eof)
+            {
+                return std::unexpected(parser_error::corrupted_trailer);
+            }
+
+            if (token.type == lexer_token_type::dictionary_begin)
+            {
+                found_dictionary = true;
             }
         }
 
-        // parse /Prev
-        if (const std::size_t prevPos = content.find("/Prev"); prevPos != std::string_view::npos)
+        while (true)
         {
-            std::string_view rest = content.substr(prevPos + 5);
-            rest = text::trim_ascii(rest);
-
-            const auto prev = text::parse_size_t(rest);
-            if (prev)
+            auto token_result = lexer.peek();
+            if (!token_result)
             {
-                trailer_builder.prev = static_cast<std::uint64_t>(*prev);
+                return std::unexpected(to_trailer_error(token_result.error()));
+            }
+
+            const auto token = *token_result;
+            if (token.type == lexer_token_type::dictionary_end)
+            {
+                (void)lexer.next();
+                break;
+            }
+
+            if (token.type == lexer_token_type::eof)
+            {
+                return std::unexpected(parser_error::unexpected_eof);
+            }
+
+            if (token.type != lexer_token_type::name)
+            {
+                auto consume_result = pdf_value_parser::consume_value(lexer, parser_error::corrupted_trailer);
+                if (!consume_result)
+                {
+                    return std::unexpected(consume_result.error());
+                }
+
+                continue;
+            }
+
+            const auto key_token = *lexer.next();
+
+            if (key_token.lexeme == "Size")
+            {
+                auto value_result = lexer.peek();
+                if (!value_result)
+                {
+                    return std::unexpected(to_trailer_error(value_result.error()));
+                }
+
+                if (value_result->type == lexer_token_type::integer)
+                {
+                    const auto size = text::parse_size_t(value_result->lexeme);
+                    (void)lexer.next();
+
+                    if (size)
+                    {
+                        trailer_builder.size = static_cast<std::uint64_t>(*size);
+                    }
+                }
+                else
+                {
+                    auto consume_result = pdf_value_parser::consume_value(lexer, parser_error::corrupted_trailer);
+                    if (!consume_result)
+                    {
+                        return std::unexpected(consume_result.error());
+                    }
+                }
+
+                continue;
+            }
+
+            if (key_token.lexeme == "Prev")
+            {
+                auto value_result = lexer.peek();
+                if (!value_result)
+                {
+                    return std::unexpected(to_trailer_error(value_result.error()));
+                }
+
+                if (value_result->type == lexer_token_type::integer)
+                {
+                    const auto prev = text::parse_size_t(value_result->lexeme);
+                    (void)lexer.next();
+
+                    if (prev)
+                    {
+                        trailer_builder.prev = static_cast<std::uint64_t>(*prev);
+                    }
+                }
+                else
+                {
+                    auto consume_result = pdf_value_parser::consume_value(lexer, parser_error::corrupted_trailer);
+                    if (!consume_result)
+                    {
+                        return std::unexpected(consume_result.error());
+                    }
+                }
+
+                continue;
+            }
+
+            if (key_token.lexeme == "Root")
+            {
+                auto obj_token_result = lexer.peek();
+                auto gen_token_result = lexer.peek(1);
+                auto marker_token_result = lexer.peek(2);
+
+                if (!obj_token_result || !gen_token_result || !marker_token_result)
+                {
+                    return std::unexpected(parser_error::corrupted_trailer);
+                }
+
+                if (obj_token_result->type == lexer_token_type::integer &&
+                    gen_token_result->type == lexer_token_type::integer &&
+                    marker_token_result->type == lexer_token_type::keyword &&
+                    marker_token_result->lexeme == "R")
+                {
+                    const auto obj_num = text::parse_size_t(obj_token_result->lexeme);
+                    const auto gen_num = text::parse_size_t(gen_token_result->lexeme);
+
+                    (void)lexer.next();
+                    (void)lexer.next();
+                    (void)lexer.next();
+
+                    if (obj_num && gen_num &&
+                        *obj_num <= std::numeric_limits<std::uint32_t>::max() &&
+                        *gen_num <= std::numeric_limits<std::uint16_t>::max())
+                    {
+                        trailer_builder.root = indirect_reference{
+                            static_cast<std::uint32_t>(*obj_num),
+                            static_cast<std::uint16_t>(*gen_num)};
+                    }
+                }
+                else
+                {
+                    auto consume_result = pdf_value_parser::consume_value(lexer, parser_error::corrupted_trailer);
+                    if (!consume_result)
+                    {
+                        return std::unexpected(consume_result.error());
+                    }
+                }
+
+                continue;
+            }
+
+            auto consume_result = pdf_value_parser::consume_value(lexer, parser_error::corrupted_trailer);
+            if (!consume_result)
+            {
+                return std::unexpected(consume_result.error());
             }
         }
 
-        // parse /Root
-        if (const std::size_t rootPos = content.find("/Root"); rootPos != std::string_view::npos)
-        {
-            std::string_view rest = content.substr(rootPos + 5);
-            rest = text::trim_ascii(rest);
-
-            auto ref = parse_indirect_reference(rest);
-            if (ref)
-            {
-                trailer_builder.root = indirect_reference{ref->first, ref->second};
-            }
-        }
-
-        // /Info, /Encrypt and /ID parsing intentionally deferred (not in trailer model yet).
         return trailer_builder.build();
     }
 
     std::expected<trailer, parser_error> default_trailer_parser::parse(std::string_view content)
     {
-        // Find "trailer" keyword
         const std::size_t trailerPos = content.find("trailer");
         if (trailerPos == std::string_view::npos)
         {
@@ -101,18 +215,6 @@ namespace ripper::core
         }
 
         content = content.substr(trailerPos + 7); // skip "trailer"
-
-        // Find dictionary delimiters
-        const std::size_t startPos = content.find("<<");
-        const std::size_t endPos = content.find(">>");
-
-        if (startPos == std::string_view::npos || endPos == std::string_view::npos || endPos <= startPos)
-        {
-            return std::unexpected(parser_error::corrupted_trailer);
-        }
-
-        std::string_view dictContent = content.substr(startPos + 2, endPos - startPos - 2);
-
-        return parse_dictionary(dictContent);
+        return parse_dictionary(content);
     }
 }

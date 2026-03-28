@@ -19,7 +19,7 @@ namespace ripper::core
     public:
         default_cross_reference_table_parser() = default;
 
-        [[nodiscard]] std::expected<cross_reference_table_parse_result, parser_error> parse(std::string_view content) override;
+        [[nodiscard]] std::expected<cross_reference_table, parser_error> parse(std::string_view content) override;
 
     private:
         [[nodiscard]] static std::expected<void, parser_error> parse_subsection(
