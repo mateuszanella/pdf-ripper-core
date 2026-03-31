@@ -6,6 +6,7 @@
 #include "core/parser/header/header_parser.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
 #include "core/parser/catalog/default_catalog_resolver.hpp"
+#include "core/parser/catalog/indirect_object_resolver.hpp"
 
 namespace ripper::core
 {
@@ -120,16 +121,17 @@ namespace ripper::core
             return catalog_.value();
         }
 
-        default_catalog_resolver catalog_resolver{};
+        [[maybe_unused]] indirect_object_resolver object_resolver{document_};
+        default_catalog_parser parser{};
 
-        auto resolved_catalog = catalog_resolver.parse(document_);
+        auto catalog = parser.parse(document_);
 
-        if (!resolved_catalog)
+        if (!catalog)
         {
-            return std::unexpected(resolved_catalog.error());
+            return std::unexpected(catalog.error());
         }
 
-        catalog_.emplace(std::move(*resolved_catalog));
+        catalog_.emplace(std::move(*catalog));
 
         return catalog_.value();
     }

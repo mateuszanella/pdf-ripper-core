@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string_view>
 
+#include "core/document/catalog/catalog.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/parser/lexer/pdf_value_parser.hpp"
 
@@ -24,9 +25,7 @@ namespace ripper::core
         }
     }
 
-    std::expected<indirect_reference, parser_error> default_catalog_parser::parse(
-        std::string_view content,
-        indirect_reference catalog_ref) const
+    std::expected<catalog, parser_error> default_catalog_parser::parse(std::string_view content) const
     {
         pdf_lexer lexer{content};
 
@@ -112,6 +111,6 @@ namespace ripper::core
             }
         }
 
-        return catalog_ref;
+        return catalog{document_, catalog_ref, 0};
     }
 }

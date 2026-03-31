@@ -77,4 +77,30 @@ namespace ripper::core::text
 
         return value;
     }
+
+    [[nodiscard]] inline std::optional<std::uint32_t> parse_u32(std::string_view text) noexcept
+    {
+        std::uint32_t value{};
+        const char *first = text.data();
+        const char *last = text.data() + text.size();
+        auto [ptr, ec] = std::from_chars(first, last, value);
+
+        if (ec != std::errc{} || ptr != last)
+        {
+            return std::nullopt;
+        }
+
+        return value;
+    }
+
+    [[nodiscard]] inline std::optional<std::uint16_t> parse_u16(std::string_view text) noexcept
+    {
+        const auto v32 = parse_u32(text);
+        if (!v32.has_value() || *v32 > 0xFFFFu)
+        {
+            return std::nullopt;
+        }
+
+        return static_cast<std::uint16_t>(*v32);
+    }
 }
