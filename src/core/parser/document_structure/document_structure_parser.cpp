@@ -225,9 +225,9 @@ namespace ripper::core
         }
 
         return document_structure_result{
-            .compiledXrefTable = cross_reference_table{std::move(compiled_entries)},
+            .compiled_xref = cross_reference_table{std::move(compiled_entries)},
             .xref_history = std::move(xref_history),
-            .compiledTrailer = compiled_trailer_builder.build(),
+            .compiled_trailer = compiled_trailer_builder.build(),
             .trailer_history = std::move(trailer_history),
         };
     }

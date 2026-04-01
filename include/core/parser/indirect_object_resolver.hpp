@@ -15,7 +15,7 @@ namespace ripper::core
     public:
         explicit indirect_object_resolver(const document &document) noexcept;
 
-        [[nodiscard]] std::expected<std::string, parser_error> read_object(indirect_reference ref) const;
+        [[nodiscard]] std::expected<std::string, parser_error> resolve(indirect_reference ref) const;
 
     private:
         const document &document_;

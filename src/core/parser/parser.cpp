@@ -3,7 +3,7 @@
 #include <utility>
 
 #include "core/document.hpp"
-#include "core/parser/catalog/default_catalog_resolver.hpp"
+// #include "core/parser/catalog/default_catalog_resolver.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
 #include "core/parser/header/header_parser.hpp"
 #include "core/parser/indirect_object_resolver.hpp"
@@ -50,10 +50,10 @@ namespace ripper::core
             return std::unexpected(result.error());
         }
 
-        xref_table_ = std::move(result->compiledXrefTable);
-        xref_history_ = std::move(result->xrefTableHistory);
-        trailer_ = std::move(result->compiledTrailer);
-        trailer_history_ = std::move(result->trailerHistory);
+        xref_table_ = std::move(result->compiled_xref);
+        xref_history_ = std::move(result->xref_history);
+        trailer_ = std::move(result->compiled_trailer);
+        trailer_history_ = std::move(result->trailer_history);
         structure_parsed_ = true;
 
         return {};
@@ -123,17 +123,27 @@ namespace ripper::core
 
         // TODO: Move to a parsing_manager class and reuse the same instance.
         indirect_object_resolver object_resolver{document_};
-        default_catalog_parser parser{};
+        // default_catalog_parser parser{};
 
-        std::string content = object_resolver.resolve(trailer_->root());
-
-        auto catalog = parser.parse(content);
-        if (!catalog)
+        auto root_obj = trailer_->root();
+        if (!root_obj)
         {
-            return std::unexpected(catalog.error());
+            return std::unexpected(parser_error::missing_catalog);
         }
 
-        catalog_.emplace(std::move(*catalog));
+        auto content = object_resolver.resolve(root_obj.value());
+        if (!content)
+        {
+            return std::unexpected(content.error());
+        }
+
+        // auto catalog = parser.parse(content);
+        // if (!catalog)
+        // {
+        //     return std::unexpected(catalog.error());
+        // }
+
+        catalog_.emplace(document_, root_obj.value(), 0);
 
         return catalog_.value();
     }

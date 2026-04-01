@@ -12,11 +12,11 @@ namespace ripper::core
 {
     struct document_structure_result
     {
-        cross_reference_table compiledXrefTable;
-        std::vector<cross_reference_table> xrefTableHistory;
+        cross_reference_table compiled_xref;
+        std::vector<cross_reference_table> xref_history;
 
-        trailer compiledTrailer;
-        std::vector<trailer> trailerHistory;
+        trailer compiled_trailer;
+        std::vector<trailer> trailer_history;
     };
 
     /**

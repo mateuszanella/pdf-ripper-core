@@ -50,7 +50,7 @@ namespace ripper::core
     {
     }
 
-    std::expected<std::string, parser_error> indirect_object_resolver::read_object(indirect_reference ref) const
+    std::expected<std::string, parser_error> indirect_object_resolver::resolve(indirect_reference ref) const
     {
         auto &r = document_.reader();
         if (!r.is_open())

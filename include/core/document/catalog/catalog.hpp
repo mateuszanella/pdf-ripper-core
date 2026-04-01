@@ -14,8 +14,13 @@ namespace ripper::core
     class catalog : public pdf_object
     {
     public:
-        catalog(const document &doc, indirect_reference ref, std::uint64_t offset) noexcept
+        explicit catalog(const document &doc, indirect_reference ref, std::uint64_t offset) noexcept
             : pdf_object{doc, ref, offset}
+        {
+        }
+
+        explicit catalog(pdf_object obj) noexcept
+            : pdf_object{std::move(obj)}
         {
         }
 

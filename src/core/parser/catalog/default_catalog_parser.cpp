@@ -7,6 +7,7 @@
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/parser/lexer/pdf_value_parser.hpp"
 
+#ifdef IGNORE
 namespace ripper::core
 {
     namespace
@@ -24,7 +25,6 @@ namespace ripper::core
             }
         }
     }
-
     std::expected<catalog, parser_error> default_catalog_parser::parse(std::string_view content) const
     {
         pdf_lexer lexer{content};
@@ -114,3 +114,4 @@ namespace ripper::core
         return catalog{document_, catalog_ref, 0};
     }
 }
+#endif
