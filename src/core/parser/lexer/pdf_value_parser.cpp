@@ -1,14 +1,17 @@
 #include "core/parser/lexer/pdf_value_parser.hpp"
+
 #include <limits>
+
+#include "core/errors/parser/parser_error.hpp"
 #include "core/util/text.hpp"
 
 namespace ripper::core
 {
-    std::expected<void, int> pdf_value_parser::consume_compound_object(
+    std::expected<void, parser_error> pdf_value_parser::consume_compound_object(
         pdf_lexer &lexer,
         lexer_token_type begin_token,
         lexer_token_type end_token,
-        int error_code)
+        parser_error error_code)
     {
         std::size_t depth = 1;
         while (depth > 0)
@@ -38,9 +41,9 @@ namespace ripper::core
         return {};
     }
 
-    std::expected<void, int> pdf_value_parser::consume_value(
+    std::expected<void, parser_error> pdf_value_parser::consume_value(
         pdf_lexer &lexer,
-        int error_code)
+        parser_error error_code)
     {
         auto value_result = lexer.next();
         if (!value_result)
@@ -104,8 +107,8 @@ namespace ripper::core
         return {};
     }
 
-    std::expected<std::pair<std::uint32_t, std::uint16_t>, int>
-    pdf_value_parser::parse_reference_tokens(pdf_lexer &lexer, int error_code)
+    std::expected<std::pair<std::uint32_t, std::uint16_t>, parser_error>
+    pdf_value_parser::parse_reference_tokens(pdf_lexer &lexer, parser_error error_code)
     {
         auto obj_token_result = lexer.next();
         auto gen_token_result = lexer.next();

@@ -13,8 +13,6 @@ namespace ripper::core
     public:
         virtual ~catalog_parser() = default;
 
-        [[nodiscard]] virtual std::expected<indirect_reference, parser_error> parse(
-            std::string_view content,
-            indirect_reference catalog_ref) const = 0;
+        [[nodiscard]] virtual std::expected<catalog, parser_error> parse(std::string_view content) const = 0;
     };
 }

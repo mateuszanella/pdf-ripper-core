@@ -3,10 +3,10 @@
 #include <utility>
 
 #include "core/document.hpp"
-#include "core/parser/header/header_parser.hpp"
-#include "core/parser/document_structure/document_structure_parser.hpp"
 #include "core/parser/catalog/default_catalog_resolver.hpp"
-#include "core/parser/catalog/indirect_object_resolver.hpp"
+#include "core/parser/document_structure/document_structure_parser.hpp"
+#include "core/parser/header/header_parser.hpp"
+#include "core/parser/indirect_object_resolver.hpp"
 
 namespace ripper::core
 {
@@ -121,11 +121,13 @@ namespace ripper::core
             return catalog_.value();
         }
 
-        [[maybe_unused]] indirect_object_resolver object_resolver{document_};
+        // TODO: Move to a parsing_manager class and reuse the same instance.
+        indirect_object_resolver object_resolver{document_};
         default_catalog_parser parser{};
 
-        auto catalog = parser.parse(document_);
+        std::string content = object_resolver.resolve(trailer_->root());
 
+        auto catalog = parser.parse(content);
         if (!catalog)
         {
             return std::unexpected(catalog.error());

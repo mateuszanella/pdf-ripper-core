@@ -3,8 +3,8 @@
 #include <expected>
 #include <string_view>
 
-#include "core/errors/parser/parser_error.hpp"
 #include "core/document/catalog/catalog.hpp"
+#include "core/errors/parser/parser_error.hpp"
 #include "core/parser/catalog/catalog_parser.hpp"
 
 namespace ripper::core

@@ -1,4 +1,4 @@
-#pragma once
+#include "core/parser/indirect_object_resolver.hpp"
 
 #include <array>
 #include <charconv>
