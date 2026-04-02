@@ -143,7 +143,7 @@ namespace ripper::core
         //     return std::unexpected(catalog.error());
         // }
 
-        catalog_.emplace(document_, root_obj.value(), 0);
+        catalog_.emplace(document_, root_obj.value());
 
         return catalog_.value();
     }

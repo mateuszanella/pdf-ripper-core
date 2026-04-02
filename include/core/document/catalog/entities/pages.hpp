@@ -16,8 +16,8 @@ namespace ripper::core
     class pages : public pdf_object
     {
     public:
-        pages(const document &doc, indirect_reference ref, std::uint64_t offset) noexcept
-            : pdf_object{doc, ref, offset}
+        pages(const document &doc, indirect_reference ref) noexcept
+            : pdf_object{doc, ref}
         {
         }
 

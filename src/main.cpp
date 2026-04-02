@@ -70,8 +70,6 @@ namespace
         }
 
         std::println("\nCatalog parsed successfully.");
-
-        std::println("\nCatalog offset: {}", catalog.value().offset());
     }
 }
 
