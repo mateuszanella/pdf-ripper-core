@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "core/document/catalog/catalog.hpp"
@@ -39,17 +40,17 @@ namespace ripper::core
         [[nodiscard]] std::expected<catalog, parser_error> catalog() const;
 
     private:
-        std::unique_ptr<ripper::core::reader> reader_;
-        std::unique_ptr<ripper::core::parser> parser_;
+        std::unique_ptr<class reader> reader_;
+        std::unique_ptr<class parser> parser_;
 
-        std::optional<class header> header_;
+        mutable std::optional<class header> header_;
 
-        std::optional<class cross_reference_table> xref_table_;
-        std::optional<std::vector<class cross_reference_table>> xref_history_;
+        mutable std::optional<class cross_reference_table> xref_table_;
+        mutable std::optional<std::vector<class cross_reference_table>> xref_history_;
 
-        std::optional<class trailer> trailer_;
-        std::optional<std::vector<class trailer>> trailer_history_;
+        mutable std::optional<class trailer> trailer_;
+        mutable std::optional<std::vector<class trailer>> trailer_history_;
 
-        std::optional<class catalog> catalog_;
+        mutable std::optional<class catalog> catalog_;
     };
 }

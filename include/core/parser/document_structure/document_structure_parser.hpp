@@ -23,6 +23,6 @@ namespace ripper::core
     {
     public:
         virtual ~document_structure_parser() = default;
-        virtual std::expected<document_structure_result, parser_error> parse() = default;
+        virtual std::expected<document_structure_result, parser_error> parse() = 0;
     };
 }

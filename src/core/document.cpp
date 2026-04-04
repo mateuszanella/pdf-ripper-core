@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <memory>
+#include <utility>
 
 #include "core/document/catalog/catalog.hpp"
 #include "core/document/cross_reference_table/cross_reference_table.hpp"

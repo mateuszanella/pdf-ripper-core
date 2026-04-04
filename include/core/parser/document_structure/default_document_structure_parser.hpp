@@ -1,11 +1,15 @@
 #pragma once
 
 #include <expected>
+#include <memory>
 #include <vector>
 
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/errors/parser/parser_error.hpp"
+#include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
+#include "core/parser/document_structure/document_structure_parser.hpp"
+#include "core/parser/trailer/trailer_parser.hpp"
 #include "core/reader/reader.hpp"
 
 namespace ripper::core
@@ -14,6 +18,10 @@ namespace ripper::core
     {
     public:
         explicit default_document_structure_parser(reader &reader);
+        default_document_structure_parser(
+            reader &reader,
+            std::unique_ptr<class cross_reference_table_parser> xref_parser,
+            std::unique_ptr<class trailer_parser> trailer_parser);
 
         [[nodiscard]] std::expected<document_structure_result, parser_error> parse();
 
