@@ -3,6 +3,8 @@
 #include <expected>
 #include <filesystem>
 #include <memory>
+#include <optional>
+#include <vector>
 
 #include "core/document/catalog/catalog.hpp"
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
@@ -39,5 +41,15 @@ namespace ripper::core
     private:
         std::unique_ptr<ripper::core::reader> reader_;
         std::unique_ptr<ripper::core::parser> parser_;
+
+        std::optional<class header> header_;
+
+        std::optional<class cross_reference_table> xref_table_;
+        std::optional<std::vector<class cross_reference_table>> xref_history_;
+
+        std::optional<class trailer> trailer_;
+        std::optional<std::vector<class trailer>> trailer_history_;
+
+        std::optional<class catalog> catalog_;
     };
 }

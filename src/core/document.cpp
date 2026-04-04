@@ -42,21 +42,60 @@ namespace ripper::core
 
     std::expected<header, parser_error> document::header() const
     {
-        return parser_->header();
+        if (header_.has_value())
+            return header_.value();
+
+        auto parsed = parser_->header();
+        if (!parsed)
+            return std::unexpected(parsed.error());
+
+        header_ = std::move(*parsed);
+
+        return header_.value();
     }
 
     std::expected<cross_reference_table, parser_error> document::cross_reference_table() const
     {
-        return parser_->cross_reference_table();
+        if (xref_table_.has_value())
+            return xref_table_.value();
+
+        auto parsed = parser_->structure();
+        if (!parsed)
+            return std::unexpected(parsed.error());
+
+        xref_table_ = std::move(parsed->compiled_xref);
+        xref_history_ = std::move(parsed->xref_history);
+        trailer_ = std::move(parsed->compiled_trailer);
+        trailer_history_ = std::move(parsed->trailer_history);
+
+        return xref_table_.value();
     }
 
     std::expected<trailer, parser_error> document::trailer() const
     {
-        return parser_->trailer();
+        if (trailer_.has_value())
+            return trailer_.value();
+
+        auto parsed = parser_->structure();
+        if (!parsed)
+            return std::unexpected(parsed.error());
+
+        xref_table_ = std::move(parsed->compiled_xref);
+        xref_history_ = std::move(parsed->xref_history);
+        trailer_ = std::move(parsed->compiled_trailer);
+        trailer_history_ = std::move(parsed->trailer_history);
+
+        return trailer_.value();
     }
 
     std::expected<catalog, parser_error> document::catalog() const
     {
-        return parser_->catalog();
+        if (catalog_.has_value())
+            return catalog_.value();
+
+        // TODO: add actual parsing of the catalog object
+        catalog_.emplace(*this, trailer()->root().value());
+
+        return catalog_.value();
     }
 }

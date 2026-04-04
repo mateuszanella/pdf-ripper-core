@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -10,71 +11,55 @@
 #include "core/document/trailer/trailer.hpp"
 #include "core/document/catalog/catalog.hpp"
 #include "core/errors/parser/parser_error.hpp"
+#include "core/parser/catalog/catalog_parser.hpp"
 #include "core/reader/reader.hpp"
 
 namespace ripper::core
 {
     class document;
+    class header_parser;
+    class document_structure_parser;
+    class indirect_object_resolver;
 
-    /**
-     * @brief Parser facade for PDF documents.
-     *
-     * Eagerly parses xref + trailer (required for navigation).
-     * Object-specific parsing is delegated to dedicated parser components.
-     */
+    struct parsed_structure
+    {
+        class cross_reference_table compiled_xref;
+        std::vector<class cross_reference_table> xref_history;
+        class trailer compiled_trailer;
+        std::vector<class trailer> trailer_history;
+    };
+
     class parser
     {
     public:
         explicit parser(const document &doc);
 
-        /**
-         * @brief Ensures that the PDF structure (header, xref, trailer) is parsed.
-         *
-         * This method is idempotent and can be called multiple times without adverse effects.
-         */
-        [[nodiscard]] std::expected<void, parser_error> ensure_structure();
+        void set_header_parser(std::unique_ptr<class header_parser> value) noexcept;
+        void set_cross_reference_table_parser(std::unique_ptr<class cross_reference_table_parser> value) noexcept;
+        void set_trailer_parser(std::unique_ptr<class trailer_parser> value) noexcept;
+        void set_catalog_parser(std::unique_ptr<class catalog_parser> value) noexcept;
+        void set_document_structure_parser(std::unique_ptr<class document_structure_parser> value) noexcept;
+        void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> value) noexcept;
 
-        /**
-         * @brief Get the PDF header.
-         *
-         * @note This will trigger parsing of the PDF structure if it hasn't been parsed yet.
-         */
+        [[nodiscard]] class header_parser &header_parser() const;
+        [[nodiscard]] class cross_reference_table_parser &cross_reference_table_parser() const;
+        [[nodiscard]] class trailer_parser &trailer_parser() const;
+        [[nodiscard]] class catalog_parser &catalog_parser() const;
+        [[nodiscard]] class document_structure_parser &document_structure_parser() const;
+        [[nodiscard]] class indirect_object_resolver &object_resolver() const;
+
         [[nodiscard]] std::expected<header, parser_error> header();
-
-        /**
-         * @brief Get the cross-reference table.
-         *
-         * @note This will trigger parsing of the PDF structure if it hasn't been parsed yet.
-         */
-        [[nodiscard]] std::expected<cross_reference_table, parser_error> cross_reference_table();
-
-        /**
-         * @brief Get the PDF trailer.
-         *
-         * @note This will trigger parsing of the PDF structure if it hasn't been parsed yet.
-         */
-        [[nodiscard]] std::expected<trailer, parser_error> trailer();
-
-        /**
-         * @brief Get the PDF catalog.
-         *
-         * @note This will trigger parsing of the PDF structure if it hasn't been parsed yet.
-         */
+        [[nodiscard]] std::expected<parsed_structure, parser_error> structure();
         [[nodiscard]] std::expected<catalog, parser_error> catalog();
 
     private:
         const document &document_;
 
-        std::optional<class header> header_;
-        std::optional<class cross_reference_table> xref_table_;
-        std::optional<std::vector<class cross_reference_table>> xref_history_;
-        std::optional<class trailer> trailer_;
-        std::optional<std::vector<class trailer>> trailer_history_;
-        std::optional<class catalog> catalog_;
-
-        bool structure_parsed_ = false;
-
-        [[nodiscard]] std::expected<void, parser_error> parse_header_if_needed();
-        [[nodiscard]] std::expected<void, parser_error> parse_structure_if_needed();
+        std::unique_ptr<class header_parser> header_parser_;
+        std::unique_ptr<class cross_reference_table_parser> xref_parser_;
+        std::unique_ptr<class trailer_parser> trailer_parser_;
+        std::unique_ptr<class catalog_parser> catalog_parser_;
+        std::unique_ptr<class document_structure_parser> structure_parser_;
+        std::unique_ptr<class indirect_object_resolver> object_resolver_;
     };
 }

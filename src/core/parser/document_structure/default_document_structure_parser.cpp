@@ -1,8 +1,10 @@
-#include "core/parser/document_structure/document_structure_parser.hpp"
+#include "core/parser/document_structure/default_document_structure_parser.hpp"
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <unordered_set>
+#include <utility>
 
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
@@ -10,16 +12,33 @@
 
 namespace ripper::core
 {
-    document_structure_parser::document_structure_parser(reader &reader)
-        : _reader{reader}
+    default_document_structure_parser::default_document_structure_parser(reader &reader)
+        : default_document_structure_parser(
+              reader,
+              std::make_unique<default_cross_reference_table_parser>(),
+              std::make_unique<default_trailer_parser>())
     {
+    }
+
+    default_document_structure_parser::default_document_structure_parser(
+        reader &reader,
+        std::unique_ptr<class cross_reference_table_parser> xref_parser,
+        std::unique_ptr<class trailer_parser> trailer_parser)
+        : _reader{reader},
+          _xref_parser{std::move(xref_parser)},
+          _trailer_parser{std::move(trailer_parser)}
+    {
+        if (!_xref_parser)
+            _xref_parser = std::make_unique<default_cross_reference_table_parser>();
+        if (!_trailer_parser)
+            _trailer_parser = std::make_unique<default_trailer_parser>();
     }
 
     /**
      * @todo Technically, this implementation does not really get the last startxref,
      *       since the startxref keyword could appear in the last 1024 bytes multiple times.
      */
-    std::expected<std::size_t, parser_error> document_structure_parser::find_start_xref_offset()
+    std::expected<std::size_t, parser_error> default_document_structure_parser::find_start_xref_offset()
     {
         constexpr std::string_view start_xref_keyword = "startxref";
         constexpr std::size_t line_buffer_size = 256;
@@ -78,7 +97,7 @@ namespace ripper::core
         return offset.value();
     }
 
-    std::expected<std::size_t, parser_error> document_structure_parser::extract_prev_offset(const trailer &trailer)
+    std::expected<std::size_t, parser_error> default_document_structure_parser::extract_prev_offset(const trailer &trailer)
     {
         if (!trailer.prev())
         {
@@ -88,7 +107,7 @@ namespace ripper::core
         return trailer.prev().value();
     }
 
-    std::expected<document_structure_result, parser_error> document_structure_parser::parse()
+    std::expected<document_structure_result, parser_error> default_document_structure_parser::parse()
     {
         // Step 1: Find the last occurence of startxref from the end of the file
         auto start_xref_result = find_start_xref_offset();
@@ -158,8 +177,7 @@ namespace ripper::core
             }
 
             // Step 3: Parse xref from collected bytes
-            default_cross_reference_table_parser xrefParser;
-            auto cross_reference_table = xrefParser.parse(collected_content);
+            auto cross_reference_table = _xref_parser->parse(collected_content);
             if (!cross_reference_table)
             {
                 if (xref_history.empty())
@@ -172,8 +190,7 @@ namespace ripper::core
             xref_history.push_back(std::move(cross_reference_table.value()));
 
             // Step 4: Parse trailer from collected bytes
-            default_trailer_parser trailer_parser;
-            auto trailerResult = trailer_parser.parse(collected_content);
+            auto trailerResult = _trailer_parser->parse(collected_content);
             if (!trailerResult)
             {
                 if (trailer_history.empty())
