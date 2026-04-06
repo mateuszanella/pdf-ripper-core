@@ -1,8 +1,11 @@
 #include "core/parser/trailer/default_trailer_parser.hpp"
 
 #include <limits>
+#include <string>
 #include <string_view>
 
+#include "core/document/identifier.hpp"
+#include "core/document/trailer/trailer.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/parser/lexer/pdf_value_parser.hpp"
 #include "core/util/text.hpp"
@@ -23,10 +26,16 @@ namespace ripper::core
                 return parser_error::corrupted_trailer;
             }
         }
+
+        bool is_id_string_token(const lexer_token &token)
+        {
+            return token.type == lexer_token_type::hex_string ||
+                   token.type == lexer_token_type::literal_string;
+        }
     }
 
     std::expected<std::pair<std::uint32_t, std::uint16_t>, parser_error>
-        default_trailer_parser::parse_indirect_reference(std::string_view line)
+    default_trailer_parser::parse_indirect_reference(std::string_view line)
     {
         pdf_lexer lexer{line};
         return pdf_value_parser::parse_reference_tokens(lexer, parser_error::corrupted_trailer);
@@ -192,6 +201,82 @@ namespace ripper::core
                         return std::unexpected(consume_result.error());
                     }
                 }
+
+                continue;
+            }
+
+            if (key_token.lexeme == "ID")
+            {
+                auto begin_result = lexer.next();
+                if (!begin_result)
+                {
+                    return std::unexpected(to_trailer_error(begin_result.error()));
+                }
+
+                if (begin_result->type != lexer_token_type::array_begin)
+                {
+                    auto consume_result = pdf_value_parser::consume_value(
+                        lexer, parser_error::corrupted_trailer);
+
+                    if (!consume_result)
+                    {
+                        return std::unexpected(consume_result.error());
+                    }
+
+                    continue;
+                }
+
+                auto original_result = lexer.next();
+                if (!original_result)
+                {
+                    return std::unexpected(to_trailer_error(original_result.error()));
+                }
+
+                if (!is_id_string_token(*original_result))
+                {
+                    return std::unexpected(parser_error::corrupted_trailer);
+                }
+
+                std::string original{original_result->lexeme};
+
+                auto next_result = lexer.peek();
+                if (!next_result)
+                {
+                    return std::unexpected(to_trailer_error(next_result.error()));
+                }
+
+                if (next_result->type == lexer_token_type::array_end)
+                {
+                    (void)lexer.next();
+                    trailer_builder.id = identifier{std::move(original), {}};
+
+                    continue;
+                }
+
+                auto current_result = lexer.next();
+                if (!current_result)
+                {
+                    return std::unexpected(to_trailer_error(current_result.error()));
+                }
+
+                if (!is_id_string_token(*current_result))
+                {
+                    return std::unexpected(parser_error::corrupted_trailer);
+                }
+
+                auto end_result = lexer.next();
+                if (!end_result)
+                {
+                    return std::unexpected(to_trailer_error(end_result.error()));
+                }
+
+                if (end_result->type != lexer_token_type::array_end)
+                {
+                    return std::unexpected(parser_error::corrupted_trailer);
+                }
+
+                identifier id{std::move(original), std::string{current_result->lexeme}};
+                trailer_builder.id = std::move(id);
 
                 continue;
             }

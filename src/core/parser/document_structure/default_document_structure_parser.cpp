@@ -239,6 +239,10 @@ namespace ripper::core
             {
                 compiled_trailer_builder.prev = it->prev();
             }
+            if (it->id().has_value())
+            {
+                compiled_trailer_builder.id = it->id();
+            }
         }
 
         return document_structure_result{

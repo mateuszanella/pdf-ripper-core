@@ -56,6 +56,17 @@ namespace
             return;
         }
 
+        auto id = trailer->id();
+        if (id)        {
+            std::println("\nDocument ID:");
+
+            std::println("  Original: {}", id->original());
+
+            if (id->current()) {
+                std::println("  Current: {}", *id->current());
+            }
+        }
+
         std::println("\nTrailer parsed successfully.");
     }
 
