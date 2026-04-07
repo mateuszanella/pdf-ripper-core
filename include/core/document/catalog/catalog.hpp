@@ -14,25 +14,17 @@ namespace ripper::core
     class catalog : public pdf_object
     {
     public:
-        explicit catalog(const document &doc, indirect_reference ref) noexcept
-            : pdf_object{doc, ref}
+        explicit catalog(const document &doc, indirect_reference ref, std::optional<indirect_reference> pages_ref) noexcept
+            : pdf_object{doc, ref}, pages_ref_{pages_ref}
         {
         }
 
-        explicit catalog(pdf_object obj) noexcept
-            : pdf_object{std::move(obj)}
+        explicit catalog(pdf_object obj, std::optional<indirect_reference> pages_ref) noexcept
+            : pdf_object{std::move(obj)}, pages_ref_{pages_ref}
         {
         }
-
-        // /**
-        //  * @brief Returns the Pages tree root, if present.
-        //  */
-        // [[nodiscard]] const std::optional<class pages> &pages() const noexcept
-        // {
-        //     return pages_;
-        // }
 
     private:
-        // std::optional<class pages> pages_;
+        std::optional<indirect_reference> pages_ref_;
     };
 }

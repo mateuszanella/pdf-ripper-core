@@ -94,8 +94,11 @@ namespace ripper::core
         if (catalog_.has_value())
             return catalog_.value();
 
-        // TODO: add actual parsing of the catalog object
-        catalog_.emplace(*this, trailer()->root().value());
+        auto parsed = parser_->catalog();
+        if (!parsed)
+            return std::unexpected(parsed.error());
+
+        catalog_.emplace(std::move(*parsed));
 
         return catalog_.value();
     }

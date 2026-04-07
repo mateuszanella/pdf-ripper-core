@@ -4,8 +4,8 @@
 #include <utility>
 
 #include "core/document.hpp"
-// #include "core/parser/catalog/catalog_parser.hpp"
-// #include "core/parser/catalog/default_catalog_parser.hpp"
+#include "core/parser/catalog/catalog_parser.hpp"
+#include "core/parser/catalog/default_catalog_parser.hpp"
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
@@ -44,10 +44,10 @@ namespace ripper::core
         object_resolver_ = std::move(value);
     }
 
-    // void parser::set_catalog_parser(std::unique_ptr<class catalog_parser> value) noexcept
-    // {
-    //     catalog_parser_ = std::move(value);
-    // }
+    void parser::set_catalog_parser(std::unique_ptr<class catalog_parser> value) noexcept
+    {
+        catalog_parser_ = std::move(value);
+    }
 
     void parser::set_document_structure_parser(std::unique_ptr<class document_structure_parser> value) noexcept
     {
@@ -87,13 +87,13 @@ namespace ripper::core
         return *structure_parser_;
     }
 
-    // catalog_parser &parser::catalog_parser()
-    // {
-    //     if (!catalog_parser_)
-    //         catalog_parser_ = std::make_unique<class default_catalog_parser>();
+    catalog_parser &parser::catalog_parser()
+    {
+        if (!catalog_parser_)
+            catalog_parser_ = std::make_unique<class default_catalog_parser>();
 
-    //     return *catalog_parser_;
-    // }
+        return *catalog_parser_;
+    }
 
     indirect_object_resolver &parser::object_resolver()
     {
@@ -124,16 +124,27 @@ namespace ripper::core
         return out;
     }
 
-    // std::expected<catalog, parser_error> parser::catalog(const class trailer &tr)
-    // {
-    //     auto root_obj = tr.root();
-    //     if (!root_obj)
-    //         return std::unexpected(parser_error::missing_catalog);
+    std::expected<catalog, parser_error> parser::catalog()
+    {
+        const auto trailer = document_.trailer();
+        if (!trailer)
+            return std::unexpected(trailer.error());
 
-    //     auto content = object_resolver().resolve(root_obj.value());
-    //     if (!content)
-    //         return std::unexpected(content.error());
+        if (!trailer->root().has_value())
+            return std::unexpected(parser_error::missing_catalog);
 
-    //     return catalog{document_, root_obj.value()};
-    // }
+        const auto root_ref = trailer->root().value();
+
+        auto content = object_resolver().resolve(root_ref);
+        if (!content)
+            return std::unexpected(content.error());
+
+        auto parsed = catalog_parser().parse(content.value());
+        if (!parsed)
+            return std::unexpected(parsed.error());
+
+        class catalog out{document_, root_ref, parsed->pages_ref};
+
+        return out;
+    }
 }
