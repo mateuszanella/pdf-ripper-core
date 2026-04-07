@@ -9,10 +9,6 @@
 
 namespace ripper::core
 {
-    /**
-     * @brief Represents the PDF Pages tree root object.
-     * Lazily resolves its properties via the document.
-     */
     class pages : public pdf_object
     {
     public:
@@ -21,12 +17,14 @@ namespace ripper::core
         {
         }
 
-        /**
-         * @brief Returns the total page count. Parsed lazily on first access.
-         */
-        [[nodiscard]] std::expected<std::uint32_t, parser_error> count() const;
+        pages(const document &doc, indirect_reference ref, std::optional<std::uint32_t> count) noexcept
+            : pdf_object{doc, ref}, count_{count}
+        {
+        }
+
+        std::expected<std::uint32_t, parser_error> count() const;
 
     private:
-        mutable std::optional<std::uint32_t> count_;
+        std::optional<std::uint32_t> count_;
     };
 }

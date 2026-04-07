@@ -82,6 +82,27 @@ namespace
 
         std::println("\nCatalog parsed successfully.");
     }
+
+    void check_pages(const ripper::core::document &document)
+    {
+        const auto pages = document.catalog()->pages();
+        if (!pages)
+        {
+            std::println("\nFailed to parse pages. Error code: {}",
+                         static_cast<int>(pages.error()));
+            return;
+        }
+
+        const auto pageCount = pages->count();
+        if (!pageCount)
+        {
+            std::println("\nFailed to get page count. Error code: {}",
+                         static_cast<int>(pageCount.error()));
+            return;
+        }
+
+        std::println("\nPages parsed successfully. Page count: {}", pageCount.value());
+    }
 }
 
 int main(int argc, char **argv)
@@ -101,6 +122,7 @@ int main(int argc, char **argv)
     check_cross_reference_table(document);
     check_trailer(document);
     check_catalog(document);
+    check_pages(document);
 
     return 0;
 }

@@ -6,6 +6,8 @@
 #include "core/document.hpp"
 #include "core/parser/catalog/catalog_parser.hpp"
 #include "core/parser/catalog/default_catalog_parser.hpp"
+#include "core/parser/catalog/pages/pages_parser.hpp"
+#include "core/parser/catalog/pages/default_pages_parser.hpp"
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
@@ -47,6 +49,11 @@ namespace ripper::core
     void parser::set_catalog_parser(std::unique_ptr<class catalog_parser> value) noexcept
     {
         catalog_parser_ = std::move(value);
+    }
+
+    void parser::set_pages_parser(std::unique_ptr<class pages_parser> value) noexcept
+    {
+        pages_parser_ = std::move(value);
     }
 
     void parser::set_document_structure_parser(std::unique_ptr<class document_structure_parser> value) noexcept
@@ -93,6 +100,14 @@ namespace ripper::core
             catalog_parser_ = std::make_unique<class default_catalog_parser>();
 
         return *catalog_parser_;
+    }
+
+    pages_parser &parser::pages_parser()
+    {
+        if (!pages_parser_)
+            pages_parser_ = std::make_unique<class default_pages_parser>();
+
+        return *pages_parser_;
     }
 
     indirect_object_resolver &parser::object_resolver()
@@ -144,6 +159,21 @@ namespace ripper::core
             return std::unexpected(parsed.error());
 
         class catalog out{document_, root_ref, parsed->pages_ref};
+
+        return out;
+    }
+
+    std::expected<class pages, parser_error> parser::pages(indirect_reference obj)
+    {
+        auto content = object_resolver().resolve(obj);
+        if (!content)
+            return std::unexpected(content.error());
+
+        auto parsed = pages_parser().parse(content.value());
+        if (!parsed)
+            return std::unexpected(parsed.error());
+
+        class pages out{document_, obj, parsed->count};
 
         return out;
     }

@@ -3,7 +3,7 @@
 #include <optional>
 
 #include "core/document/pdf_object.hpp"
-#include "core/document/catalog/entities/pages.hpp"
+#include "core/document/catalog/pages/pages.hpp"
 
 namespace ripper::core
 {
@@ -24,7 +24,10 @@ namespace ripper::core
         {
         }
 
+        std::expected<class pages, parser_error> pages();
+
     private:
         std::optional<indirect_reference> pages_ref_;
+        std::optional<class pages> pages_;
     };
 }

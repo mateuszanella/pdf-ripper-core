@@ -15,6 +15,7 @@
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "core/parser/trailer/trailer_parser.hpp"
 #include "core/parser/catalog/catalog_parser.hpp"
+#include "core/parser/catalog/pages/pages_parser.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
 #include "core/parser/indirect_object_resolver.hpp"
 #include "core/reader/reader.hpp"
@@ -44,6 +45,7 @@ namespace ripper::core
         void set_cross_reference_table_parser(std::unique_ptr<class cross_reference_table_parser> value) noexcept;
         void set_trailer_parser(std::unique_ptr<class trailer_parser> value) noexcept;
         void set_catalog_parser(std::unique_ptr<class catalog_parser> value) noexcept;
+        void set_pages_parser(std::unique_ptr<class pages_parser> value) noexcept;
         void set_document_structure_parser(std::unique_ptr<class document_structure_parser> value) noexcept;
         void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> value) noexcept;
 
@@ -51,12 +53,14 @@ namespace ripper::core
         [[nodiscard]] class cross_reference_table_parser &cross_reference_table_parser();
         [[nodiscard]] class trailer_parser &trailer_parser();
         [[nodiscard]] class catalog_parser &catalog_parser();
+        [[nodiscard]] class pages_parser &pages_parser();
         [[nodiscard]] class document_structure_parser &document_structure_parser();
         [[nodiscard]] class indirect_object_resolver &object_resolver();
 
         [[nodiscard]] std::expected<header, parser_error> header();
         [[nodiscard]] std::expected<parsed_structure, parser_error> structure();
         [[nodiscard]] std::expected<catalog, parser_error> catalog();
+        [[nodiscard]] std::expected<pages, parser_error> pages(indirect_reference pages_ref);
 
     private:
         const document &document_;
@@ -65,6 +69,7 @@ namespace ripper::core
         std::unique_ptr<class cross_reference_table_parser> xref_parser_;
         std::unique_ptr<class trailer_parser> trailer_parser_;
         std::unique_ptr<class catalog_parser> catalog_parser_;
+        std::unique_ptr<class pages_parser> pages_parser_;
         std::unique_ptr<class document_structure_parser> structure_parser_;
         std::unique_ptr<class indirect_object_resolver> object_resolver_;
     };
