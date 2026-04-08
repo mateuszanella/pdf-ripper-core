@@ -1,7 +1,0 @@
-- ~~Add CrossReferenceEntry as a proper class~~
-- ~~Add support for typed trailer types~~
-  - ~~The ID field should be vector of byte strings, currently it only supports a single value~~
-- ~~Add catalog parsing~~
-- Add support for parsing xref streams
-- Add proper object lexer/parser
-- Become a billionaire
