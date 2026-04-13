@@ -17,17 +17,17 @@ namespace ripper::core
 
     enum class lexer_token_type
     {
-        eof,
-        dictionary_begin,
-        dictionary_end,
-        array_begin,
-        array_end,
-        name,
-        integer,
-        real,
-        keyword,
-        literal_string,
-        hex_string
+        eof,                // %%EOF
+        dictionary_begin,   // <<
+        dictionary_end,     // >>
+        array_begin,        // [
+        array_end,          // ]
+        name,               // /Name
+        integer,            // 123
+        real,               // 123.45
+        keyword,            // true, false, null
+        literal_string,     // (String)
+        hex_string          // <48656C6C6F>
     };
 
     struct lexer_token
