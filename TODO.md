@@ -2,7 +2,7 @@
 
 ## 1) Parser and Architecture Refactor
 
-- [ ] Split `parser` into smaller components
+- [ X ] Split `parser` into smaller components
   - Separate parser implementations from object-building logic, the parser class should
         just get the correct parser implementation and build the objects through a builder class
 
