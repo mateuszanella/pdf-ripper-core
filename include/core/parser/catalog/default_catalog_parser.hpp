@@ -3,7 +3,7 @@
 #include <expected>
 #include <string_view>
 
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 #include "core/parser/catalog/catalog_parser.hpp"
 
 namespace ripper::core
@@ -13,6 +13,6 @@ namespace ripper::core
     public:
         default_catalog_parser() = default;
 
-        [[nodiscard]] std::expected<parsed_catalog, parser_error> parse(std::string_view content) const override;
+        [[nodiscard]] std::expected<parsed_catalog, error> parse(std::string_view content) const override;
     };
 }

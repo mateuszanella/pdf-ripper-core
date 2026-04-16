@@ -5,7 +5,7 @@
 #include <optional>
 #include <string_view>
 
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 
 namespace ripper::core
 {
@@ -19,6 +19,6 @@ namespace ripper::core
     public:
         virtual ~pages_parser() = default;
 
-        [[nodiscard]] virtual std::expected<parsed_pages, parser_error> parse(std::string_view content) const = 0;
+        [[nodiscard]] virtual std::expected<parsed_pages, error> parse(std::string_view content) const = 0;
     };
 }

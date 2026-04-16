@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "core/document.hpp"
+#include "core/error.hpp"
+#include "core/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/reader/reader.hpp"
 #include "core/util/text.hpp"
@@ -50,12 +52,16 @@ namespace ripper::core
     {
     }
 
-    std::expected<std::string, parser_error> indirect_object_resolver::resolve(indirect_reference ref) const
+    std::expected<std::string, error> indirect_object_resolver::resolve(indirect_reference ref) const
     {
         auto &r = document_.reader();
         if (!r.is_open())
         {
-            return std::unexpected(parser_error{});
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::reader_not_open)
+                                       .with_component(error_component::reader)
+                                       .with_message("The provided reader is not open while trying to resolve an indirect object")
+                                       .build());
         }
 
         // Resolve the object location from the compiled xref table. We only proceed
@@ -64,35 +70,64 @@ namespace ripper::core
         const auto xref = document_.cross_reference_table();
         if (!xref)
         {
-            return std::unexpected(parser_error{});
+            return std::unexpected(xref.error());
         }
 
         const auto entry = xref->find(ref);
-        if (!entry.has_value() || !entry->in_use())
+        if (!entry.has_value())
         {
-            return std::unexpected(parser_error{});
+            return std::unexpected(error_builder::xref_entry_not_found(ref));
+        }
+
+        if (!entry->in_use())
+        {
+            return std::unexpected(error_builder::xref_entry_not_in_use(ref));
         }
 
         if (entry->reference().generation() != ref.generation())
         {
-            return std::unexpected(parser_error{});
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::generation_mismatch)
+                                       .with_component(error_component::cross_reference)
+                                       .with_reference(ref)
+                                       .with_message("Generation mismatch for indirect object")
+                                       .build());
         }
 
         const std::uint64_t file_size_u64 = r.size();
         if (file_size_u64 == 0)
         {
-            return std::unexpected(parser_error{});
+            const std::string error_message = "Read size zero when trying to resolve indirect object " +
+                                              std::to_string(ref.object_number()) + " " +
+                                              std::to_string(ref.generation());
+
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::io_error)
+                                       .with_component(error_component::reader)
+                                       .with_reference(ref)
+                                       .with_message(error_message)
+                                       .build());
         }
 
         const std::uint64_t offset_u64 = entry->offset();
         if (offset_u64 >= file_size_u64)
         {
-            return std::unexpected(parser_error{});
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::offset_out_of_bounds)
+                                       .with_component(error_component::cross_reference)
+                                       .with_reference(ref)
+                                       .with_message("Offset is out of bounds")
+                                       .build());
         }
 
         if (offset_u64 > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
         {
-            return std::unexpected(parser_error{});
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::offset_out_of_bounds)
+                                       .with_component(error_component::cross_reference)
+                                       .with_reference(ref)
+                                       .with_message("Offset is too large to handle")
+                                       .build());
         }
 
         // Read from the xref-resolved byte offset to EOF. This narrows parsing
@@ -105,7 +140,13 @@ namespace ripper::core
         const std::size_t read = r.read_at(std::span<std::byte>{bytes.data(), bytes.size()}, offset);
         if (read == 0)
         {
-            return std::unexpected(parser_error{});
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::io_error)
+                                       .with_component(error_component::reader)
+                                       .with_reference(ref)
+                                       .with_offset(offset)
+                                       .with_message("Received zero bytes from reader while attempting to read at offset: " + std::to_string(offset))
+                                       .build());
         }
 
         std::string source(read, '\0');
@@ -144,7 +185,13 @@ namespace ripper::core
             auto token_result = lexer.next();
             if (!token_result)
             {
-                return std::unexpected(parser_error{});
+                return std::unexpected(error_builder::create()
+                                           .with_code(error_code::tokenization_error)
+                                           .with_component(error_component::lexer)
+                                           .with_reference(ref)
+                                           .with_offset(offset)
+                                           .with_message("Failed to parse token")
+                                           .build());
             }
 
             const auto token = *token_result;
@@ -200,13 +247,25 @@ namespace ripper::core
                 auto end_token_result = lexer.next();
                 if (!end_token_result)
                 {
-                    return std::unexpected(parser_error{});
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::tokenization_error)
+                                               .with_component(error_component::lexer)
+                                               .with_reference(ref)
+                                               .with_offset(offset + object_start)
+                                               .with_message("Failed to parse token while scanning to endobj")
+                                               .build());
                 }
 
                 const auto end_token = *end_token_result;
                 if (end_token.type == lexer_token_type::eof)
                 {
-                    return std::unexpected(parser_error{});
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::unexpected_eof)
+                                               .with_component(error_component::parser)
+                                               .with_reference(ref)
+                                               .with_offset(offset + object_start)
+                                               .with_message("Unexpected end of file while scanning to endobj")
+                                               .build());
                 }
 
                 if (end_token.type == lexer_token_type::keyword && end_token.lexeme == "endobj")
@@ -214,7 +273,13 @@ namespace ripper::core
                     const std::size_t end_offset = token_offset_in(source, end_token);
                     if (end_offset == std::string::npos || end_offset < object_start)
                     {
-                        return std::unexpected(parser_error{});
+                        return std::unexpected(error_builder::create()
+                                                   .with_code(error_code::invalid_object_boundary)
+                                                   .with_component(error_component::parser)
+                                                   .with_reference(ref)
+                                                   .with_offset(offset + object_start)
+                                                   .with_message("Invalid object end offset")
+                                                   .build());
                     }
 
                     const std::size_t object_end = end_offset + end_token.lexeme.size();
@@ -223,6 +288,11 @@ namespace ripper::core
             }
         }
 
-        return std::unexpected(parser_error{});
+        return std::unexpected(error_builder::create()
+                                   .with_code(error_code::not_found)
+                                   .with_component(error_component::parser)
+                                   .with_reference(ref)
+                                   .with_message("Indirect object not found")
+                                   .build());
     }
 }

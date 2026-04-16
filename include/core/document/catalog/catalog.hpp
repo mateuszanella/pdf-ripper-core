@@ -4,6 +4,7 @@
 
 #include "core/document/pdf_object.hpp"
 #include "core/document/catalog/pages/pages.hpp"
+#include "core/error.hpp"
 
 namespace ripper::core
 {
@@ -24,7 +25,7 @@ namespace ripper::core
         {
         }
 
-        std::expected<class pages, parser_error> pages();
+        std::expected<class pages, error> pages();
 
     private:
         std::optional<indirect_reference> pages_ref_;

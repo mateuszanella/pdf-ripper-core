@@ -1,15 +1,25 @@
 #include "core/compression/compression.hpp"
 
 #include <zlib.h>
+#include <string>
+
+#include "core/error_builder.hpp"
 
 namespace ripper::core
 {
-    std::expected<std::vector<std::byte>, compression_error>
+    std::expected<std::vector<std::byte>, error>
     compression::compress(std::span<const std::byte> input)
     {
         if (input.empty())
         {
-            return std::unexpected(compression_error::invalid_input);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::compression_invalid_input)
+                                       .with_component(error_component::compression)
+                                       .with_field("input")
+                                       .with_expected("non-empty buffer")
+                                       .with_actual("empty")
+                                       .with_message("Compression input is empty")
+                                       .build());
         }
 
         const uLongf maxSize = compressBound(static_cast<uLong>(input.size()));
@@ -28,11 +38,28 @@ namespace ripper::core
             switch (result)
             {
                 case Z_MEM_ERROR:
-                    return std::unexpected(compression_error::memory_error);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::compression_memory_error)
+                                               .with_component(error_component::compression)
+                                               .with_field("compress")
+                                               .with_message("Compression failed due to memory error")
+                                               .build());
                 case Z_BUF_ERROR:
-                    return std::unexpected(compression_error::buffer_too_small);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::compression_buffer_too_small)
+                                               .with_component(error_component::compression)
+                                               .with_field("output_buffer")
+                                               .with_expected(">= compressBound(input_size)")
+                                               .with_actual(std::to_string(maxSize))
+                                               .with_message("Compression output buffer too small")
+                                               .build());
                 default:
-                    return std::unexpected(compression_error::compression_failed);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::compression_failed)
+                                               .with_component(error_component::compression)
+                                               .with_field("compress")
+                                               .with_message("Compression failed")
+                                               .build());
             }
         }
 
@@ -40,12 +67,19 @@ namespace ripper::core
         return output;
     }
 
-    std::expected<std::vector<std::byte>, compression_error>
+    std::expected<std::vector<std::byte>, error>
     compression::decompress(std::span<const std::byte> input)
     {
         if (input.empty())
         {
-            return std::unexpected(compression_error::invalid_input);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::compression_invalid_input)
+                                       .with_component(error_component::compression)
+                                       .with_field("input")
+                                       .with_expected("non-empty buffer")
+                                       .with_actual("empty")
+                                       .with_message("Decompression input is empty")
+                                       .build());
         }
 
         // Start with estimated size and grow if needed
@@ -79,23 +113,52 @@ namespace ripper::core
             switch (result)
             {
                 case Z_MEM_ERROR:
-                    return std::unexpected(compression_error::memory_error);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::compression_memory_error)
+                                               .with_component(error_component::compression)
+                                               .with_field("decompress")
+                                               .with_message("Decompression failed due to memory error")
+                                               .build());
                 case Z_DATA_ERROR:
-                    return std::unexpected(compression_error::corrupted_data);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::corrupted_compressed_data)
+                                               .with_component(error_component::compression)
+                                               .with_field("compressed_stream")
+                                               .with_message("Compressed stream is corrupted")
+                                               .build());
                 default:
-                    return std::unexpected(compression_error::decompression_failed);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::decompression_failed)
+                                               .with_component(error_component::compression)
+                                               .with_field("decompress")
+                                               .with_message("Decompression failed")
+                                               .build());
             }
         }
 
-        return std::unexpected(compression_error::buffer_too_small);
+        return std::unexpected(error_builder::create()
+                                   .with_code(error_code::compression_buffer_too_small)
+                                   .with_component(error_component::compression)
+                                   .with_field("output_buffer")
+                                   .with_expected("larger buffer after retries")
+                                   .with_actual("insufficient")
+                                   .with_message("Decompression buffer too small after retries")
+                                   .build());
     }
 
-    std::expected<std::vector<std::byte>, compression_error>
+    std::expected<std::vector<std::byte>, error>
     compression::decompress(std::span<const std::byte> input, std::size_t expectedSize)
     {
         if (input.empty())
         {
-            return std::unexpected(compression_error::invalid_input);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::compression_invalid_input)
+                                       .with_component(error_component::compression)
+                                       .with_field("input")
+                                       .with_expected("non-empty buffer")
+                                       .with_actual("empty")
+                                       .with_message("Decompression input is empty")
+                                       .build());
         }
 
         std::vector<std::byte> output(expectedSize);
@@ -113,13 +176,35 @@ namespace ripper::core
             switch (result)
             {
                 case Z_MEM_ERROR:
-                    return std::unexpected(compression_error::memory_error);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::compression_memory_error)
+                                               .with_component(error_component::compression)
+                                               .with_field("decompress")
+                                               .with_message("Decompression failed due to memory error")
+                                               .build());
                 case Z_BUF_ERROR:
-                    return std::unexpected(compression_error::buffer_too_small);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::compression_buffer_too_small)
+                                               .with_component(error_component::compression)
+                                               .with_field("output_buffer")
+                                               .with_expected(std::to_string(expectedSize))
+                                               .with_actual("too small")
+                                               .with_message("Provided decompression buffer is too small")
+                                               .build());
                 case Z_DATA_ERROR:
-                    return std::unexpected(compression_error::corrupted_data);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::corrupted_compressed_data)
+                                               .with_component(error_component::compression)
+                                               .with_field("compressed_stream")
+                                               .with_message("Compressed stream is corrupted")
+                                               .build());
                 default:
-                    return std::unexpected(compression_error::decompression_failed);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::decompression_failed)
+                                               .with_component(error_component::compression)
+                                               .with_field("decompress")
+                                               .with_message("Decompression failed")
+                                               .build());
             }
         }
 

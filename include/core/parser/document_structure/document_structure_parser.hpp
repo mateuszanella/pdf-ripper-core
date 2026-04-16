@@ -5,7 +5,7 @@
 
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/trailer/trailer.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 #include "core/reader/reader.hpp"
 
 namespace ripper::core
@@ -23,6 +23,6 @@ namespace ripper::core
     {
     public:
         virtual ~document_structure_parser() = default;
-        virtual std::expected<document_structure_result, parser_error> parse() = 0;
+        virtual std::expected<document_structure_result, error> parse() = 0;
     };
 }

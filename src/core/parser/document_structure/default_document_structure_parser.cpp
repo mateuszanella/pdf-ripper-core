@@ -3,9 +3,12 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <string>
 #include <unordered_set>
 #include <utility>
 
+#include "core/error.hpp"
+#include "core/error_builder.hpp"
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
 #include "core/util/text.hpp"
@@ -38,7 +41,7 @@ namespace ripper::core
      * @todo Technically, this implementation does not really get the last startxref,
      *       since the startxref keyword could appear in the last 1024 bytes multiple times.
      */
-    std::expected<std::size_t, parser_error> default_document_structure_parser::find_start_xref_offset()
+    std::expected<std::size_t, error> default_document_structure_parser::find_start_xref_offset()
     {
         constexpr std::string_view start_xref_keyword = "startxref";
         constexpr std::size_t line_buffer_size = 256;
@@ -75,13 +78,25 @@ namespace ripper::core
 
         if (!found_keyword)
         {
-            return std::unexpected(parser_error::missing_cross_reference_table);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::missing_xref_table)
+                                       .with_component(error_component::cross_reference)
+                                       .with_field("startxref")
+                                       .with_expected("startxref section")
+                                       .with_message("Missing startxref section")
+                                       .build());
         }
 
         const std::size_t bytes_read = _reader.read_line(buffer);
         if (bytes_read == 0)
         {
-            return std::unexpected(parser_error::unexpected_eof);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::unexpected_eof)
+                                       .with_component(error_component::cross_reference)
+                                       .with_field("startxref_offset")
+                                       .with_expected("numeric offset line")
+                                       .with_message("Missing startxref offset line")
+                                       .build());
         }
 
         const std::string_view offset_line{
@@ -91,23 +106,36 @@ namespace ripper::core
         const auto offset = text::parse_size_t(offset_line);
         if (!offset)
         {
-            return std::unexpected(parser_error::corrupted_cross_reference_table);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::corrupted_xref_table)
+                                       .with_component(error_component::cross_reference)
+                                       .with_field("startxref_offset")
+                                       .with_actual(std::string{offset_line})
+                                       .with_message("Invalid startxref offset")
+                                       .build());
         }
 
         return offset.value();
     }
 
-    std::expected<std::size_t, parser_error> default_document_structure_parser::extract_prev_offset(const trailer &trailer)
+    std::expected<std::size_t, error> default_document_structure_parser::extract_prev_offset(const trailer &trailer)
     {
         if (!trailer.prev())
         {
-            return std::unexpected(parser_error::missing_cross_reference_table);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::missing_xref_table)
+                                       .with_component(error_component::trailer)
+                                       .with_field("Prev")
+                                       .with_expected("offset")
+                                       .with_actual("missing")
+                                       .with_message("Trailer has no Prev offset")
+                                       .build());
         }
 
         return trailer.prev().value();
     }
 
-    std::expected<document_structure_result, parser_error> default_document_structure_parser::parse()
+    std::expected<document_structure_result, error> default_document_structure_parser::parse()
     {
         // Step 1: Find the last occurence of startxref from the end of the file
         auto start_xref_result = find_start_xref_offset();
@@ -171,7 +199,13 @@ namespace ripper::core
             {
                 if (xref_history.empty())
                 {
-                    return std::unexpected(parser_error::missing_trailer);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::missing_trailer)
+                                               .with_component(error_component::document)
+                                               .with_field("trailer")
+                                               .with_expected("complete trailer dictionary")
+                                               .with_message("Unable to find complete trailer while parsing document structure")
+                                               .build());
                 }
                 break;
             }

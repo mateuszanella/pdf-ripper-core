@@ -5,16 +5,10 @@
 #include <expected>
 #include <string_view>
 
+#include "core/error.hpp"
+
 namespace ripper::core
 {
-    enum class lexer_error
-    {
-        invalid_token,
-        unexpected_eof,
-        unterminated_literal_string,
-        unterminated_hex_string
-    };
-
     enum class lexer_token_type
     {
         eof,                // %%EOF
@@ -41,12 +35,12 @@ namespace ripper::core
     public:
         explicit pdf_lexer(std::string_view content);
 
-        [[nodiscard]] std::expected<lexer_token, lexer_error> next();
-        [[nodiscard]] std::expected<lexer_token, lexer_error> peek(std::size_t lookahead = 0);
+        [[nodiscard]] std::expected<lexer_token, error> next();
+        [[nodiscard]] std::expected<lexer_token, error> peek(std::size_t lookahead = 0);
         [[nodiscard]] bool consume(lexer_token_type type, std::string_view lexeme = {});
 
     private:
-        [[nodiscard]] std::expected<lexer_token, lexer_error> read_token();
+        [[nodiscard]] std::expected<lexer_token, error> read_token();
         void skip_whitespace_and_comments();
 
         [[nodiscard]] static bool is_whitespace(char ch);

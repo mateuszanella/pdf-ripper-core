@@ -4,7 +4,7 @@
 #include <string_view>
 
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "core/reader/reader.hpp"
 
@@ -19,10 +19,10 @@ namespace ripper::core
     public:
         default_cross_reference_table_parser() = default;
 
-        [[nodiscard]] std::expected<cross_reference_table, parser_error> parse(std::string_view content) override;
+        [[nodiscard]] std::expected<cross_reference_table, error> parse(std::string_view content) override;
 
     private:
-        [[nodiscard]] static std::expected<void, parser_error> parse_subsection(
+        [[nodiscard]] static std::expected<void, error> parse_subsection(
             cross_reference_table::entry_map &entries,
             std::string_view &content);
     };

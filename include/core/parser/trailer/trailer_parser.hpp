@@ -4,7 +4,7 @@
 #include <string_view>
 
 #include "core/document/trailer/trailer.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 
 namespace ripper::core
 {
@@ -20,6 +20,6 @@ namespace ripper::core
          * @brief Parses a trailer dictionary from raw content.
          * @param content The raw trailer content (starting with "trailer" keyword)
          */
-        [[nodiscard]] virtual std::expected<trailer, parser_error> parse(std::string_view content) = 0;
+        [[nodiscard]] virtual std::expected<trailer, error> parse(std::string_view content) = 0;
     };
 }

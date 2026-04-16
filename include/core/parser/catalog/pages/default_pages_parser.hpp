@@ -3,7 +3,7 @@
 #include <expected>
 #include <string_view>
 
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 #include "core/parser/catalog/pages/pages_parser.hpp"
 
 namespace ripper::core
@@ -13,6 +13,6 @@ namespace ripper::core
     public:
         default_pages_parser() = default;
 
-        [[nodiscard]] std::expected<parsed_pages, parser_error> parse(std::string_view content) const override;
+        [[nodiscard]] std::expected<parsed_pages, error> parse(std::string_view content) const override;
     };
 }

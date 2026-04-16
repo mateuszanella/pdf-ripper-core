@@ -8,7 +8,7 @@
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 #include "core/parser/parser.hpp"
 #include "core/reader/file_reader.hpp"
 #include "core/reader/reader.hpp"
@@ -41,7 +41,7 @@ namespace ripper::core
         return *parser_;
     }
 
-    std::expected<header, parser_error> document::header() const
+    std::expected<header, error> document::header() const
     {
         if (header_.has_value())
             return header_.value();
@@ -55,7 +55,7 @@ namespace ripper::core
         return header_.value();
     }
 
-    std::expected<cross_reference_table, parser_error> document::cross_reference_table() const
+    std::expected<cross_reference_table, error> document::cross_reference_table() const
     {
         if (xref_table_.has_value())
             return xref_table_.value();
@@ -72,7 +72,7 @@ namespace ripper::core
         return xref_table_.value();
     }
 
-    std::expected<trailer, parser_error> document::trailer() const
+    std::expected<trailer, error> document::trailer() const
     {
         if (trailer_.has_value())
             return trailer_.value();
@@ -89,7 +89,7 @@ namespace ripper::core
         return trailer_.value();
     }
 
-    std::expected<catalog, parser_error> document::catalog() const
+    std::expected<catalog, error> document::catalog() const
     {
         if (catalog_.has_value())
             return catalog_.value();

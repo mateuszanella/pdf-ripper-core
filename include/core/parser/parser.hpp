@@ -10,7 +10,7 @@
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/document/catalog/catalog.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 #include "core/parser/header/header_parser.hpp"
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "core/parser/trailer/trailer_parser.hpp"
@@ -44,10 +44,10 @@ namespace ripper::core
 
         [[nodiscard]] class parser_manager &manager();
 
-        [[nodiscard]] std::expected<header, parser_error> header();
-        [[nodiscard]] std::expected<parsed_structure, parser_error> structure();
-        [[nodiscard]] std::expected<catalog, parser_error> catalog();
-        [[nodiscard]] std::expected<pages, parser_error> pages(indirect_reference pages_ref);
+        [[nodiscard]] std::expected<header, error> header();
+        [[nodiscard]] std::expected<parsed_structure, error> structure();
+        [[nodiscard]] std::expected<catalog, error> catalog();
+        [[nodiscard]] std::expected<pages, error> pages(indirect_reference pages_ref);
 
     private:
         const document &document_;

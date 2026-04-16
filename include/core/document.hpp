@@ -11,7 +11,7 @@
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 #include "core/parser/parser.hpp"
 #include "core/reader/reader.hpp"
 
@@ -34,10 +34,10 @@ namespace ripper::core
         [[nodiscard]] ripper::core::reader &reader() const noexcept;
         [[nodiscard]] ripper::core::parser &parser() const noexcept;
 
-        [[nodiscard]] std::expected<header, parser_error> header() const;
-        [[nodiscard]] std::expected<cross_reference_table, parser_error> cross_reference_table() const;
-        [[nodiscard]] std::expected<trailer, parser_error> trailer() const;
-        [[nodiscard]] std::expected<catalog, parser_error> catalog() const;
+        [[nodiscard]] std::expected<header, error> header() const;
+        [[nodiscard]] std::expected<cross_reference_table, error> cross_reference_table() const;
+        [[nodiscard]] std::expected<trailer, error> trailer() const;
+        [[nodiscard]] std::expected<catalog, error> catalog() const;
 
     private:
         std::unique_ptr<class reader> reader_;

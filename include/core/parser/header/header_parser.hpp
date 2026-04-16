@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "core/document/header.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 #include "core/reader/reader.hpp"
 
 namespace ripper::core
@@ -16,7 +16,7 @@ namespace ripper::core
     public:
         explicit header_parser(reader &reader);
 
-        [[nodiscard]] std::expected<header, parser_error> parse();
+        [[nodiscard]] std::expected<header, error> parse();
 
     private:
         reader &_reader;

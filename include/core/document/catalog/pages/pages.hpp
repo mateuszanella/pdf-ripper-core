@@ -5,7 +5,7 @@
 #include <optional>
 
 #include "core/document/pdf_object.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 
 namespace ripper::core
 {
@@ -22,7 +22,7 @@ namespace ripper::core
         {
         }
 
-        std::expected<std::uint32_t, parser_error> count() const;
+        std::expected<std::uint32_t, error> count() const;
 
     private:
         std::optional<std::uint32_t> count_;

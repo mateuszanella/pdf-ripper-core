@@ -4,28 +4,14 @@
 #include <string>
 #include <string_view>
 
+#include "core/error.hpp"
+#include "core/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/parser/lexer/pdf_value_parser.hpp"
 
 namespace ripper::core
 {
-    namespace
-    {
-        parser_error to_catalog_error(lexer_error error)
-        {
-            switch (error)
-            {
-            case lexer_error::unexpected_eof:
-            case lexer_error::unterminated_hex_string:
-            case lexer_error::unterminated_literal_string:
-                return parser_error::unexpected_eof;
-            default:
-                return parser_error::corrupted_catalog;
-            }
-        }
-    }
-
-    std::expected<parsed_catalog, parser_error>
+    std::expected<parsed_catalog, error>
     default_catalog_parser::parse(std::string_view content) const
     {
         pdf_lexer lexer{content};
@@ -38,7 +24,7 @@ namespace ripper::core
         {
             auto token_result = lexer.next();
             if (!token_result)
-                return std::unexpected(to_catalog_error(token_result.error()));
+                return std::unexpected(token_result.error());
 
             const auto token = *token_result;
             if (token.type == lexer_token_type::eof)
@@ -49,13 +35,19 @@ namespace ripper::core
         }
 
         if (!found_dictionary)
-            return std::unexpected(parser_error::corrupted_catalog);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::corrupted_catalog)
+                                       .with_component(error_component::catalog)
+                                       .with_field("dictionary")
+                                       .with_expected("<< ... >>")
+                                       .with_message("Catalog dictionary was not found")
+                                       .build());
 
         while (true)
         {
             auto token_result = lexer.peek();
             if (!token_result)
-                return std::unexpected(to_catalog_error(token_result.error()));
+                return std::unexpected(token_result.error());
 
             const auto token = *token_result;
 
@@ -66,11 +58,24 @@ namespace ripper::core
             }
 
             if (token.type == lexer_token_type::eof)
-                return std::unexpected(parser_error::unexpected_eof);
+                return std::unexpected(error_builder::create()
+                                           .with_code(error_code::unexpected_eof)
+                                           .with_component(error_component::catalog)
+                                           .with_field("dictionary")
+                                           .with_message("Unexpected EOF while parsing catalog")
+                                           .build());
 
             if (token.type != lexer_token_type::name)
             {
-                auto consume_result = pdf_value_parser::consume_value(lexer, parser_error::corrupted_catalog);
+                auto consume_result = pdf_value_parser::consume_value(
+                    lexer,
+                    error_builder::create()
+                        .with_code(error_code::corrupted_catalog)
+                        .with_component(error_component::catalog)
+                        .with_field("dictionary_entry")
+                        .with_expected("name key")
+                        .with_message("Unexpected value in catalog dictionary")
+                        .build());
                 if (!consume_result)
                     return std::unexpected(consume_result.error());
                 continue;
@@ -82,10 +87,16 @@ namespace ripper::core
             {
                 auto value_result = lexer.next();
                 if (!value_result)
-                    return std::unexpected(to_catalog_error(value_result.error()));
-
+                    return std::unexpected(value_result.error());
                 if (value_result->type != lexer_token_type::name || value_result->lexeme != "Catalog")
-                    return std::unexpected(parser_error::corrupted_catalog);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::corrupted_catalog)
+                                               .with_component(error_component::catalog)
+                                               .with_field("Type")
+                                               .with_expected("Catalog")
+                                               .with_actual(std::string{value_result->lexeme})
+                                               .with_message("Catalog Type must be /Catalog")
+                                               .build());
 
                 found_type_catalog = true;
                 continue;
@@ -93,7 +104,15 @@ namespace ripper::core
 
             if (key_token.lexeme == "Pages")
             {
-                auto ref_result = pdf_value_parser::parse_reference_tokens(lexer, parser_error::corrupted_catalog);
+                auto ref_result = pdf_value_parser::parse_reference_tokens(
+                    lexer,
+                    error_builder::create()
+                        .with_code(error_code::corrupted_catalog)
+                        .with_component(error_component::catalog)
+                        .with_field("Pages")
+                        .with_expected("indirect reference")
+                        .with_message("Catalog Pages entry must be an indirect reference")
+                        .build());
                 if (!ref_result)
                     return std::unexpected(ref_result.error());
 
@@ -105,22 +124,43 @@ namespace ripper::core
             {
                 auto value_result = lexer.next();
                 if (!value_result)
-                    return std::unexpected(to_catalog_error(value_result.error()));
-
+                    return std::unexpected(value_result.error());
                 if (value_result->type != lexer_token_type::name)
-                    return std::unexpected(parser_error::corrupted_catalog);
+                    return std::unexpected(error_builder::create()
+                                               .with_code(error_code::corrupted_catalog)
+                                               .with_component(error_component::catalog)
+                                               .with_field("Version")
+                                               .with_expected("name")
+                                               .with_actual(std::string{value_result->lexeme})
+                                               .with_message("Catalog Version must be a name")
+                                               .build());
 
                 out.version = std::string{value_result->lexeme};
                 continue;
             }
 
-            auto consume_result = pdf_value_parser::consume_value(lexer, parser_error::corrupted_catalog);
+            auto consume_result = pdf_value_parser::consume_value(
+                lexer,
+                error_builder::create()
+                    .with_code(error_code::corrupted_catalog)
+                    .with_component(error_component::catalog)
+                    .with_field("dictionary_entry")
+                    .with_expected("known key or valid value")
+                    .with_message("Unexpected value in catalog dictionary")
+                    .build());
             if (!consume_result)
                 return std::unexpected(consume_result.error());
         }
 
         if (!found_type_catalog)
-            return std::unexpected(parser_error::corrupted_catalog);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::corrupted_catalog)
+                                       .with_component(error_component::catalog)
+                                       .with_field("Type")
+                                       .with_expected("Catalog")
+                                       .with_actual("missing")
+                                       .with_message("Catalog dictionary is missing /Type /Catalog")
+                                       .build());
 
         return out;
     }

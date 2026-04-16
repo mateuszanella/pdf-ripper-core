@@ -5,7 +5,7 @@
 #include <span>
 #include <vector>
 
-#include "core/errors/compression/compression_error.hpp"
+#include "core/error.hpp"
 
 namespace ripper::core
 {
@@ -22,7 +22,7 @@ namespace ripper::core
          * @param input Raw uncompressed data
          * @return Compressed data or error
          */
-        [[nodiscard]] static std::expected<std::vector<std::byte>, compression_error>
+        [[nodiscard]] static std::expected<std::vector<std::byte>, error>
             compress(std::span<const std::byte> input);
 
         /**
@@ -30,7 +30,7 @@ namespace ripper::core
          * @param input Compressed data
          * @return Decompressed data or error
          */
-        [[nodiscard]] static std::expected<std::vector<std::byte>, compression_error>
+        [[nodiscard]] static std::expected<std::vector<std::byte>, error>
             decompress(std::span<const std::byte> input);
 
         /**
@@ -39,7 +39,7 @@ namespace ripper::core
          * @param expectedSize Expected size of decompressed data
          * @return Decompressed data or error
          */
-        [[nodiscard]] static std::expected<std::vector<std::byte>, compression_error>
+        [[nodiscard]] static std::expected<std::vector<std::byte>, error>
             decompress(std::span<const std::byte> input, std::size_t expectedSize);
 
         /**

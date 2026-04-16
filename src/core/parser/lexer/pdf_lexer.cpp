@@ -1,6 +1,10 @@
 #include "core/parser/lexer/pdf_lexer.hpp"
 
 #include <cctype>
+#include <string>
+
+#include "core/error.hpp"
+#include "core/error_builder.hpp"
 
 namespace ripper::core
 {
@@ -17,7 +21,7 @@ namespace ripper::core
     {
     }
 
-    std::expected<lexer_token, lexer_error> pdf_lexer::next()
+    std::expected<lexer_token, error> pdf_lexer::next()
     {
         if (!_lookahead_tokens.empty())
         {
@@ -29,7 +33,7 @@ namespace ripper::core
         return read_token();
     }
 
-    std::expected<lexer_token, lexer_error> pdf_lexer::peek(std::size_t lookahead)
+    std::expected<lexer_token, error> pdf_lexer::peek(std::size_t lookahead)
     {
         while (_lookahead_tokens.size() <= lookahead)
         {
@@ -68,7 +72,7 @@ namespace ripper::core
         return true;
     }
 
-    std::expected<lexer_token, lexer_error> pdf_lexer::read_token()
+    std::expected<lexer_token, error> pdf_lexer::read_token()
     {
         skip_whitespace_and_comments();
 
@@ -97,7 +101,14 @@ namespace ripper::core
 
             if (_position >= _content.size())
             {
-                return std::unexpected(lexer_error::unterminated_hex_string);
+                return std::unexpected(error_builder::create()
+                                           .with_code(error_code::unterminated_hex_string)
+                                           .with_component(error_component::lexer)
+                                           .with_offset(start)
+                                           .with_field("hex_string")
+                                           .with_expected(">")
+                                           .with_message("Unterminated hex string")
+                                           .build());
             }
 
             const std::size_t end = _position;
@@ -114,7 +125,15 @@ namespace ripper::core
                 return lexer_token{lexer_token_type::dictionary_end, ">>"};
             }
 
-            return std::unexpected(lexer_error::invalid_token);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::invalid_token)
+                                       .with_component(error_component::lexer)
+                                       .with_offset(_position)
+                                       .with_field("dictionary_end")
+                                       .with_expected(">>")
+                                       .with_actual(std::string{1, ch})
+                                       .with_message("Invalid token")
+                                       .build());
         }
 
         if (ch == '[')
@@ -190,7 +209,14 @@ namespace ripper::core
                 }
             }
 
-            return std::unexpected(lexer_error::unterminated_literal_string);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::unterminated_literal_string)
+                                       .with_component(error_component::lexer)
+                                       .with_offset(start)
+                                       .with_field("literal_string")
+                                       .with_expected(")")
+                                       .with_message("Unterminated literal string")
+                                       .build());
         }
 
         if (is_number_start(ch))
@@ -224,7 +250,14 @@ namespace ripper::core
             const std::string_view lexeme = _content.substr(start, _position - start);
             if (!saw_digit || is_invalid_number_lexeme(lexeme))
             {
-                return std::unexpected(lexer_error::invalid_token);
+                return std::unexpected(error_builder::create()
+                                           .with_code(error_code::invalid_token)
+                                           .with_component(error_component::lexer)
+                                           .with_offset(start)
+                                           .with_field("numeric_token")
+                                           .with_actual(std::string{lexeme})
+                                           .with_message("Invalid numeric token")
+                                           .build());
             }
 
             return lexer_token{
@@ -246,7 +279,14 @@ namespace ripper::core
 
         if (_position == start)
         {
-            return std::unexpected(lexer_error::invalid_token);
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::invalid_token)
+                                       .with_component(error_component::lexer)
+                                       .with_offset(_position)
+                                       .with_field("token")
+                                       .with_actual(std::string{1, ch})
+                                       .with_message("Invalid token")
+                                       .build());
         }
 
         return lexer_token{lexer_token_type::keyword, _content.substr(start, _position - start)};

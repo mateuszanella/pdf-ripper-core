@@ -6,7 +6,7 @@
 #include <string_view>
 
 #include "core/document/indirect_reference.hpp"
-#include "core/errors/parser/parser_error.hpp"
+#include "core/error.hpp"
 
 namespace ripper::core
 {
@@ -21,6 +21,6 @@ namespace ripper::core
     public:
         virtual ~catalog_parser() = default;
 
-        [[nodiscard]] virtual std::expected<parsed_catalog, parser_error> parse(std::string_view content) const = 0;
+        [[nodiscard]] virtual std::expected<parsed_catalog, error> parse(std::string_view content) const = 0;
     };
 }
