@@ -61,30 +61,12 @@ namespace ripper::core
         /// Return a string representation of this component.
         [[nodiscard]] constexpr std::string_view to_string() const noexcept
         {
-            switch (value)
-            {
-                case unknown:
-                    return "unknown";
-                case reader:
-                    return "reader";
-                case lexer:
-                    return "lexer";
-                case parser:
-                    return "parser";
-                case cross_reference:
-                    return "cross_reference";
-                case trailer:
-                    return "trailer";
-                case catalog:
-                    return "catalog";
-                case pages:
-                    return "pages";
-                case compression:
-                    return "compression";
-                case document:
-                    return "document";
-            }
-
+            static constexpr std::string_view table[] = {
+                "unknown", "reader", "lexer", "parser", "cross_reference",
+                "trailer", "catalog", "pages", "compression", "document",
+            };
+            if (value < std::size(table))
+                return table[value];
             return "unknown";
         }
 
