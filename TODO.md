@@ -10,7 +10,7 @@
 
 ## 2) Errors and Diagnostics
 
-- [ ] Refactor error model
+- [ X ] Refactor error model
   - Replace integer-like errors with lightweight structured error objects
   - Preserve non-exception workflow (`std::expected` style)
   - Include richer context (location, object/ref, parser stage)
