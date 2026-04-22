@@ -7,7 +7,7 @@
 #include "core/document/identifier.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/error.hpp"
-#include "core/error_builder.hpp"
+#include "core/errors/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/parser/lexer/pdf_value_parser.hpp"
 #include "core/util/text.hpp"

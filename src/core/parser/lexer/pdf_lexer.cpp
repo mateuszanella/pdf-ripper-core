@@ -4,7 +4,7 @@
 #include <string>
 
 #include "core/error.hpp"
-#include "core/error_builder.hpp"
+#include "core/errors/error_builder.hpp"
 
 namespace ripper::core
 {

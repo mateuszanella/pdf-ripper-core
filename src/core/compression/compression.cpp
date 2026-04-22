@@ -3,7 +3,7 @@
 #include <zlib.h>
 #include <string>
 
-#include "core/error_builder.hpp"
+#include "core/errors/error_builder.hpp"
 
 namespace ripper::core
 {

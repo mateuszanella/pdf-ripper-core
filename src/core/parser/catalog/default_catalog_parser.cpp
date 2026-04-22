@@ -5,7 +5,7 @@
 #include <string_view>
 
 #include "core/error.hpp"
-#include "core/error_builder.hpp"
+#include "core/errors/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/parser/lexer/pdf_value_parser.hpp"
 

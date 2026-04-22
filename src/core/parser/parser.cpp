@@ -18,7 +18,7 @@
 #include "core/parser/trailer/trailer_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
 #include "core/error.hpp"
-#include "core/error_builder.hpp"
+#include "core/errors/error_builder.hpp"
 
 namespace ripper::core
 {

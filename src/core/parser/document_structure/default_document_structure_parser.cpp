@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "core/error.hpp"
-#include "core/error_builder.hpp"
+#include "core/errors/error_builder.hpp"
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
 #include "core/util/text.hpp"

@@ -7,7 +7,7 @@
 #include <string_view>
 
 #include "core/error.hpp"
-#include "core/error_builder.hpp"
+#include "core/errors/error_builder.hpp"
 #include "core/reader/reader.hpp"
 
 namespace ripper::core
