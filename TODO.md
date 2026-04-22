@@ -58,6 +58,8 @@
 
 ## 5) Build and Packaging
 
+> Sort of done, but not checking this until I test library consumption from an external project
+
 - [ ] Add proper CMake targets for library consumption
   - Build as a reusable library (not only `main()` testbed)
   - Export/install targets
