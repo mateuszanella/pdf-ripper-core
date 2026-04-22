@@ -78,3 +78,9 @@
 
 - [ ] Add additional PDF features incrementally as needed
 - [ ] Prioritize features based on test coverage and real-world documents
+
+---
+
+## 8) Reader/Writer error propagation and diagnostics
+
+- [ ] Add some type of error propagation for operations that may fail when reading/writing.
