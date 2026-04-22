@@ -51,38 +51,24 @@ namespace ripper::core
         void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> value) noexcept;
 
         /// Access the configured header parser.
-        ///
-        /// The corresponding parser must be configured before calling.
         [[nodiscard]] class header_parser &header_parser();
 
         /// Access the configured cross-reference-table parser.
-        ///
-        /// The corresponding parser must be configured before calling.
         [[nodiscard]] class cross_reference_table_parser &cross_reference_table_parser();
 
         /// Access the configured trailer parser.
-        ///
-        /// The corresponding parser must be configured before calling.
         [[nodiscard]] class trailer_parser &trailer_parser();
 
         /// Access the configured catalog parser.
-        ///
-        /// The corresponding parser must be configured before calling.
         [[nodiscard]] class catalog_parser &catalog_parser();
 
         /// Access the configured pages parser.
-        ///
-        /// The corresponding parser must be configured before calling.
         [[nodiscard]] class pages_parser &pages_parser();
 
         /// Access the configured document-structure parser.
-        ///
-        /// The corresponding parser must be configured before calling.
         [[nodiscard]] class document_structure_parser &document_structure_parser();
 
         /// Access the configured indirect-object resolver.
-        ///
-        /// The corresponding resolver must be configured before calling.
         [[nodiscard]] class indirect_object_resolver &object_resolver();
 
     private:

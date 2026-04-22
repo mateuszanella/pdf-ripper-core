@@ -16,15 +16,17 @@ namespace ripper::core
         enum Value : std::uint8_t
         {
             unknown = 0,
+            document,
             reader,
+            writer,
             lexer,
             parser,
+            serializer,
             cross_reference,
             trailer,
             catalog,
             pages,
             compression,
-            document,
         };
 
         /// Default constructor initializes to `unknown`.
@@ -62,8 +64,18 @@ namespace ripper::core
         [[nodiscard]] constexpr std::string_view to_string() const noexcept
         {
             static constexpr std::string_view table[] = {
-                "unknown", "reader", "lexer", "parser", "cross_reference",
-                "trailer", "catalog", "pages", "compression", "document",
+                "unknown",
+                "reader",
+                "lexer",
+                "parser",
+                "cross_reference",
+                "trailer",
+                "catalog",
+                "pages",
+                "compression",
+                "document",
+                "serializer",
+                "writer",
             };
             if (value < std::size(table))
                 return table[value];
