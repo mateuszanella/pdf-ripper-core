@@ -1,8 +1,7 @@
-#include <print>
 #include <filesystem>
+#include <print>
 
 #include "core/document.hpp"
-#include "core/parser/parser.hpp"
 
 namespace
 {
@@ -34,7 +33,6 @@ namespace
             std::println("  Error Code: {}", static_cast<ripper::core::error_code>(err.code()).to_string());
             std::println("  Message: {}", err.detailed_message());
 
-            // Branch on specific error type for targeted recovery/reporting
             if (err.code() == ripper::core::error_code::missing_header)
             {
                 std::println("  Suggestion: File may not be a valid PDF (missing header signature)");
