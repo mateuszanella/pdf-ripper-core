@@ -24,7 +24,7 @@ namespace ripper::core
         return *manager_;
     }
 
-    std::expected<std::vector<const std::byte>, error> serializer::serialize_header(const header &value)
+    std::expected<std::vector<std::byte>, error> serializer::serialize_header(const header &value)
     {
         return manager().header_serializer().serialize(value);
     }

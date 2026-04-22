@@ -8,7 +8,7 @@
 
 namespace ripper::core
 {
-    std::expected<std::vector<const std::byte>, error> default_header_serializer::serialize(const header &value) const
+    std::expected<std::vector<std::byte>, error> default_header_serializer::serialize(const header &value) const
     {
         const std::string_view version = value.version();
 
@@ -24,7 +24,7 @@ namespace ripper::core
 
         const std::string header_line = "%PDF-" + std::string{version} + "\n";
 
-        std::vector<const std::byte> buffer(header_line.size());
+        std::vector<std::byte> buffer(header_line.size());
         for (std::size_t i = 0; i < header_line.size(); ++i)
         {
             buffer[i] = static_cast<std::byte>(header_line[i]);

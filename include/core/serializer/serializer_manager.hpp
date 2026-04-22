@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/document/document.hpp"
+#include "core/document.hpp"
 #include "core/error.hpp"
 #include "core/serializer/header/header_serializer.hpp"
 

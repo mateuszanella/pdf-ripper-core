@@ -4,6 +4,9 @@
 #include <utility>
 
 #include "core/document.hpp"
+#include "core/document/header.hpp"
+#include "core/error.hpp"
+#include "core/serializer/header/default_header_serializer.hpp"
 
 namespace ripper::core
 {

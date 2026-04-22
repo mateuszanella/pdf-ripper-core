@@ -16,6 +16,6 @@ namespace ripper::core
         virtual ~header_serializer() = default;
 
         /// Serialize `value` to a byte buffer.
-        [[nodiscard]] virtual std::expected<std::vector<const std::byte>, error> serialize(const header &value) const = 0;
+        [[nodiscard]] virtual std::expected<std::vector<std::byte>, error> serialize(const header &value) const = 0;
     };
 }
