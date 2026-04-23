@@ -54,7 +54,14 @@ namespace ripper::core
 
     std::expected<std::string, error> indirect_object_resolver::resolve(indirect_reference ref) const
     {
-        auto &r = document_.reader();
+        auto reader_result = document_.reader();
+        if (!reader_result)
+        {
+            return std::unexpected(reader_result.error());
+        }
+
+        auto &r = reader_result->get();
+
         if (!r.is_open())
         {
             return std::unexpected(error_builder::create()

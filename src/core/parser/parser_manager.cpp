@@ -64,7 +64,7 @@ namespace ripper::core
     header_parser &parser_manager::header_parser()
     {
         if (!header_parser_)
-            header_parser_ = std::make_unique<class header_parser>(document_.reader());
+            header_parser_ = std::make_unique<class header_parser>(document_);
 
         return *header_parser_;
     }
@@ -104,7 +104,7 @@ namespace ripper::core
     document_structure_parser &parser_manager::document_structure_parser()
     {
         if (!structure_parser_)
-            structure_parser_ = std::make_unique<class default_document_structure_parser>(document_.reader());
+            structure_parser_ = std::make_unique<class default_document_structure_parser>(document_);
 
         return *structure_parser_;
     }

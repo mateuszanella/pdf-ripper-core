@@ -43,6 +43,7 @@ namespace ripper::core
         /// Construct a parser bound to `doc`.
         ///
         /// The parser stores a reference and does not take ownership of the document.
+        /// Backend availability is validated by parse operations.
         explicit parser(const document &doc);
 
         /// Destroy the parser and its internal manager.

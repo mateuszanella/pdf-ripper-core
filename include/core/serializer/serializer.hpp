@@ -21,7 +21,7 @@ namespace ripper::core
         /// Return the serializer manager used by this serializer.
         ///
         /// Can be used to replace serializer subcomponents.
-        [[nodiscard]] serializer_manager &manager();
+        [[nodiscard]] class serializer_manager &manager();
 
         /// Serialize a PDF header to a byte buffer.
         [[nodiscard]] std::expected<std::vector<std::byte>, error> serialize_header(const header &value);

@@ -12,22 +12,23 @@
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
 #include "core/util/text.hpp"
+#include "core/document.hpp"
 
 namespace ripper::core
 {
-    default_document_structure_parser::default_document_structure_parser(reader &reader)
+    default_document_structure_parser::default_document_structure_parser(const document &document)
         : default_document_structure_parser(
-              reader,
+              document,
               std::make_unique<default_cross_reference_table_parser>(),
               std::make_unique<default_trailer_parser>())
     {
     }
 
     default_document_structure_parser::default_document_structure_parser(
-        reader &reader,
+        const document &document,
         std::unique_ptr<class cross_reference_table_parser> xref_parser,
         std::unique_ptr<class trailer_parser> trailer_parser)
-        : _reader{reader},
+        : _document{document},
           _xref_parser{std::move(xref_parser)},
           _trailer_parser{std::move(trailer_parser)}
     {
@@ -37,29 +38,46 @@ namespace ripper::core
             _trailer_parser = std::make_unique<default_trailer_parser>();
     }
 
+    std::expected<std::size_t, error> default_document_structure_parser::extract_prev_offset(const trailer &trailer)
+    {
+        if (!trailer.prev())
+        {
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::missing_xref_table)
+                                       .with_component(error_component::trailer)
+                                       .with_field("Prev")
+                                       .with_expected("offset")
+                                       .with_actual("missing")
+                                       .with_message("Trailer has no Prev offset")
+                                       .build());
+        }
+
+        return trailer.prev().value();
+    }
+
     /**
      * @todo Technically, this implementation does not really get the last startxref,
      *       since the startxref keyword could appear in the last 1024 bytes multiple times.
      */
-    std::expected<std::size_t, error> default_document_structure_parser::find_start_xref_offset()
+    std::expected<std::size_t, error> default_document_structure_parser::find_start_xref_offset(reader &reader)
     {
         constexpr std::string_view start_xref_keyword = "startxref";
         constexpr std::size_t line_buffer_size = 256;
         constexpr std::size_t search_area_size = 1024;
 
-        const std::uint64_t file_size = _reader.size();
+        const std::uint64_t file_size = reader.size();
         const std::size_t search_pos = file_size > search_area_size
                                            ? file_size - search_area_size
                                            : 0;
 
-        _reader.seek(search_pos);
+        reader.seek(search_pos);
 
         std::array<std::byte, line_buffer_size> buffer{};
         bool found_keyword = false;
 
-        while (!_reader.eof())
+        while (!reader.eof())
         {
-            const std::size_t bytes_read = _reader.read_line(buffer);
+            const std::size_t bytes_read = reader.read_line(buffer);
             if (bytes_read == 0)
             {
                 break;
@@ -87,7 +105,7 @@ namespace ripper::core
                                        .build());
         }
 
-        const std::size_t bytes_read = _reader.read_line(buffer);
+        const std::size_t bytes_read = reader.read_line(buffer);
         if (bytes_read == 0)
         {
             return std::unexpected(error_builder::create()
@@ -118,31 +136,17 @@ namespace ripper::core
         return offset.value();
     }
 
-    std::expected<std::size_t, error> default_document_structure_parser::extract_prev_offset(const trailer &trailer)
-    {
-        if (!trailer.prev())
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::missing_xref_table)
-                                       .with_component(error_component::trailer)
-                                       .with_field("Prev")
-                                       .with_expected("offset")
-                                       .with_actual("missing")
-                                       .with_message("Trailer has no Prev offset")
-                                       .build());
-        }
-
-        return trailer.prev().value();
-    }
-
     std::expected<document_structure_result, error> default_document_structure_parser::parse()
     {
-        // Step 1: Find the last occurence of startxref from the end of the file
-        auto start_xref_result = find_start_xref_offset();
+        auto reader_result = _document.reader();
+        if (!reader_result)
+            return std::unexpected(reader_result.error());
+
+        auto &reader = reader_result->get();
+
+        auto start_xref_result = find_start_xref_offset(reader);
         if (!start_xref_result)
-        {
             return std::unexpected(start_xref_result.error());
-        }
 
         std::vector<cross_reference_table> xref_history;
         std::vector<trailer> trailer_history;
@@ -163,7 +167,7 @@ namespace ripper::core
             visited_offsets.insert(current_offset);
 
             // Step 2: Seek to the startxref offset of the current xref/trailer pair
-            _reader.seek(current_offset);
+            reader.seek(current_offset);
 
             // Collect bytes until we find the end of trailer (>>)
             std::string collected_content;
@@ -171,9 +175,9 @@ namespace ripper::core
             std::array<std::byte, k_buf_size> buffer{};
             bool has_trailer_end_been_found = false;
 
-            while (!_reader.eof() && !has_trailer_end_been_found)
+            while (!reader.eof() && !has_trailer_end_been_found)
             {
-                const std::size_t bytes_read = _reader.read(buffer);
+                const std::size_t bytes_read = reader.read(buffer);
                 if (bytes_read == 0)
                 {
                     break;

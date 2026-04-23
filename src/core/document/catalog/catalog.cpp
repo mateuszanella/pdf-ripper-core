@@ -22,7 +22,11 @@ namespace ripper::core
                                        .with_message("Catalog does not contain a Pages reference")
                                        .build());
 
-        auto parsed = owner().parser().pages(*pages_ref_);
+        auto parser = owner().parser();
+        if (!parser)
+            return std::unexpected(parser.error());
+
+        auto parsed = parser->get().pages(*pages_ref_);
         if (!parsed)
             return std::unexpected(parsed.error());
 

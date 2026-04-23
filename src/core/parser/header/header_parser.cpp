@@ -9,16 +9,23 @@
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 #include "core/reader/reader.hpp"
+#include "core/document.hpp"
 
 namespace ripper::core
 {
-    header_parser::header_parser(reader &reader)
-        : _reader{reader}
+    header_parser::header_parser(const document &document)
+        : _document{document}
     {
     }
 
     std::expected<header, error> header_parser::parse()
     {
+        auto reader_result = _document.reader();
+        if (!reader_result)
+            return std::unexpected(reader_result.error());
+
+        auto &_reader = reader_result->get();
+
         constexpr std::string_view kMagic = "%PDF-";
         constexpr std::size_t kMaxHeaderLineLength = 256;
 

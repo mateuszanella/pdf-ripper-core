@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 
     auto document = ripper::core::document::open(path);
 
-    if (!check_file_open(document.reader()))
+    if (!check_file_open(document.reader()->get()))
     {
         return 1;
     }
