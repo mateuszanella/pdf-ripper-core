@@ -53,7 +53,7 @@ namespace ripper::core
         /// If a document contains a `reader`, but has no `writer`, all objects are read from the
         /// input file and cannot be modified or saved. This can be used to parse and inspect
         /// existing PDF documents.
-        explicit document(std::unique_ptr<ripper::core::reader> reader, std::unique_ptr<ripper::core::writer> writer);
+        explicit document(std::unique_ptr<class reader> reader, std::unique_ptr<class writer> writer);
 
         /// Open an existing document at `path` in read mode.
         ///
