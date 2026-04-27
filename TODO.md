@@ -19,7 +19,7 @@
 
 ## 3) Writing and Saving (major milestone)
 
-- [ ] Implement output pipeline (`writer` + serializer layer)
+- [ X ] Implement output pipeline (`writer` + serializer layer)
   - Add a `writer` abstraction mirroring `reader` responsibilities (byte-oriented I/O only)
   - Implement file-backed writer
   - Define serializer orchestration boundary (object model -> PDF bytes)
