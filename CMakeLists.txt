@@ -79,4 +79,9 @@ if(BUILD_EXAMPLES)
         examples/read_document.cpp
     )
     target_link_libraries(pdf_ripper_core_example_read_document PRIVATE pdf_ripper_core)
+
+    add_executable(pdf_ripper_core_example_write_document
+        examples/write_document.cpp
+    )
+    target_link_libraries(pdf_ripper_core_example_write_document PRIVATE pdf_ripper_core)
 endif()

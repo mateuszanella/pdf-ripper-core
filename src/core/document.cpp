@@ -82,6 +82,17 @@ namespace ripper::core
         (void)w.write(serialized_header.value());
 
         // TODO: do everything else
+        // The idea should probalby be:
+        // - Keep track of elements that have been created in memory, not sure if
+        //   through a change_set member of the document, or trough the xref itself,
+        //   by adding either a flag or by just having the offest() be optional and
+        //   empty for new elements
+        // - Write catalog -> pages -> page, leave content empty for now
+        // - Should probably add page element now
+        // - Set the correct offsets on the xref using the current write position when
+        //   writing each element
+        // - Serialize and write xref and trailer
+        // - Finally, write the EOF marker
 
         // EOF serialization
         constexpr std::string_view eof_marker = "%%EOF\n";
