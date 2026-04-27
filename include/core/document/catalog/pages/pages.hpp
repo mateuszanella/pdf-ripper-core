@@ -4,21 +4,21 @@
 #include <expected>
 #include <optional>
 
-#include "core/document/pdf_object.hpp"
+#include "core/document/indirect_object.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core
 {
-    class pages : public pdf_object
+    class pages : public indirect_object
     {
     public:
         pages(const document &doc, indirect_reference ref) noexcept
-            : pdf_object{doc, ref}
+            : indirect_object{doc, ref}
         {
         }
 
         pages(const document &doc, indirect_reference ref, std::optional<std::uint32_t> count) noexcept
-            : pdf_object{doc, ref}, count_{count}
+            : indirect_object{doc, ref}, count_{count}
         {
         }
 

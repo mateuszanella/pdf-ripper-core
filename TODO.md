@@ -33,7 +33,7 @@
 - [ ] Add change tracking infrastructure (document-owned, not object-owned flags)
   - Introduce `change_set` class owned by `document`
   - Track object state by indirect reference (`new`, `modified`, `deleted`)
-  - Register mutations through object mutator methods via `pdf_object` owner/document context
+  - Register mutations through object mutator methods via `indirect_object` owner/document context
   - Avoid "accessed == dirty" and recursive `is_dirty()` traversal
 
 - [ ] Add object allocation policy for newly created objects
