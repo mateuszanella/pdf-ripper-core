@@ -41,6 +41,60 @@ namespace ripper::core
         return document{nullptr, std::make_unique<ripper::core::file_writer>(path)};
     }
 
+    std::expected<bool, error> document::save()
+    {
+        // Sanity checks to ensure we have the necessary components to perform a save operation.
+        if (!has_writer())
+        {
+            return std::unexpected(error_builder::create()
+                                       .with_message("No writer backend available")
+                                       .with_code(error_code::not_found)
+                                       .with_component(error_component::writer)
+                                       .build());
+        }
+
+        if (!has_serializer())
+        {
+            return std::unexpected(error_builder::create()
+                                       .with_message("No serializer available")
+                                       .with_code(error_code::not_found)
+                                       .with_component(error_component::serializer)
+                                       .build());
+        }
+
+        auto &w = writer().value().get();
+        auto &s = serializer().value().get();
+
+        // Header serialization
+        auto header = this->header();
+        if (!header)
+        {
+            return std::unexpected(header.error());
+        }
+
+        auto serialized_header = s.serialize_header(header.value());
+        if (!serialized_header)
+        {
+            return std::unexpected(serialized_header.error());
+        }
+
+        // TODO: check for written bytes
+        (void)w.write(serialized_header.value());
+
+        // TODO: do everything else
+
+        // EOF serialization
+        constexpr std::string_view eof_marker = "%%EOF\n";
+
+        // TODO: check for written bytes
+        (void)w.write(std::as_bytes(std::span{eof_marker.data(), eof_marker.size()}));
+
+        // Finish the output stream
+        w.close();
+
+        return true;
+    }
+
     bool document::has_reader() const noexcept
     {
         return static_cast<bool>(reader_);
@@ -114,15 +168,15 @@ namespace ripper::core
         if (header_.has_value())
             return header_.value();
 
-        auto parser_result = parser();
-        if (!parser_result)
-            return std::unexpected(parser_result.error());
+        auto result = has_parser()
+                          ? parse_header()
+                          : create_header();
 
-        auto parsed = parser_result->get().header();
-        if (!parsed)
-            return std::unexpected(parsed.error());
+        if (!result)
+            return std::unexpected(result.error());
 
-        header_ = std::move(*parsed);
+        header_ = std::move(*result);
+
         return header_.value();
     }
 
@@ -183,5 +237,19 @@ namespace ripper::core
 
         catalog_.emplace(std::move(*parsed));
         return catalog_.value();
+    }
+
+    std::expected<header, error> document::parse_header() const noexcept
+    {
+        auto parser_result = parser();
+        if (!parser_result)
+            return std::unexpected(parser_result.error());
+
+        return parser_result->get().header();
+    }
+
+    std::expected<header, error> document::create_header() const noexcept
+    {
+        return ripper::core::header{"1.4"};
     }
 }

@@ -19,12 +19,6 @@
 
 namespace ripper::core
 {
-    class parser;
-    class catalog;
-    class header;
-    class cross_reference_table;
-    class trailer;
-
     /// High-level PDF document facade and primary library entrypoint.
     ///
     /// This type represents a PDF document and centralizes all interactions:
@@ -69,6 +63,11 @@ namespace ripper::core
         /// @throws std::runtime_error if the file cannot be opened for writing.
         static document create(const std::filesystem::path &path);
 
+        /// Save the document to the configured writer backend.
+        ///
+        /// Returns `true` on success, or an `error` on failure.
+        [[nodiscard]] std::expected<bool, error> save();
+
         /// Returns whether a reader backend is available.
         [[nodiscard]] bool has_reader() const noexcept;
 
@@ -109,6 +108,12 @@ namespace ripper::core
         [[nodiscard]] std::expected<catalog, error> catalog() const noexcept;
 
     private:
+        /// Parse and return the PDF header without caching.
+        [[nodiscard]] std::expected<class header, error> parse_header() const noexcept;
+
+        /// Generate a new PDF header with default values.
+        [[nodiscard]] std::expected<class header, error> create_header() const noexcept;
+
         std::unique_ptr<class reader> reader_;
         std::unique_ptr<class parser> parser_;
 
