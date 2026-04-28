@@ -95,7 +95,10 @@ namespace ripper::core
         /// Access the serializer facade.
         [[nodiscard]] std::expected<std::reference_wrapper<class serializer>, error> serializer() const noexcept;
 
-        /// Parse and return the PDF header (cached after first successful parse).
+        /// Return the PDF header.
+        ///
+        /// If `reader` is set, the header is parsed from the input upon first access and cached
+        /// for subsequent accesses. Otherwise, a new header with default values is created and cached.
         [[nodiscard]] std::expected<header, error> header() const noexcept;
 
         /// Parse and return the compiled cross-reference table (cached).

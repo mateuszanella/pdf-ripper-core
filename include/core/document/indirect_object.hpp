@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "core/document/indirect_reference.hpp"
+#include "core/error.hpp"
 
 namespace ripper::core
 {

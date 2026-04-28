@@ -5,6 +5,7 @@
 
 #include "core/document.hpp"
 #include "core/parser/parser_manager.hpp"
+#include "core/document/catalog/catalog.hpp"
 #include "core/parser/catalog/catalog_parser.hpp"
 #include "core/parser/catalog/default_catalog_parser.hpp"
 #include "core/parser/catalog/pages/pages_parser.hpp"

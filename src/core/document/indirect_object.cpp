@@ -1,5 +1,9 @@
 #include "core/document/indirect_object.hpp"
 
+#include "core/document.hpp"
+#include "core/document/indirect_reference.hpp"
+#include "core/error.hpp"
+
 namespace ripper::core
 {
     indirect_object::indirect_object(const document &doc, indirect_reference ref) noexcept

@@ -7,6 +7,16 @@
 
 namespace ripper::core
 {
+    catalog::catalog(const document &doc, indirect_reference ref, std::optional<indirect_reference> pages_ref) noexcept
+        : indirect_object{doc, ref}, pages_ref_{pages_ref}
+    {
+    }
+
+    catalog::catalog(indirect_object obj, std::optional<indirect_reference> pages_ref) noexcept
+        : indirect_object{std::move(obj)}, pages_ref_{pages_ref}
+    {
+    }
+
     std::expected<class pages, error> catalog::pages()
     {
         if (pages_.has_value())
