@@ -93,6 +93,10 @@ namespace
                 std::println("  Current: {}", *id->current());
             }
         }
+        else
+        {
+            std::println("\nDocument ID not available: {}", id.error().detailed_message());
+        }
 
         std::println("\nTrailer parsed successfully.");
     }

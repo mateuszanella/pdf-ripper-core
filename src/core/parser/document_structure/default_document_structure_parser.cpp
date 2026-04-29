@@ -40,19 +40,11 @@ namespace ripper::core
 
     std::expected<std::size_t, error> default_document_structure_parser::extract_prev_offset(const trailer &trailer)
     {
-        if (!trailer.prev())
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::missing_xref_table)
-                                       .with_component(error_component::trailer)
-                                       .with_field("Prev")
-                                       .with_expected("offset")
-                                       .with_actual("missing")
-                                       .with_message("Trailer has no Prev offset")
-                                       .build());
-        }
+        auto prev = trailer.prev();
+        if (!prev)
+            return std::unexpected(prev.error());
 
-        return trailer.prev().value();
+        return static_cast<std::size_t>(*prev);
     }
 
     /**
@@ -260,33 +252,23 @@ namespace ripper::core
             }
         }
 
-        // Compile merged trailer (oldest -> newest, set only when present)
-        trailer::builder compiled_trailer_builder{};
+        // Compile merged trailer: iterate oldest-to-newest so that newer updates
+        // take precedence over older ones. Each key set by a later revision will
+        // overwrite the value from an earlier one (last write wins = newest wins).
+        dictionary compiled_dict{};
 
-        for (auto it = trailer_history.rbegin(); it != trailer_history.rend(); ++it)
+        for (auto it = trailer_history.begin(); it != trailer_history.end(); ++it)
         {
-            if (it->size() != 0)
+            for (const auto &[key, val] : it->raw().entries())
             {
-                compiled_trailer_builder.size = it->size();
-            }
-            if (it->root().has_value())
-            {
-                compiled_trailer_builder.root = it->root();
-            }
-            if (it->prev().has_value())
-            {
-                compiled_trailer_builder.prev = it->prev();
-            }
-            if (it->id().has_value())
-            {
-                compiled_trailer_builder.id = it->id();
+                compiled_dict.set(key, val);
             }
         }
 
         return document_structure_result{
             .compiled_xref = cross_reference_table{std::move(compiled_entries)},
             .xref_history = std::move(xref_history),
-            .compiled_trailer = compiled_trailer_builder.build(),
+            .compiled_trailer = trailer{std::move(compiled_dict)},
             .trailer_history = std::move(trailer_history),
         };
     }

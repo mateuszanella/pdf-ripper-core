@@ -1,10 +1,12 @@
 #include "core/parser/lexer/pdf_lexer.hpp"
 
 #include <cctype>
+#include <limits>
 #include <string>
 
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
+#include "core/util/text.hpp"
 
 namespace ripper::core
 {
@@ -353,5 +355,118 @@ namespace ripper::core
     bool pdf_lexer::is_number_start(char ch)
     {
         return std::isdigit(static_cast<unsigned char>(ch)) != 0 || ch == '+' || ch == '-' || ch == '.';
+    }
+
+    std::expected<void, error> pdf_lexer::skip_compound(
+        lexer_token_type begin_token,
+        lexer_token_type end_token)
+    {
+        std::size_t depth = 1;
+        while (depth > 0)
+        {
+            auto token_result = next();
+            if (!token_result)
+                return std::unexpected(token_result.error());
+
+            const auto token = *token_result;
+            if (token.type == lexer_token_type::eof)
+                return std::unexpected(error_builder::create()
+                                           .with_code(error_code::unexpected_eof)
+                                           .with_component(error_component::lexer)
+                                           .with_offset(_position)
+                                           .with_message("Unexpected EOF while skipping compound structure")
+                                           .build());
+
+            if (token.type == begin_token)
+                ++depth;
+            else if (token.type == end_token)
+                --depth;
+        }
+        return {};
+    }
+
+    std::expected<void, error> pdf_lexer::skip_value()
+    {
+        auto token_result = next();
+        if (!token_result)
+            return std::unexpected(token_result.error());
+
+        const auto token = *token_result;
+        if (token.type == lexer_token_type::eof ||
+            token.type == lexer_token_type::dictionary_end ||
+            token.type == lexer_token_type::array_end)
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::invalid_token)
+                                       .with_component(error_component::lexer)
+                                       .with_offset(_position)
+                                       .with_message("Expected a value but got an invalid or unexpected token")
+                                       .build());
+
+        if (token.type == lexer_token_type::dictionary_begin)
+            return skip_compound(lexer_token_type::dictionary_begin, lexer_token_type::dictionary_end);
+
+        if (token.type == lexer_token_type::array_begin)
+            return skip_compound(lexer_token_type::array_begin, lexer_token_type::array_end);
+
+        if (token.type == lexer_token_type::integer)
+        {
+            auto gen = peek();
+            auto marker = peek(1);
+            if (gen && marker &&
+                gen->type == lexer_token_type::integer &&
+                marker->type == lexer_token_type::keyword &&
+                marker->lexeme == "R")
+            {
+                (void)next();
+                (void)next();
+            }
+        }
+
+        return {};
+    }
+
+    std::expected<std::pair<std::uint32_t, std::uint16_t>, error>
+    pdf_lexer::parse_indirect_reference()
+    {
+        auto obj = next();
+        auto gen = next();
+        auto marker = next();
+
+        if (!obj || !gen || !marker)
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::unexpected_eof)
+                                       .with_component(error_component::lexer)
+                                       .with_offset(_position)
+                                       .with_message("Unexpected EOF while parsing indirect reference")
+                                       .build());
+
+        if (obj->type != lexer_token_type::integer ||
+            gen->type != lexer_token_type::integer ||
+            marker->type != lexer_token_type::keyword ||
+            marker->lexeme != "R")
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::invalid_token)
+                                       .with_component(error_component::lexer)
+                                       .with_offset(_position)
+                                       .with_expected("obj gen R")
+                                       .with_message("Invalid indirect reference")
+                                       .build());
+
+        const auto obj_num = text::parse_size_t(obj->lexeme);
+        const auto gen_num = text::parse_size_t(gen->lexeme);
+
+        if (!obj_num || !gen_num ||
+            *obj_num > std::numeric_limits<std::uint32_t>::max() ||
+            *gen_num > std::numeric_limits<std::uint16_t>::max())
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::invalid_token)
+                                       .with_component(error_component::lexer)
+                                       .with_offset(_position)
+                                       .with_message("Indirect reference numbers are out of range")
+                                       .build());
+
+        return std::make_pair(
+            static_cast<std::uint32_t>(*obj_num),
+            static_cast<std::uint16_t>(*gen_num));
     }
 }

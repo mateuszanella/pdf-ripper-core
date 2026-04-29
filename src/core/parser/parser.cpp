@@ -66,19 +66,11 @@ namespace ripper::core
         if (!trailer)
             return std::unexpected(trailer.error());
 
-        if (!trailer->root().has_value())
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::missing_catalog)
-                                       .with_component(error_component::trailer)
-                                       .with_field("Root")
-                                       .with_expected("indirect reference")
-                                       .with_actual("missing")
-                                       .with_message("Trailer does not contain a Root reference")
-                                       .build());
+        auto root_ref = trailer->root();
+        if (!root_ref)
+            return std::unexpected(root_ref.error());
 
-        const auto root_ref = trailer->root().value();
-
-        auto content = manager().object_resolver().resolve(root_ref);
+        auto content = manager().object_resolver().resolve(*root_ref);
         if (!content)
             return std::unexpected(content.error());
 

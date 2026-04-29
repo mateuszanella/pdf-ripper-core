@@ -1,47 +1,47 @@
 #pragma once
 
 #include <cstdint>
+#include <expected>
 #include <optional>
 
 #include "core/document/identifier.hpp"
+#include "core/document/object/dictionary.hpp"
 #include "core/document/object/indirect_reference.hpp"
+#include "core/error.hpp"
 
 namespace ripper::core
 {
-    /**
-     * @brief Represents a PDF trailer dictionary.
-     * Immutable after construction.
-     */
+    /// A PDF trailer dictionary.
+    ///
+    /// Thin wrapper around `dictionary`. All typed accessors (size, root,
+    /// prev, id) are derived on-demand from the underlying dictionary; there
+    /// are no separately cached fields.
+    ///
     class trailer
     {
     public:
-        struct builder
-        {
-            std::optional<std::uint64_t> size;
-            std::optional<indirect_reference> root;
-            std::optional<std::uint64_t> prev;
-            std::optional<identifier> id;
+        /// Construct a trailer from a parsed PDF dictionary.
+        explicit trailer(dictionary dict) noexcept;
 
-            [[nodiscard]] trailer build() const
-            {
-                return trailer{size.value_or(0), root, prev, id};
-            }
-        };
+        /// /Size — total number of objects in the cross-reference table.
+        [[nodiscard]] std::expected<std::uint64_t, error> size() const noexcept;
 
-        [[nodiscard]] std::uint64_t size() const noexcept { return size_; }
-        [[nodiscard]] const std::optional<indirect_reference> &root() const noexcept { return root_; }
-        [[nodiscard]] const std::optional<std::uint64_t> &prev() const noexcept { return prev_; }
-        [[nodiscard]] const std::optional<identifier> &id() const noexcept { return id_; }
+        /// /Root — indirect reference to the document catalog.
+        [[nodiscard]] std::expected<indirect_reference, error> root() const noexcept;
+
+        /// /Prev — byte offset of the previous cross-reference section.
+        [[nodiscard]] std::expected<std::uint64_t, error> prev() const noexcept;
+
+        /// /ID — document identifier pair.
+        [[nodiscard]] std::expected<identifier, error> id() const noexcept;
+
+        /// Access the const reference to the underlying dictionary directly.
+        [[nodiscard]] const class dictionary &dictionary() const noexcept;
+
+        /// Access the mutable reference to the underlying dictionary directly.
+        [[nodiscard]] class dictionary &dictionary() noexcept;
 
     private:
-        trailer(std::uint64_t size, std::optional<indirect_reference> root, std::optional<std::uint64_t> prev, std::optional<identifier> id) noexcept
-            : size_{size}, root_{root}, prev_{prev}, id_{id}
-        {
-        }
-
-        std::uint64_t size_;
-        std::optional<indirect_reference> root_;
-        std::optional<std::uint64_t> prev_;
-        std::optional<identifier> id_;
+        class dictionary dict_;
     };
 }
