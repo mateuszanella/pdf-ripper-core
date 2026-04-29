@@ -91,7 +91,7 @@
      abstract away every object as a pair of `dictionary` and `content_stream`.
 
 - [ X ] Create a `pdf_value` abstraction, probably with std::variant
-- [ ] Add a base class that abstracts away the concept of an object as a pair of `dictionary` 
+- [ X ] Add a base class that abstracts away the concept of an object as a pair of `dictionary` 
       and `content_stream`
 - [ ] Make all objects extend from that class
 - [ ] All object classes will now be just a wrapper around these two components, providing
