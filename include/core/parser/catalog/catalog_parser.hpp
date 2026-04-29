@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-#include "core/document/indirect_reference.hpp"
+#include "core/document/object/indirect_reference.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core

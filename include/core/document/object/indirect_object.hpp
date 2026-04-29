@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "core/document/indirect_reference.hpp"
+#include "core/document/object/indirect_reference.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core
@@ -31,7 +31,6 @@ namespace ripper::core
         /// uniquely identifies this object within its owning document.
         [[nodiscard]] const indirect_reference &reference() const noexcept;
 
-    protected:
         /// Returns the owning document.
         ///
         /// Derived classes may use this to navigate the document structure or

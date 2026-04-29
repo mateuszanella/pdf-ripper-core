@@ -2,8 +2,8 @@
 
 #include <optional>
 
-#include "core/document/indirect_object.hpp"
 #include "core/document/catalog/pages/pages.hpp"
+#include "core/document/object/indirect_object.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core

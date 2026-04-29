@@ -4,7 +4,7 @@
 #include <optional>
 
 #include "core/document/identifier.hpp"
-#include "core/document/indirect_reference.hpp"
+#include "core/document/object/indirect_reference.hpp"
 
 namespace ripper::core
 {

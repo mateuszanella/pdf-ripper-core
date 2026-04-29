@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "core/error.hpp"
-#include "core/document/indirect_reference.hpp"
+#include "core/document/object/indirect_reference.hpp"
 
 namespace ripper::core
 {

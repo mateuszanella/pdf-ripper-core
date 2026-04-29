@@ -1,7 +1,7 @@
-#include "core/document/indirect_object.hpp"
+#include "core/document/object/indirect_object.hpp"
 
 #include "core/document.hpp"
-#include "core/document/indirect_reference.hpp"
+#include "core/document/object/indirect_reference.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core

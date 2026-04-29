@@ -87,10 +87,10 @@
 
 - [ ] Add some type of error propagation for operations that may fail when reading/writing.
 
-##9) Change the current indirect_object implementation (or add a base class to compose it) and
+## 9) Change the current indirect_object implementation (or add a base class to compose it) and
      abstract away every object as a pair of `dictionary` and `content_stream`.
 
-- [ ] Create a `pdf_value` abstraction, probably with std::variant
+- [ X ] Create a `pdf_value` abstraction, probably with std::variant
 - [ ] Add a base class that abstracts away the concept of an object as a pair of `dictionary` 
       and `content_stream`
 - [ ] Make all objects extend from that class

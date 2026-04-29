@@ -3,7 +3,7 @@
 #include <expected>
 #include <string>
 
-#include "core/document/indirect_reference.hpp"
+#include "core/document/object/indirect_reference.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core
