@@ -35,10 +35,10 @@ namespace ripper::core
     {
     public:
         /// Construct an object with identity and dictionary, no content stream.
-        object(indirect_object identity, dictionary dict) noexcept;
+        object(indirect_object identity, dictionary dictionary) noexcept;
 
         /// Construct an object with identity, dictionary and a content stream.
-        object(indirect_object identity, dictionary dict, stream stream) noexcept;
+        object(indirect_object identity, dictionary dictionary, stream stream) noexcept;
 
         virtual ~object() = default;
 
@@ -53,10 +53,10 @@ namespace ripper::core
         [[nodiscard]] const indirect_object &identity() const noexcept;
 
         /// Returns the dictionary holding this object's metadata.
-        [[nodiscard]] const dictionary &dict() const noexcept;
+        [[nodiscard]] const dictionary &dictionary() const noexcept;
 
         /// Returns a mutable reference to the dictionary.
-        [[nodiscard]] dictionary &dict() noexcept;
+        [[nodiscard]] class dictionary &dictionary() noexcept;
 
         /// Returns `true` if this object carries a content stream.
         [[nodiscard]] bool has_stream() const noexcept;
@@ -72,7 +72,7 @@ namespace ripper::core
 
     private:
         indirect_object identity_;
-        dictionary dictionary_;
+        class dictionary dictionary_;
         std::optional<class stream> stream_;
     };
 }

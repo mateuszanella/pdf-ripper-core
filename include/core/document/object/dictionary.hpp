@@ -86,6 +86,10 @@ namespace ripper::core
         /// or `nullptr` if absent or not a dictionary.
         [[nodiscard]] const dictionary *get_dictionary(const std::string &key) const noexcept;
 
+        /// Returns a pointer to the indirect reference value for `key`,
+        /// or `nullptr` if absent or not an indirect reference.
+        [[nodiscard]] const indirect_reference *get_indirect_reference(const std::string &key) const noexcept;
+
         /// Returns the raw underlying map for full traversal or serialization.
         [[nodiscard]] const map_type &entries() const noexcept;
 

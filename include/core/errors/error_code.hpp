@@ -29,7 +29,11 @@ namespace ripper::core
             corrupted_trailer,    ///< Trailer found but malformed
             missing_catalog,      ///< Catalog not found in document structure
             corrupted_catalog,    ///< Catalog found but malformed
+            missing_object,       ///< Object not found in document structure
             corrupted_object,     ///< Object found but malformed
+            missing_pages,        ///< Pages object not found in catalog
+            corrupted_pages,      ///< Pages object found but malformed
+
             object_not_found,     ///< Object not found
 
             // Detailed tokenization errors:

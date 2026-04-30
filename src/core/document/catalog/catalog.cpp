@@ -7,13 +7,8 @@
 
 namespace ripper::core
 {
-    catalog::catalog(const document &doc, indirect_reference ref, std::optional<indirect_reference> pages_ref) noexcept
-        : indirect_object{doc, ref}, pages_ref_{pages_ref}
-    {
-    }
-
-    catalog::catalog(indirect_object obj, std::optional<indirect_reference> pages_ref) noexcept
-        : indirect_object{std::move(obj)}, pages_ref_{pages_ref}
+    catalog::catalog(object obj) noexcept
+        : object{std::move(obj)}
     {
     }
 
@@ -22,15 +17,17 @@ namespace ripper::core
         if (pages_.has_value())
             return pages_.value();
 
-        if (!pages_ref_.has_value())
+        pages_ref = dictionary().get_indirect_reference("Pages");
+        if (!pages_ref)
+        {
             return std::unexpected(error_builder::create()
-                                       .with_code(error_code::missing_catalog)
+                                       .with_code(error_code::corrupted_catalog)
                                        .with_component(error_component::catalog)
                                        .with_field("Pages")
-                                       .with_expected("indirect reference")
-                                       .with_actual("missing")
-                                       .with_message("Catalog does not contain a Pages reference")
+                                       .with_expected("indirect reference to pages object")
+                                       .with_message("Catalog is missing required /Pages reference")
                                        .build());
+        }
 
         auto parser = owner().parser();
         if (!parser)

@@ -4,27 +4,16 @@
 #include <expected>
 #include <optional>
 
-#include "core/document/object/indirect_object.hpp"
+#include "core/document/object/object.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core
 {
-    class pages : public indirect_object
+    class pages : public object
     {
     public:
-        pages(const document &doc, indirect_reference ref) noexcept
-            : indirect_object{doc, ref}
-        {
-        }
+        explicit pages(object object) noexcept;
 
-        pages(const document &doc, indirect_reference ref, std::optional<std::uint32_t> count) noexcept
-            : indirect_object{doc, ref}, count_{count}
-        {
-        }
-
-        std::expected<std::uint32_t, error> count() const;
-
-    private:
-        std::optional<std::uint32_t> count_;
+        std::expected<std::uint64_t, error> count() const;
     };
 }

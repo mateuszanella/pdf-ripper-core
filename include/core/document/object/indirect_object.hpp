@@ -25,8 +25,6 @@ namespace ripper::core
         /// The document is stored by reference and must outlive this object.
         indirect_object(const document &doc, indirect_reference ref) noexcept;
 
-        virtual ~indirect_object() = default;
-
         /// Returns the indirect reference (object number + generation number) that
         /// uniquely identifies this object within its owning document.
         [[nodiscard]] const indirect_reference &reference() const noexcept;

@@ -74,13 +74,7 @@ namespace ripper::core
         if (!content)
             return std::unexpected(content.error());
 
-        auto parsed = manager().catalog_parser().parse(content.value());
-        if (!parsed)
-            return std::unexpected(parsed.error());
-
-        class catalog out{document_, root_ref, parsed->pages_ref};
-
-        return out;
+        return manager().catalog_parser().parse(content.value());
     }
 
     std::expected<class pages, error> parser::pages(indirect_reference obj)
@@ -89,12 +83,6 @@ namespace ripper::core
         if (!content)
             return std::unexpected(content.error());
 
-        auto parsed = manager().pages_parser().parse(content.value());
-        if (!parsed)
-            return std::unexpected(parsed.error());
-
-        class pages out{document_, obj, parsed->count};
-
-        return out;
+        return manager().pages_parser().parse(content.value());
     }
 }

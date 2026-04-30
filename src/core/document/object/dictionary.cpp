@@ -80,6 +80,12 @@ namespace ripper::core
         return value ? value->as_dictionary() : nullptr;
     }
 
+    const indirect_reference *dictionary::get_indirect_reference(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_indirect_reference() : nullptr;
+    }
+
     const dictionary::map_type &dictionary::entries() const noexcept
     {
         return entries_;

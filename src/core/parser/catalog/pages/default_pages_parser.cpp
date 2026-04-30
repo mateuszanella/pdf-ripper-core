@@ -1,10 +1,12 @@
 #include "core/parser/catalog/pages/default_pages_parser.hpp"
 
 #include <expected>
-#include <limits>
 #include <string>
 #include <string_view>
 
+#include "core/document/catalog/pages/pages.hpp"
+#include "core/document/object/dictionary.hpp"
+#include "core/document/object/value.hpp"
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
@@ -13,11 +15,11 @@
 
 namespace ripper::core
 {
-    std::expected<parsed_pages, error>
+    std::expected<pages, error>
     default_pages_parser::parse(std::string_view content) const
     {
         pdf_lexer lexer{content};
-        parsed_pages out{};
+        dictionary dict{};
 
         bool found_dictionary = false;
         bool found_type_pages = false;
@@ -100,48 +102,15 @@ namespace ripper::core
                                                .with_message("Pages Type must be /Pages")
                                                .build());
                 found_type_pages = true;
+                dict.set("Type", value{name{"Pages"}});
                 continue;
             }
 
-            if (key_token.lexeme == "Count")
-            {
-                auto value_result = lexer.next();
-                if (!value_result)
-                    return std::unexpected(value_result.error());
-                if (value_result->type != lexer_token_type::integer)
-                    return std::unexpected(error_builder::create()
-                                               .with_code(error_code::corrupted_object)
-                                               .with_component(error_component::pages)
-                                               .with_field("Count")
-                                               .with_expected("integer")
-                                               .with_actual(std::string{value_result->lexeme})
-                                               .with_message("Pages Count must be an integer")
-                                               .build());
-                const auto count = text::parse_size_t(value_result->lexeme);
-                if (!count || *count > std::numeric_limits<std::uint32_t>::max())
-                    return std::unexpected(error_builder::create()
-                                               .with_code(error_code::corrupted_object)
-                                               .with_component(error_component::pages)
-                                               .with_field("Count")
-                                               .with_expected("0..4294967295")
-                                               .with_actual(std::string{value_result->lexeme})
-                                               .with_message("Pages Count is out of range")
-                                               .build());
-                out.count = static_cast<std::uint32_t>(*count);
-                continue;
-            }
-
-            auto consume_result = pdf_value_parser::consume_value(
-                lexer,
-                error_builder::create()
-                    .with_code(error_code::corrupted_object)
-                    .with_component(error_component::pages)
-                    .with_field("dictionary_entry")
-                    .with_expected("known key or valid value")
-                    .with_message("Unexpected value in pages dictionary")
-                    .build());
-            if (!consume_result)
-                return std::unexpected(consume_result.error());
+            // For all other keys (Count, Kids, Parent, etc.), parse and store generically
+            auto val_result = pdf_value_parser::parse_value(lexer);
+            if (!val_result)
+                return std::unexpected(val_result.error());
+            dict.set(std::string{key_token.lexeme}, std::move(*val_result));
         }
 
         if (!found_type_pages)
@@ -153,6 +122,7 @@ namespace ripper::core
                                        .with_actual("missing")
                                        .with_message("Pages dictionary is missing /Type /Pages")
                                        .build());
-        return out;
+
+        return pages{object{std::move(dict)}};
     }
 }

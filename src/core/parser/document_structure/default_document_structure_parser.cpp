@@ -242,9 +242,12 @@ namespace ripper::core
             current_offset = *prev_offset_result;
         }
 
-        // Compile merged xref (oldest -> newest so newer overrides)
+        // Compile merged xref table: iterate newest-to-oldest so that newer entries
+        // take precedence over older ones. Each object number from a later revision
+        // will overwrite the entry from an earlier one (last write wins = newest wins).
         cross_reference_table::entry_map compiled_entries;
-        for (auto it = xref_history.rbegin(); it != xref_history.rend(); ++it)
+
+        for (auto it = xref_history.begin(); it != xref_history.end(); ++it)
         {
             for (const auto &[objectNum, entry] : it->entries())
             {

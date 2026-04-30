@@ -4,6 +4,10 @@
 #include <string>
 #include <string_view>
 
+#include "core/document/catalog/catalog.hpp"
+#include "core/document/object/dictionary.hpp"
+#include "core/document/object/object.hpp"
+#include "core/document/object/value.hpp"
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
@@ -11,11 +15,11 @@
 
 namespace ripper::core
 {
-    std::expected<parsed_catalog, error>
+    std::expected<catalog, error>
     default_catalog_parser::parse(std::string_view content) const
     {
         pdf_lexer lexer{content};
-        parsed_catalog out{};
+        dictionary dict{};
 
         bool found_dictionary = false;
         bool found_type_catalog = false;
@@ -97,8 +101,8 @@ namespace ripper::core
                                                .with_actual(std::string{value_result->lexeme})
                                                .with_message("Catalog Type must be /Catalog")
                                                .build());
-
                 found_type_catalog = true;
+                dict.set("Type", value{name{"Catalog"}});
                 continue;
             }
 
@@ -115,8 +119,7 @@ namespace ripper::core
                         .build());
                 if (!ref_result)
                     return std::unexpected(ref_result.error());
-
-                out.pages_ref = indirect_reference{ref_result->first, ref_result->second};
+                dict.set("Pages", value{indirect_reference{ref_result->first, ref_result->second}});
                 continue;
             }
 
@@ -134,22 +137,15 @@ namespace ripper::core
                                                .with_actual(std::string{value_result->lexeme})
                                                .with_message("Catalog Version must be a name")
                                                .build());
-
-                out.version = std::string{value_result->lexeme};
+                dict.set("Version", value{name{std::string{value_result->lexeme}}});
                 continue;
             }
 
-            auto consume_result = pdf_value_parser::consume_value(
-                lexer,
-                error_builder::create()
-                    .with_code(error_code::corrupted_catalog)
-                    .with_component(error_component::catalog)
-                    .with_field("dictionary_entry")
-                    .with_expected("known key or valid value")
-                    .with_message("Unexpected value in catalog dictionary")
-                    .build());
-            if (!consume_result)
-                return std::unexpected(consume_result.error());
+            // For all other keys, parse and store the full value generically
+            auto val_result = pdf_value_parser::parse_value(lexer);
+            if (!val_result)
+                return std::unexpected(val_result.error());
+            dict.set(std::string{key_token.lexeme}, std::move(*val_result));
         }
 
         if (!found_type_catalog)
@@ -162,6 +158,6 @@ namespace ripper::core
                                        .with_message("Catalog dictionary is missing /Type /Catalog")
                                        .build());
 
-        return out;
+        return catalog{object{std::move(dict)}};
     }
 }
