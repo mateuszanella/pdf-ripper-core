@@ -24,26 +24,26 @@ namespace ripper::core
         ///
         /// Both `object_number` and `generation` are initialized to zero.
         /// A null reference does not correspond to any valid PDF object.
-        constexpr indirect_reference() noexcept;
+        indirect_reference() noexcept;
 
         /// Construct an indirect reference from an object number and generation.
         ///
         /// @param object_number  The unique object number within the PDF document.
         /// @param generation     The generation number; typically 0 for new objects.
-        constexpr indirect_reference(std::uint32_t object_number, std::uint16_t generation) noexcept;
+        indirect_reference(std::uint32_t object_number, std::uint16_t generation) noexcept;
 
         /// Return the object number component of this reference.
-        [[nodiscard]] constexpr std::uint32_t object_number() const noexcept;
+        [[nodiscard]] std::uint32_t object_number() const noexcept;
 
         /// Return the generation number component of this reference.
-        [[nodiscard]] constexpr std::uint16_t generation() const noexcept;
+        [[nodiscard]] std::uint16_t generation() const noexcept;
 
         /// Equality comparison. Two references are equal if both components match.
-        constexpr bool operator==(const indirect_reference &other) const noexcept = default;
+        bool operator==(const indirect_reference &other) const noexcept = default;
 
         /// Three-way comparison. References are ordered first by object number,
         /// then by generation number.
-        constexpr auto operator<=>(const indirect_reference &other) const noexcept = default;
+        auto operator<=>(const indirect_reference &other) const noexcept = default;
 
     private:
         std::uint32_t object_number_;
