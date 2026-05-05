@@ -44,7 +44,7 @@ namespace ripper::core
         ///
         /// The parser stores a reference and does not take ownership of the document.
         /// Backend availability is validated by parse operations.
-        explicit parser(const document &doc);
+        explicit parser(document &doc);
 
         /// Destroy the parser and its internal manager.
         ~parser();
@@ -67,7 +67,7 @@ namespace ripper::core
         [[nodiscard]] std::expected<pages, error> pages(indirect_reference pages_ref);
 
     private:
-        const document &document_;
+        document &document_;
         std::unique_ptr<parser_manager> manager_;
     };
 }

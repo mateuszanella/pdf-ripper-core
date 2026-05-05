@@ -4,9 +4,9 @@
 #include <vector>
 #include <cstddef>
 
-#include "core/document/object/dictionary.hpp"
 #include "core/document/object/indirect_object.hpp"
 #include "core/document/object/stream.hpp"
+#include "core/document/object/value.hpp"
 
 namespace ripper::core
 {
@@ -35,18 +35,18 @@ namespace ripper::core
     {
     public:
         /// Construct an object with identity and dictionary, no content stream.
-        object(indirect_object identity, dictionary dictionary) noexcept;
+        object(indirect_object identity, class dictionary dictionary) noexcept;
 
         /// Construct an object with identity, dictionary and a content stream.
-        object(indirect_object identity, dictionary dictionary, stream stream) noexcept;
+        object(indirect_object identity, class dictionary dictionary, class stream stream) noexcept;
 
         virtual ~object() = default;
 
-        object(const object &) = delete;
+        object(const object &) = default;
         object &operator=(const object &) = delete;
 
         object(object &&) = default;
-        object &operator=(object &&) = default;
+        object &operator=(object &&) = delete;
 
         /// Returns the `indirect_object` identity of this object, which includes the
         /// owning document and indirect reference.

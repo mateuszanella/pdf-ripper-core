@@ -5,7 +5,6 @@
 #include <string_view>
 
 #include "core/document/identifier.hpp"
-#include "core/document/object/dictionary.hpp"
 #include "core/document/object/value.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/error.hpp"

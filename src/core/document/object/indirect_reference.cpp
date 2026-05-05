@@ -2,22 +2,22 @@
 
 namespace ripper::core
 {
-    constexpr indirect_reference::indirect_reference() noexcept
+    indirect_reference::indirect_reference() noexcept
         : object_number_{0}, generation_{0}
     {
     }
 
-    constexpr indirect_reference::indirect_reference(std::uint32_t object_number, std::uint16_t generation) noexcept
+    indirect_reference::indirect_reference(std::uint32_t object_number, std::uint16_t generation) noexcept
         : object_number_{object_number}, generation_{generation}
     {
     }
 
-    constexpr std::uint32_t indirect_reference::object_number() const noexcept
+    std::uint32_t indirect_reference::object_number() const noexcept
     {
         return object_number_;
     }
 
-    constexpr std::uint16_t indirect_reference::generation() const noexcept
+    std::uint16_t indirect_reference::generation() const noexcept
     {
         return generation_;
     }

@@ -10,8 +10,8 @@
 
 namespace ripper::core
 {
-    pages::pages(object object) noexcept
-        : object{std::move(object)}
+    pages::pages(object obj) noexcept
+        : object{std::move(obj)}
     {
     }
 

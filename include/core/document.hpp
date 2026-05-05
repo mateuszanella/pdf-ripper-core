@@ -99,16 +99,20 @@ namespace ripper::core
         ///
         /// If `reader` is set, the header is parsed from the input upon first access and cached
         /// for subsequent accesses. Otherwise, a new header with default values is created and cached.
-        [[nodiscard]] std::expected<header, error> header() const noexcept;
+        /// Changes made to the returned reference are reflected in the document on save.
+        [[nodiscard]] std::expected<std::reference_wrapper<class header>, error> header() noexcept;
 
         /// Parse and return the compiled cross-reference table (cached).
-        [[nodiscard]] std::expected<cross_reference_table, error> cross_reference_table() const noexcept;
+        /// Changes made to the returned reference are reflected in the document on save.
+        [[nodiscard]] std::expected<std::reference_wrapper<class cross_reference_table>, error> cross_reference_table() noexcept;
 
         /// Parse and return the compiled trailer dictionary (cached).
-        [[nodiscard]] std::expected<trailer, error> trailer() const noexcept;
+        /// Changes made to the returned reference are reflected in the document on save.
+        [[nodiscard]] std::expected<std::reference_wrapper<class trailer>, error> trailer() noexcept;
 
         /// Parse and return the document catalog (cached).
-        [[nodiscard]] std::expected<catalog, error> catalog() const noexcept;
+        /// Changes made to the returned reference are reflected in the document on save.
+        [[nodiscard]] std::expected<std::reference_wrapper<class catalog>, error> catalog() noexcept;
 
     private:
         /// Parse and return the PDF header without caching.
@@ -123,14 +127,14 @@ namespace ripper::core
         std::unique_ptr<class writer> writer_;
         std::unique_ptr<class serializer> serializer_;
 
-        mutable std::optional<class header> header_;
+        std::optional<class header> header_;
 
-        mutable std::optional<class cross_reference_table> xref_table_;
-        mutable std::optional<std::vector<class cross_reference_table>> xref_history_;
+        std::optional<class cross_reference_table> xref_table_;
+        std::optional<std::vector<class cross_reference_table>> xref_history_;
 
-        mutable std::optional<class trailer> trailer_;
-        mutable std::optional<std::vector<class trailer>> trailer_history_;
+        std::optional<class trailer> trailer_;
+        std::optional<std::vector<class trailer>> trailer_history_;
 
-        mutable std::optional<class catalog> catalog_;
+        std::optional<class catalog> catalog_;
     };
 }

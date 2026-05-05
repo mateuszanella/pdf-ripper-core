@@ -12,7 +12,7 @@ namespace ripper::core
     class pages : public object
     {
     public:
-        explicit pages(object object) noexcept;
+        explicit pages(object obj) noexcept;
 
         std::expected<std::uint64_t, error> count() const;
     };

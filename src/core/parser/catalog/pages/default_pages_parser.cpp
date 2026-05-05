@@ -4,19 +4,15 @@
 #include <string>
 #include <string_view>
 
-#include "core/document/catalog/pages/pages.hpp"
-#include "core/document/object/dictionary.hpp"
 #include "core/document/object/value.hpp"
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
-#include "core/parser/lexer/pdf_value_parser.hpp"
 #include "core/util/text.hpp"
 
 namespace ripper::core
 {
-    std::expected<pages, error>
-    default_pages_parser::parse(std::string_view content) const
+    std::expected<dictionary, error> default_pages_parser::parse(std::string_view content) const
     {
         pdf_lexer lexer{content};
         dictionary dict{};
@@ -71,17 +67,9 @@ namespace ripper::core
 
             if (token.type != lexer_token_type::name)
             {
-                auto consume_result = pdf_value_parser::consume_value(
-                    lexer,
-                    error_builder::create()
-                        .with_code(error_code::corrupted_object)
-                        .with_component(error_component::pages)
-                        .with_field("dictionary_entry")
-                        .with_expected("name key")
-                        .with_message("Unexpected value in pages dictionary")
-                        .build());
-                if (!consume_result)
-                    return std::unexpected(consume_result.error());
+                auto skip_result = lexer.skip_value();
+                if (!skip_result)
+                    return std::unexpected(skip_result.error());
                 continue;
             }
 
@@ -92,6 +80,7 @@ namespace ripper::core
                 auto value_result = lexer.next();
                 if (!value_result)
                     return std::unexpected(value_result.error());
+
                 if (value_result->type != lexer_token_type::name || value_result->lexeme != "Pages")
                     return std::unexpected(error_builder::create()
                                                .with_code(error_code::corrupted_object)
@@ -101,16 +90,18 @@ namespace ripper::core
                                                .with_actual(std::string{value_result->lexeme})
                                                .with_message("Pages Type must be /Pages")
                                                .build());
+
                 found_type_pages = true;
+
                 dict.set("Type", value{name{"Pages"}});
+
                 continue;
             }
 
             // For all other keys (Count, Kids, Parent, etc.), parse and store generically
-            auto val_result = pdf_value_parser::parse_value(lexer);
-            if (!val_result)
-                return std::unexpected(val_result.error());
-            dict.set(std::string{key_token.lexeme}, std::move(*val_result));
+            auto skip_result = lexer.skip_value();
+            if (!skip_result)
+                return std::unexpected(skip_result.error());
         }
 
         if (!found_type_pages)
@@ -123,6 +114,6 @@ namespace ripper::core
                                        .with_message("Pages dictionary is missing /Type /Pages")
                                        .build());
 
-        return pages{object{std::move(dict)}};
+        return std::move(dict);
     }
 }

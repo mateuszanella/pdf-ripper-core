@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 
+#include "core/document/object/object.hpp"
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 #include "core/util/text.hpp"

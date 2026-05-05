@@ -5,7 +5,7 @@
 
 namespace ripper::core
 {
-    trailer::trailer(dictionary dict) noexcept
+    trailer::trailer(class dictionary dict) noexcept
         : dict_{std::move(dict)}
     {
     }

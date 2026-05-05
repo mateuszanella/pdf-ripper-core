@@ -3,7 +3,7 @@
 namespace ripper::core
 {
     stream::stream(std::vector<std::byte> data) noexcept
-        : data(std::move(data))
+        : data_(std::move(data))
     {
     }
 }

@@ -24,7 +24,7 @@ namespace ripper::core
         /// Construct a manager bound to `doc`.
         ///
         /// The manager stores a reference and does not take ownership of the document.
-        explicit parser_manager(const document &doc);
+        explicit parser_manager(document &doc);
 
         /// Destroy the manager and all owned parser components.
         ~parser_manager();
@@ -72,7 +72,7 @@ namespace ripper::core
         [[nodiscard]] class indirect_object_resolver &object_resolver();
 
     private:
-        const document &document_;
+        document &document_;
 
         std::unique_ptr<class header_parser> header_parser_;
         std::unique_ptr<class cross_reference_table_parser> xref_parser_;

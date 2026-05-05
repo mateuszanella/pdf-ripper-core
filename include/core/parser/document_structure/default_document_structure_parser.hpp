@@ -16,16 +16,17 @@ namespace ripper::core
     class default_document_structure_parser : public document_structure_parser
     {
     public:
-        explicit default_document_structure_parser(const document &document);
+        explicit default_document_structure_parser(document &document);
+
         default_document_structure_parser(
-            const document &document,
+            document &document,
             std::unique_ptr<class cross_reference_table_parser> xref_parser,
             std::unique_ptr<class trailer_parser> trailer_parser);
 
         [[nodiscard]] std::expected<document_structure_result, error> parse();
 
     private:
-        const document &_document;
+        document &_document;
 
         std::unique_ptr<class cross_reference_table_parser> _xref_parser;
         std::unique_ptr<class trailer_parser> _trailer_parser;

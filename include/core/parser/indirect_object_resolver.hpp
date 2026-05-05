@@ -13,11 +13,11 @@ namespace ripper::core
     class indirect_object_resolver
     {
     public:
-        explicit indirect_object_resolver(const document &document) noexcept;
+        explicit indirect_object_resolver(document &document) noexcept;
 
         [[nodiscard]] std::expected<std::string, error> resolve(indirect_reference ref) const;
 
     private:
-        const document &document_;
+        document &document_;
     };
 }

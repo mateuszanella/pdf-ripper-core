@@ -78,7 +78,7 @@ namespace ripper::core
         /// Otherwise, `loader` is invoked to parse the object from disk and cache it.
         ///
         /// Returns `nullptr` if the entry does not exist or the loader fails.
-        [[nodiscard]] class object *resolve(const indirect_reference &ref, const loader_fn &loader) const;
+        [[nodiscard]] class object *resolve(const indirect_reference &ref, const loader_fn &loader);
 
         /// Reserve a slot for a new object, returning its assigned indirect reference.
         ///

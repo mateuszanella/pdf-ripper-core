@@ -17,7 +17,7 @@ namespace ripper::core
         if (pages_.has_value())
             return pages_.value();
 
-        pages_ref = dictionary().get_indirect_reference("Pages");
+        auto pages_ref = dictionary().get_indirect_reference("Pages");
         if (!pages_ref)
         {
             return std::unexpected(error_builder::create()
@@ -29,11 +29,11 @@ namespace ripper::core
                                        .build());
         }
 
-        auto parser = owner().parser();
+        auto parser = identity().owner().parser();
         if (!parser)
             return std::unexpected(parser.error());
 
-        auto parsed = parser->get().pages(*pages_ref_);
+        auto parsed = parser->get().pages(*pages_ref);
         if (!parsed)
             return std::unexpected(parsed.error());
 

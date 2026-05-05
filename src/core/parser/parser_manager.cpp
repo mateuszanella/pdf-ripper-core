@@ -19,7 +19,7 @@
 
 namespace ripper::core
 {
-    parser_manager::parser_manager(const document &doc)
+    parser_manager::parser_manager(document &doc)
         : document_{doc}
     {
     }

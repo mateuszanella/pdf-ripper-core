@@ -1,7 +1,6 @@
 #include "core/document/object/value.hpp"
 
 #include "core/document/object/indirect_reference.hpp"
-#include "core/document/object/dictionary.hpp"
 
 namespace ripper::core
 {
@@ -41,13 +40,31 @@ namespace ripper::core
     }
 
     value::value(dictionary value) noexcept
-        : value_(std::move(value))
+        : value_(std::make_unique<dictionary>(std::move(value)))
     {
     }
 
     value::value(indirect_reference value) noexcept
         : value_(std::move(value))
     {
+    }
+
+    value::value(const value &other)
+        : value_(std::visit([](const auto &v) -> variant_type
+                            {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::unique_ptr<dictionary>>)
+            return std::make_unique<dictionary>(*v);
+        else
+            return v; }, other.value_))
+    {
+    }
+
+    value &value::operator=(const value &other)
+    {
+        if (this != &other)
+            value_ = value(other).value_;
+        return *this;
     }
 
     bool value::is_null() const noexcept
@@ -87,7 +104,7 @@ namespace ripper::core
 
     bool value::is_dictionary() const noexcept
     {
-        return std::holds_alternative<dictionary>(value_);
+        return std::holds_alternative<std::unique_ptr<dictionary>>(value_);
     }
 
     bool value::is_indirect_reference() const noexcept
@@ -127,7 +144,9 @@ namespace ripper::core
 
     const dictionary *value::as_dictionary() const noexcept
     {
-        return std::get_if<dictionary>(&value_);
+        const auto *ptr = std::get_if<std::unique_ptr<dictionary>>(&value_);
+
+        return ptr ? ptr->get() : nullptr;
     }
 
     const indirect_reference *value::as_indirect_reference() const noexcept
@@ -138,5 +157,94 @@ namespace ripper::core
     const value::variant_type &value::variant() const noexcept
     {
         return value_;
+    }
+
+    dictionary::dictionary(dictionary_map_type entries) noexcept
+        : entries_(std::move(entries))
+    {
+    }
+
+    void dictionary::set(std::string key, value value)
+    {
+        entries_.insert_or_assign(std::move(key), std::move(value));
+    }
+
+    bool dictionary::remove(const std::string &key) noexcept
+    {
+        return entries_.erase(key) > 0;
+    }
+
+    bool dictionary::contains(const std::string &key) const noexcept
+    {
+        return entries_.contains(key);
+    }
+
+    std::size_t dictionary::size() const noexcept
+    {
+        return entries_.size();
+    }
+
+    bool dictionary::empty() const noexcept
+    {
+        return entries_.empty();
+    }
+
+    const value *dictionary::get(const std::string &key) const noexcept
+    {
+        const auto it = entries_.find(key);
+        return it != entries_.end() ? &it->second : nullptr;
+    }
+
+    const bool *dictionary::get_bool(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_bool() : nullptr;
+    }
+
+    const std::int64_t *dictionary::get_integer(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_integer() : nullptr;
+    }
+
+    const double *dictionary::get_real(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_real() : nullptr;
+    }
+
+    const std::string *dictionary::get_string(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_string() : nullptr;
+    }
+
+    const name *dictionary::get_name(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_name() : nullptr;
+    }
+
+    const array *dictionary::get_array(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_array() : nullptr;
+    }
+
+    const dictionary *dictionary::get_dictionary(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_dictionary() : nullptr;
+    }
+
+    const indirect_reference *dictionary::get_indirect_reference(const std::string &key) const noexcept
+    {
+        const auto *value = get(key);
+        return value ? value->as_indirect_reference() : nullptr;
+    }
+
+    const dictionary::dictionary_map_type &dictionary::entries() const noexcept
+    {
+        return entries_;
     }
 }

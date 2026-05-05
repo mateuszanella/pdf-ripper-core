@@ -23,7 +23,7 @@ namespace ripper::core
         /// Construct an indirect object bound to `doc` and identified by `ref`.
         ///
         /// The document is stored by reference and must outlive this object.
-        indirect_object(const document &doc, indirect_reference ref) noexcept;
+        indirect_object(document &doc, indirect_reference ref) noexcept;
 
         /// Returns the indirect reference (object number + generation number) that
         /// uniquely identifies this object within its owning document.
@@ -33,10 +33,10 @@ namespace ripper::core
         ///
         /// Derived classes may use this to navigate the document structure or
         /// resolve other indirect references.
-        [[nodiscard]] const document &owner() const noexcept;
+        [[nodiscard]] document &owner() const noexcept;
 
     private:
-        const document &document_;
+        std::reference_wrapper<document> document_;
         indirect_reference reference_;
     };
 }

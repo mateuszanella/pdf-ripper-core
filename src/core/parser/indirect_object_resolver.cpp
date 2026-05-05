@@ -47,7 +47,7 @@ namespace ripper::core
         }
     }
 
-    indirect_object_resolver::indirect_object_resolver(const document &document) noexcept
+    indirect_object_resolver::indirect_object_resolver(document &document) noexcept
         : document_{document}
     {
     }
@@ -74,18 +74,13 @@ namespace ripper::core
         // Resolve the object location from the compiled xref table. We only proceed
         // with an in-use entry and the exact generation requested by the caller, so
         // we do not accidentally return another revision.
-        const auto xref = document_.cross_reference_table();
+        auto xref = document_.cross_reference_table();
         if (!xref)
         {
             return std::unexpected(xref.error());
         }
 
-        const auto entry = xref->find(ref);
-        if (!entry.has_value())
-        {
-            return std::unexpected(error_builder::xref_entry_not_found(ref));
-        }
-
+        const auto entry = xref->get().find(ref);
         if (!entry->in_use())
         {
             return std::unexpected(error_builder::xref_entry_not_in_use(ref));
@@ -116,8 +111,18 @@ namespace ripper::core
                                        .build());
         }
 
-        const std::uint64_t offset_u64 = entry->offset();
-        if (offset_u64 >= file_size_u64)
+        const auto offset_u64 = entry->offset();
+        if (!offset_u64.has_value())
+        {
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::missing_object)
+                                       .with_component(error_component::cross_reference)
+                                       .with_reference(ref)
+                                       .with_message("XRef entry is missing file offset")
+                                       .build());
+        }
+
+        if (offset_u64.value() >= file_size_u64)
         {
             return std::unexpected(error_builder::create()
                                        .with_code(error_code::offset_out_of_bounds)
@@ -127,7 +132,7 @@ namespace ripper::core
                                        .build());
         }
 
-        if (offset_u64 > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+        if (offset_u64.value() > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
         {
             return std::unexpected(error_builder::create()
                                        .with_code(error_code::offset_out_of_bounds)
@@ -140,8 +145,8 @@ namespace ripper::core
         // Read from the xref-resolved byte offset to EOF. This narrows parsing
         // to the region where the target indirect object is expected to exist,
         // instead of scanning from byte 0.
-        const std::size_t offset = static_cast<std::size_t>(offset_u64);
-        const std::size_t to_read = static_cast<std::size_t>(file_size_u64 - offset_u64);
+        const std::size_t offset = static_cast<std::size_t>(offset_u64.value());
+        const std::size_t to_read = static_cast<std::size_t>(file_size_u64 - offset_u64.value());
 
         std::vector<std::byte> bytes(to_read);
         const std::size_t read = r.read_at(std::span<std::byte>{bytes.data(), bytes.size()}, offset);

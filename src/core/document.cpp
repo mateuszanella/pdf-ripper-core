@@ -174,27 +174,23 @@ namespace ripper::core
         return std::ref(*serializer_);
     }
 
-    std::expected<header, error> document::header() const noexcept
+    std::expected<std::reference_wrapper<header>, error> document::header() noexcept
     {
         if (header_.has_value())
-            return header_.value();
+            return std::ref(*header_);
 
-        auto result = has_parser()
-                          ? parse_header()
-                          : create_header();
-
+        auto result = has_parser() ? parse_header() : create_header();
         if (!result)
             return std::unexpected(result.error());
 
         header_ = std::move(*result);
-
-        return header_.value();
+        return std::ref(*header_);
     }
 
-    std::expected<cross_reference_table, error> document::cross_reference_table() const noexcept
+    std::expected<std::reference_wrapper<cross_reference_table>, error> document::cross_reference_table() noexcept
     {
         if (xref_table_.has_value())
-            return xref_table_.value();
+            return std::ref(*xref_table_);
 
         auto parser_result = parser();
         if (!parser_result)
@@ -209,13 +205,13 @@ namespace ripper::core
         trailer_ = std::move(parsed->compiled_trailer);
         trailer_history_ = std::move(parsed->trailer_history);
 
-        return xref_table_.value();
+        return std::ref(*xref_table_);
     }
 
-    std::expected<trailer, error> document::trailer() const noexcept
+    std::expected<std::reference_wrapper<trailer>, error> document::trailer() noexcept
     {
         if (trailer_.has_value())
-            return trailer_.value();
+            return std::ref(*trailer_);
 
         auto parser_result = parser();
         if (!parser_result)
@@ -230,13 +226,13 @@ namespace ripper::core
         trailer_ = std::move(parsed->compiled_trailer);
         trailer_history_ = std::move(parsed->trailer_history);
 
-        return trailer_.value();
+        return std::ref(*trailer_);
     }
 
-    std::expected<catalog, error> document::catalog() const noexcept
+    std::expected<std::reference_wrapper<catalog>, error> document::catalog() noexcept
     {
         if (catalog_.has_value())
-            return catalog_.value();
+            return std::ref(*catalog_);
 
         auto parser_result = parser();
         if (!parser_result)
@@ -247,7 +243,7 @@ namespace ripper::core
             return std::unexpected(parsed.error());
 
         catalog_.emplace(std::move(*parsed));
-        return catalog_.value();
+        return std::ref(*catalog_);
     }
 
     std::expected<header, error> document::parse_header() const noexcept

@@ -16,7 +16,7 @@
 
 namespace ripper::core
 {
-    default_document_structure_parser::default_document_structure_parser(const document &document)
+    default_document_structure_parser::default_document_structure_parser(document &document)
         : default_document_structure_parser(
               document,
               std::make_unique<default_cross_reference_table_parser>(),
@@ -25,7 +25,7 @@ namespace ripper::core
     }
 
     default_document_structure_parser::default_document_structure_parser(
-        const document &document,
+        document &document,
         std::unique_ptr<class cross_reference_table_parser> xref_parser,
         std::unique_ptr<class trailer_parser> trailer_parser)
         : _document{document},
@@ -249,9 +249,9 @@ namespace ripper::core
 
         for (auto it = xref_history.begin(); it != xref_history.end(); ++it)
         {
-            for (const auto &[objectNum, entry] : it->entries())
+            for (auto &[objectNum, entry] : it->entries())
             {
-                compiled_entries.insert_or_assign(objectNum, entry);
+                compiled_entries.insert_or_assign(objectNum, std::move(entry));
             }
         }
 
@@ -262,7 +262,7 @@ namespace ripper::core
 
         for (auto it = trailer_history.begin(); it != trailer_history.end(); ++it)
         {
-            for (const auto &[key, val] : it->raw().entries())
+            for (const auto &[key, val] : it->dictionary().entries())
             {
                 compiled_dict.set(key, val);
             }

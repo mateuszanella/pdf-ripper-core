@@ -1,6 +1,7 @@
 #include "core/document/cross_reference_table/cross_reference_entry.hpp"
 
 #include "core/document/object/indirect_object.hpp"
+#include "core/document/object/object.hpp"
 
 namespace ripper::core
 {
@@ -14,8 +15,8 @@ namespace ripper::core
     {
     }
 
-    cross_reference_entry::cross_reference_entry(indirect_reference ref, std::unique_ptr<object> object) noexcept
-        : reference_{ref}, offset_{std::nullopt}, in_use_{true}, object_{std::move(object)}
+    cross_reference_entry::cross_reference_entry(indirect_reference ref, std::unique_ptr<class object> obj) noexcept
+        : reference_{ref}, offset_{std::nullopt}, in_use_{true}, object_{std::move(obj)}
     {
     }
 
@@ -49,9 +50,9 @@ namespace ripper::core
         return object_.get();
     }
 
-    object *cross_reference_entry::resolve(std::unique_ptr<class object> object) noexcept
+    object *cross_reference_entry::resolve(std::unique_ptr<class object> obj) noexcept
     {
-        object_ = std::move(object);
+        object_ = std::move(obj);
 
         return object_.get();
     }

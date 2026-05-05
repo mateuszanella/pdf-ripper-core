@@ -23,7 +23,7 @@
 
 namespace ripper::core
 {
-    parser::parser(const document &doc)
+    parser::parser(document &doc)
         : document_{doc},
           manager_{std::make_unique<class parser_manager>(doc)}
     {
@@ -66,7 +66,7 @@ namespace ripper::core
         if (!trailer)
             return std::unexpected(trailer.error());
 
-        auto root_ref = trailer->root();
+        auto root_ref = trailer->get().root();
         if (!root_ref)
             return std::unexpected(root_ref.error());
 
@@ -74,7 +74,16 @@ namespace ripper::core
         if (!content)
             return std::unexpected(content.error());
 
-        return manager().catalog_parser().parse(content.value());
+        auto parse_result = manager().catalog_parser().parse(content.value());
+        if (!parse_result)
+            return std::unexpected(parse_result.error());
+
+        class catalog c
+        {
+            object { indirect_object{document_, *root_ref}, std::move(parse_result.value()) }
+        };
+
+        return c;
     }
 
     std::expected<class pages, error> parser::pages(indirect_reference obj)
@@ -83,6 +92,15 @@ namespace ripper::core
         if (!content)
             return std::unexpected(content.error());
 
-        return manager().pages_parser().parse(content.value());
+        auto parse_result = manager().pages_parser().parse(content.value());
+        if (!parse_result)
+            return std::unexpected(parse_result.error());
+
+        class pages p
+        {
+            object { indirect_object{document_, obj}, std::move(parse_result.value()) }
+        };
+
+        return p;
     }
 }

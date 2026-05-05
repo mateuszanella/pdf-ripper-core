@@ -78,13 +78,13 @@ namespace ripper::core
         ///
         /// Returns a raw pointer to the resolved object, or `nullptr` if the reference
         /// does not correspond to a reserved entry.
-        [[nodiscard]] class object *resolve(std::unique_ptr<class object> object) noexcept;
+        [[nodiscard]] class object *resolve(std::unique_ptr<class object> obj) noexcept;
 
     private:
         indirect_reference reference_;
         std::optional<std::uint64_t> offset_;
         bool in_use_;
 
-        mutable std::unique_ptr<class object> object_;
+        std::unique_ptr<class object> object_;
     };
 }

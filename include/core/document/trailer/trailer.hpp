@@ -5,8 +5,8 @@
 #include <optional>
 
 #include "core/document/identifier.hpp"
-#include "core/document/object/dictionary.hpp"
 #include "core/document/object/indirect_reference.hpp"
+#include "core/document/object/value.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core

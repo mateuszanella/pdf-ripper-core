@@ -1,6 +1,7 @@
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 
 #include "core/document/object/indirect_object.hpp"
+#include "core/document/object/object.hpp"
 
 namespace ripper::core
 {
@@ -33,7 +34,7 @@ namespace ripper::core
         return find(ref.object_number());
     }
 
-    class object *cross_reference_table::resolve(const indirect_reference &ref, const loader_fn &loader) const
+    class object *cross_reference_table::resolve(const indirect_reference &ref, const loader_fn &loader)
     {
         auto it = entries_.find(ref.object_number());
         if (it == entries_.end())

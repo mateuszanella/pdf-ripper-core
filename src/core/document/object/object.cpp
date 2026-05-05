@@ -1,17 +1,17 @@
 #include "core/document/object/object.hpp"
 
-#include "core/document/object/dictionary.hpp"
 #include "core/document/object/indirect_object.hpp"
 #include "core/document/object/stream.hpp"
+#include "core/document/object/value.hpp"
 
 namespace ripper::core
 {
-    object::object(indirect_object identity, dictionary dictionary) noexcept
+    object::object(indirect_object identity, class dictionary dictionary) noexcept
         : identity_(std::move(identity)), dictionary_(std::move(dictionary)), stream_(std::nullopt)
     {
     }
 
-    object::object(indirect_object identity, dictionary dictionary, stream stream) noexcept
+    object::object(indirect_object identity, class dictionary dictionary, class stream stream) noexcept
         : identity_(std::move(identity)), dictionary_(std::move(dictionary)), stream_(std::move(stream))
     {
     }
@@ -46,7 +46,7 @@ namespace ripper::core
         return stream_ ? &stream_.value() : nullptr;
     }
 
-    void object::set_stream(stream stream) noexcept
+    void object::set_stream(class stream stream) noexcept
     {
         stream_ = std::move(stream);
     }

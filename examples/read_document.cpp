@@ -5,7 +5,7 @@
 
 namespace
 {
-    bool check_file_open(const ripper::core::reader &reader)
+    bool check_file_open(ripper::core::reader &reader)
     {
         if (reader.is_open())
         {
@@ -19,12 +19,12 @@ namespace
         return false;
     }
 
-    void check_header(const ripper::core::document &document)
+    void check_header(ripper::core::document &document)
     {
-        const auto header = document.header();
+        auto header = document.header();
         if (header)
         {
-            std::println("PDF Header Version: {}", header.value().version());
+            std::println("PDF Header Version: {}", header->get().version());
         }
         else
         {
@@ -44,13 +44,13 @@ namespace
         }
     }
 
-    void check_cross_reference_table(const ripper::core::document &document)
+    void check_cross_reference_table(ripper::core::document &document)
     {
-        const auto xrefTable = document.cross_reference_table();
+        auto xrefTable = document.cross_reference_table();
         if (xrefTable)
         {
             std::println("\nCross-Reference Table parsed successfully.");
-            std::println("Found {} entries", xrefTable.value().size());
+            std::println("Found {} entries", xrefTable->get().size());
         }
         else
         {
@@ -70,9 +70,9 @@ namespace
         }
     }
 
-    void check_trailer(const ripper::core::document &document)
+    void check_trailer(ripper::core::document &document)
     {
-        const auto trailer = document.trailer();
+        auto trailer = document.trailer();
         if (!trailer)
         {
             const auto &err = trailer.error();
@@ -82,7 +82,7 @@ namespace
             return;
         }
 
-        auto id = trailer->id();
+        auto id = trailer->get().id();
         if (id)
         {
             std::println("\nDocument ID:");
@@ -101,9 +101,9 @@ namespace
         std::println("\nTrailer parsed successfully.");
     }
 
-    void check_catalog(const ripper::core::document &document)
+    void check_catalog(ripper::core::document &document)
     {
-        const auto catalog = document.catalog();
+        auto catalog = document.catalog();
         if (!catalog)
         {
             const auto &err = catalog.error();
@@ -116,9 +116,9 @@ namespace
         std::println("\nCatalog parsed successfully.");
     }
 
-    void check_pages(const ripper::core::document &document)
+    void check_pages(ripper::core::document &document)
     {
-        const auto pages = document.catalog()->pages();
+        auto pages = document.catalog()->get().pages();
         if (!pages)
         {
             const auto &err = pages.error();
@@ -128,7 +128,7 @@ namespace
             return;
         }
 
-        const auto pageCount = pages->count();
+        auto pageCount = pages->count();
         if (!pageCount)
         {
             const auto &err = pageCount.error();

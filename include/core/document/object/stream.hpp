@@ -6,11 +6,14 @@
 /// Simple stream object
 ///
 /// @todo Make this decent
-class stream
+namespace ripper::core
 {
+    class stream
+    {
     public:
         explicit stream(std::vector<std::byte> data) noexcept;
 
     private:
-        std::vector<std::byte> data;
-};
+        std::vector<std::byte> data_;
+    };
+}
