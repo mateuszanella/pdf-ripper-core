@@ -179,11 +179,15 @@ namespace ripper::core
         if (header_.has_value())
             return std::ref(*header_);
 
-        auto result = has_parser() ? parse_header() : create_header();
+        auto result = has_parser()
+                          ? parse_header()
+                          : create_header();
+
         if (!result)
             return std::unexpected(result.error());
 
         header_ = std::move(*result);
+
         return std::ref(*header_);
     }
 
