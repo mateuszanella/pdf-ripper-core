@@ -44,20 +44,9 @@ namespace ripper::core
         return manager().header_parser().parse();
     }
 
-    std::expected<parsed_structure, error> parser::structure()
+    std::expected<document_structure, error> parser::structure()
     {
-        auto result = manager().document_structure_parser().parse();
-        if (!result)
-            return std::unexpected(result.error());
-
-        parsed_structure out{
-            .compiled_xref = std::move(result->compiled_xref),
-            .xref_history = std::move(result->xref_history),
-            .compiled_trailer = std::move(result->compiled_trailer),
-            .trailer_history = std::move(result->trailer_history),
-        };
-
-        return out;
+        return manager().document_structure_parser().parse();
     }
 
     std::expected<catalog, error> parser::catalog()

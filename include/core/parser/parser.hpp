@@ -5,8 +5,7 @@
 #include <vector>
 
 #include "core/document/header.hpp"
-#include "core/document/cross_reference_table/cross_reference_table.hpp"
-#include "core/document/trailer/trailer.hpp"
+#include "core/document/document_structure.hpp"
 #include "core/document/catalog/catalog.hpp"
 #include "core/error.hpp"
 
@@ -16,22 +15,6 @@ namespace ripper::core
     class parser_manager;
     class pages;
     class indirect_reference;
-
-    /// Materialized document structure assembled from cross-reference and trailer chains.
-    struct parsed_structure
-    {
-        /// Compiled (final) cross-reference table.
-        class cross_reference_table compiled_xref;
-
-        /// Historical cross-reference tables in traversal/merge order.
-        std::vector<class cross_reference_table> xref_history;
-
-        /// Compiled (final) trailer dictionary.
-        class trailer compiled_trailer;
-
-        /// Historical trailer dictionaries in traversal/merge order.
-        std::vector<class trailer> trailer_history;
-    };
 
     /// High-level PDF parser facade for a single `document`.
     ///
@@ -58,7 +41,7 @@ namespace ripper::core
         [[nodiscard]] std::expected<header, error> header();
 
         /// Parse and return compiled document structure and traversal history.
-        [[nodiscard]] std::expected<parsed_structure, error> structure();
+        [[nodiscard]] std::expected<document_structure, error> structure();
 
         /// Parse and return the document catalog.
         [[nodiscard]] std::expected<catalog, error> catalog();

@@ -23,7 +23,7 @@ namespace ripper::core
             std::unique_ptr<class cross_reference_table_parser> xref_parser,
             std::unique_ptr<class trailer_parser> trailer_parser);
 
-        [[nodiscard]] std::expected<document_structure_result, error> parse();
+        [[nodiscard]] std::expected<document_structure, error> parse();
 
     private:
         document &_document;

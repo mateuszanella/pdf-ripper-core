@@ -128,7 +128,7 @@ namespace ripper::core
         return offset.value();
     }
 
-    std::expected<document_structure_result, error> default_document_structure_parser::parse()
+    std::expected<document_structure, error> default_document_structure_parser::parse()
     {
         auto reader_result = _document.reader();
         if (!reader_result)
@@ -268,11 +268,11 @@ namespace ripper::core
             }
         }
 
-        return document_structure_result{
-            .compiled_xref = cross_reference_table{std::move(compiled_entries)},
-            .xref_history = std::move(xref_history),
-            .compiled_trailer = trailer{std::move(compiled_dict)},
-            .trailer_history = std::move(trailer_history),
+        return document_structure{
+            cross_reference_table{std::move(compiled_entries)},
+            std::move(xref_history),
+            trailer{std::move(compiled_dict)},
+            std::move(trailer_history),
         };
     }
 }

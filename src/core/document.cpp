@@ -7,6 +7,7 @@
 
 #include "core/document/catalog/catalog.hpp"
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/error.hpp"
@@ -193,44 +194,20 @@ namespace ripper::core
 
     std::expected<std::reference_wrapper<cross_reference_table>, error> document::cross_reference_table() noexcept
     {
-        if (xref_table_.has_value())
-            return std::ref(*xref_table_);
+        auto s = structure();
+        if (!s)
+            return std::unexpected(s.error());
 
-        auto parser_result = parser();
-        if (!parser_result)
-            return std::unexpected(parser_result.error());
-
-        auto parsed = parser_result->get().structure();
-        if (!parsed)
-            return std::unexpected(parsed.error());
-
-        xref_table_ = std::move(parsed->compiled_xref);
-        xref_history_ = std::move(parsed->xref_history);
-        trailer_ = std::move(parsed->compiled_trailer);
-        trailer_history_ = std::move(parsed->trailer_history);
-
-        return std::ref(*xref_table_);
+        return std::ref(s->get().xref());
     }
 
     std::expected<std::reference_wrapper<trailer>, error> document::trailer() noexcept
     {
-        if (trailer_.has_value())
-            return std::ref(*trailer_);
+        auto s = structure();
+        if (!s)
+            return std::unexpected(s.error());
 
-        auto parser_result = parser();
-        if (!parser_result)
-            return std::unexpected(parser_result.error());
-
-        auto parsed = parser_result->get().structure();
-        if (!parsed)
-            return std::unexpected(parsed.error());
-
-        xref_table_ = std::move(parsed->compiled_xref);
-        xref_history_ = std::move(parsed->xref_history);
-        trailer_ = std::move(parsed->compiled_trailer);
-        trailer_history_ = std::move(parsed->trailer_history);
-
-        return std::ref(*trailer_);
+        return std::ref(s->get().trailer());
     }
 
     std::expected<std::reference_wrapper<catalog>, error> document::catalog() noexcept
@@ -247,7 +224,43 @@ namespace ripper::core
             return std::unexpected(parsed.error());
 
         catalog_.emplace(std::move(*parsed));
+
         return std::ref(*catalog_);
+    }
+
+    std::expected<std::reference_wrapper<document_structure>, error> document::structure() noexcept
+    {
+        if (structure_.has_value())
+            return std::ref(*structure_);
+
+        auto result = has_parser()
+                          ? parse_structure()
+                          : create_structure();
+
+        if (!result)
+            return std::unexpected(result.error());
+
+        structure_ = std::move(*result);
+
+        return std::ref(*structure_);
+    }
+
+    std::expected<document_structure, error> document::parse_structure() const noexcept
+    {
+        auto parser_result = parser();
+        if (!parser_result)
+            return std::unexpected(parser_result.error());
+
+        return parser_result->get().structure();
+    }
+
+    std::expected<document_structure, error> document::create_structure() const noexcept
+    {
+        return std::unexpected(error_builder::create()
+                                   .with_message("create_structure not yet implemented")
+                                   .with_code(error_code::not_found)
+                                   .with_component(error_component::document)
+                                   .build());
     }
 
     std::expected<header, error> document::parse_header() const noexcept

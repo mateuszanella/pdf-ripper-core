@@ -9,6 +9,7 @@
 
 #include "core/document/catalog/catalog.hpp"
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/error.hpp"
@@ -115,11 +116,20 @@ namespace ripper::core
         [[nodiscard]] std::expected<std::reference_wrapper<class catalog>, error> catalog() noexcept;
 
     private:
+        /// Parse and return the assembled document structure (xref + trailer + histories) (cached).
+        [[nodiscard]] std::expected<std::reference_wrapper<class document_structure>, error> structure() noexcept;
+
         /// Parse and return the PDF header without caching.
         [[nodiscard]] std::expected<class header, error> parse_header() const noexcept;
 
         /// Generate a new PDF header with default values.
         [[nodiscard]] std::expected<class header, error> create_header() const noexcept;
+
+        /// Parse and return the document structure without caching.
+        [[nodiscard]] std::expected<class document_structure, error> parse_structure() const noexcept;
+
+        /// Generate a new document structure with default values.
+        [[nodiscard]] std::expected<class document_structure, error> create_structure() const noexcept;
 
         std::unique_ptr<class reader> reader_;
         std::unique_ptr<class parser> parser_;
@@ -129,11 +139,7 @@ namespace ripper::core
 
         std::optional<class header> header_;
 
-        std::optional<class cross_reference_table> xref_table_;
-        std::optional<std::vector<class cross_reference_table>> xref_history_;
-
-        std::optional<class trailer> trailer_;
-        std::optional<std::vector<class trailer>> trailer_history_;
+        std::optional<class document_structure> structure_;
 
         std::optional<class catalog> catalog_;
     };
