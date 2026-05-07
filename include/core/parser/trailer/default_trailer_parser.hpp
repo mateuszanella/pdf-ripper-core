@@ -22,8 +22,5 @@ namespace ripper::core
 
     private:
         [[nodiscard]] static std::expected<trailer, error> parse_dictionary(std::string_view content);
-
-        [[nodiscard]] static std::expected<std::pair<std::uint32_t, std::uint16_t>, error>
-            parse_indirect_reference(std::string_view line);
     };
 }

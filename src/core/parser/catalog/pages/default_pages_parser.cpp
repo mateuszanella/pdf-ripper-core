@@ -8,7 +8,7 @@
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
-#include "core/util/text.hpp"
+#include "core/parser/value_parsing.hpp"
 
 namespace ripper::core
 {
@@ -67,41 +67,32 @@ namespace ripper::core
 
             if (token.type != lexer_token_type::name)
             {
-                auto skip_result = lexer.skip_value();
-                if (!skip_result)
-                    return std::unexpected(skip_result.error());
+                auto r = lexer.skip_value();
+                if (!r)
+                    return std::unexpected(r.error());
                 continue;
             }
 
             const auto key_token = *lexer.next();
+            auto val = parse_value(lexer);
+            if (!val)
+                return std::unexpected(val.error());
 
             if (key_token.lexeme == "Type")
             {
-                auto value_result = lexer.next();
-                if (!value_result)
-                    return std::unexpected(value_result.error());
-
-                if (value_result->type != lexer_token_type::name || value_result->lexeme != "Pages")
+                if (!val->is_name() || val->as_name()->value != "Pages")
                     return std::unexpected(error_builder::create()
                                                .with_code(error_code::corrupted_object)
                                                .with_component(error_component::pages)
                                                .with_field("Type")
                                                .with_expected("Pages")
-                                               .with_actual(std::string{value_result->lexeme})
+                                               .with_actual(val->is_name() ? val->as_name()->value : "non-name")
                                                .with_message("Pages Type must be /Pages")
                                                .build());
-
                 found_type_pages = true;
-
-                dict.set("Type", value{name{"Pages"}});
-
-                continue;
             }
 
-            // For all other keys (Count, Kids, Parent, etc.), parse and store generically
-            auto skip_result = lexer.skip_value();
-            if (!skip_result)
-                return std::unexpected(skip_result.error());
+            dict.set(std::string{key_token.lexeme}, std::move(*val));
         }
 
         if (!found_type_pages)
@@ -114,6 +105,6 @@ namespace ripper::core
                                        .with_message("Pages dictionary is missing /Type /Pages")
                                        .build());
 
-        return std::move(dict);
+        return dict;
     }
 }

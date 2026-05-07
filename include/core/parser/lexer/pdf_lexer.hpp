@@ -75,12 +75,6 @@ namespace ripper::core
         /// Returns `unexpected(err)` if the value cannot be skipped.
         [[nodiscard]] std::expected<void, error> skip_value();
 
-        /// Parse an indirect reference of the form `obj gen R`.
-        ///
-        /// Consumes three tokens and validates their types and range constraints.
-        /// Returns `unexpected(err)` if the tokens do not form a valid reference.
-        [[nodiscard]] std::expected<std::pair<std::uint32_t, std::uint16_t>, error> parse_indirect_reference();
-
     private:
         /// Read and return the next token from the raw content buffer.
         ///

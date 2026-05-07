@@ -63,26 +63,39 @@ namespace ripper::core
         /// Return a string representation of this component.
         [[nodiscard]] constexpr std::string_view to_string() const noexcept
         {
-            static constexpr std::string_view table[] = {
-                "unknown",
-                "reader",
-                "lexer",
-                "parser",
-                "cross_reference",
-                "trailer",
-                "catalog",
-                "pages",
-                "compression",
-                "document",
-                "serializer",
-                "writer",
-            };
-            if (value < std::size(table))
-                return table[value];
-            return "unknown";
+            return lookup(value).name;
         }
 
     private:
         Value value = unknown;
+
+        struct entry
+        {
+            Value component;
+            std::string_view name;
+        };
+
+        static constexpr entry table[] = {
+            {unknown, "unknown"},
+            {document, "document"},
+            {reader, "reader"},
+            {writer, "writer"},
+            {lexer, "lexer"},
+            {parser, "parser"},
+            {serializer, "serializer"},
+            {cross_reference, "cross_reference"},
+            {trailer, "trailer"},
+            {catalog, "catalog"},
+            {pages, "pages"},
+            {compression, "compression"},
+        };
+
+        [[nodiscard]] static constexpr const entry &lookup(Value v) noexcept
+        {
+            for (const auto &e : table)
+                if (e.component == v)
+                    return e;
+            return table[0];
+        }
     };
 }

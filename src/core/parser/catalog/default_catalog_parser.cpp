@@ -8,6 +8,7 @@
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
+#include "core/parser/value_parsing.hpp"
 
 namespace ripper::core
 {
@@ -100,11 +101,11 @@ namespace ripper::core
 
             if (key_token.lexeme == "Pages")
             {
-                auto ref_result = lexer.parse_indirect_reference();
+                auto ref_result = parse_indirect_reference(lexer);
                 if (!ref_result)
                     return std::unexpected(ref_result.error());
 
-                dict.set("Pages", value{indirect_reference{ref_result->first, ref_result->second}});
+                dict.set("Pages", value{*ref_result});
 
                 continue;
             }

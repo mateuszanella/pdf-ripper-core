@@ -10,18 +10,11 @@
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
+#include "core/parser/value_parsing.hpp"
 #include "core/util/text.hpp"
 
 namespace ripper::core
 {
-    std::expected<std::pair<std::uint32_t, std::uint16_t>, error>
-    default_trailer_parser::parse_indirect_reference(std::string_view line)
-    {
-        pdf_lexer lexer{line};
-
-        return lexer.parse_indirect_reference();
-    }
-
     std::expected<trailer, error> default_trailer_parser::parse_dictionary(std::string_view content)
     {
         pdf_lexer lexer{content};
@@ -123,7 +116,7 @@ namespace ripper::core
             // This is the entry point for the entire logical document structure.
             if (key_token.lexeme == "Root")
             {
-                auto ref = lexer.parse_indirect_reference();
+                auto ref = parse_indirect_reference(lexer);
                 if (!ref)
                     return std::unexpected(error_builder::create()
                                                .with_code(error_code::corrupted_trailer)
@@ -133,7 +126,7 @@ namespace ripper::core
                                                .with_message("Root must be an indirect reference")
                                                .build());
 
-                dict.set("Root", value{indirect_reference{ref->first, ref->second}});
+                dict.set("Root", value{*ref});
 
                 continue;
             }

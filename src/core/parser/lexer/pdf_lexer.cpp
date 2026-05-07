@@ -425,48 +425,4 @@ namespace ripper::core
         return {};
     }
 
-    std::expected<std::pair<std::uint32_t, std::uint16_t>, error>
-    pdf_lexer::parse_indirect_reference()
-    {
-        auto obj = next();
-        auto gen = next();
-        auto marker = next();
-
-        if (!obj || !gen || !marker)
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::unexpected_eof)
-                                       .with_component(error_component::lexer)
-                                       .with_offset(_position)
-                                       .with_message("Unexpected EOF while parsing indirect reference")
-                                       .build());
-
-        if (obj->type != lexer_token_type::integer ||
-            gen->type != lexer_token_type::integer ||
-            marker->type != lexer_token_type::keyword ||
-            marker->lexeme != "R")
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::invalid_token)
-                                       .with_component(error_component::lexer)
-                                       .with_offset(_position)
-                                       .with_expected("obj gen R")
-                                       .with_message("Invalid indirect reference")
-                                       .build());
-
-        const auto obj_num = text::parse_size_t(obj->lexeme);
-        const auto gen_num = text::parse_size_t(gen->lexeme);
-
-        if (!obj_num || !gen_num ||
-            *obj_num > std::numeric_limits<std::uint32_t>::max() ||
-            *gen_num > std::numeric_limits<std::uint16_t>::max())
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::invalid_token)
-                                       .with_component(error_component::lexer)
-                                       .with_offset(_position)
-                                       .with_message("Indirect reference numbers are out of range")
-                                       .build());
-
-        return std::make_pair(
-            static_cast<std::uint32_t>(*obj_num),
-            static_cast<std::uint16_t>(*gen_num));
-    }
 }
