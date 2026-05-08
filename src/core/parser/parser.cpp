@@ -4,18 +4,16 @@
 #include <utility>
 
 #include "core/document.hpp"
-#include "core/parser/parser_manager.hpp"
 #include "core/document/catalog/catalog.hpp"
-#include "core/parser/catalog/catalog_parser.hpp"
-#include "core/parser/catalog/default_catalog_parser.hpp"
-#include "core/parser/catalog/pages/pages_parser.hpp"
-#include "core/parser/catalog/pages/default_pages_parser.hpp"
+#include "core/document/catalog/pages/pages.hpp"
+#include "core/parser/parser_manager.hpp"
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
 #include "core/parser/document_structure/default_document_structure_parser.hpp"
 #include "core/parser/header/header_parser.hpp"
 #include "core/parser/indirect_object_resolver.hpp"
+#include "core/parser/object_parser.hpp"
 #include "core/parser/trailer/trailer_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
 #include "core/error.hpp"
@@ -59,37 +57,28 @@ namespace ripper::core
         if (!root_ref)
             return std::unexpected(root_ref.error());
 
-        auto content = manager().object_resolver().resolve(*root_ref);
-        if (!content)
-            return std::unexpected(content.error());
+        auto obj = parse_object(*root_ref);
+        if (!obj)
+            return std::unexpected(obj.error());
 
-        auto parse_result = manager().catalog_parser().parse(content.value());
-        if (!parse_result)
-            return std::unexpected(parse_result.error());
-
-        class catalog c
-        {
-            object { indirect_object{document_, *root_ref}, std::move(parse_result.value()) }
-        };
-
-        return c;
+        return ripper::core::catalog{std::move(*obj)};
     }
 
-    std::expected<class pages, error> parser::pages(indirect_reference obj)
+    std::expected<class pages, error> parser::pages(indirect_reference ref)
     {
-        auto content = manager().object_resolver().resolve(obj);
+        auto obj = parse_object(ref);
+        if (!obj)
+            return std::unexpected(obj.error());
+
+        return ripper::core::pages{std::move(*obj)};
+    }
+
+    std::expected<object, error> parser::parse_object(indirect_reference ref)
+    {
+        auto content = manager().object_resolver().resolve(ref);
         if (!content)
             return std::unexpected(content.error());
 
-        auto parse_result = manager().pages_parser().parse(content.value());
-        if (!parse_result)
-            return std::unexpected(parse_result.error());
-
-        class pages p
-        {
-            object { indirect_object{document_, obj}, std::move(parse_result.value()) }
-        };
-
-        return p;
+        return manager().object_parser().parse(document_, ref, *content);
     }
 }

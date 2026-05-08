@@ -17,7 +17,15 @@ namespace ripper::core
         if (pages_.has_value())
             return pages_.value();
 
-        auto pages_ref = dictionary().get_indirect_reference("Pages");
+        auto *d = dictionary();
+        if (!d)
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::corrupted_catalog)
+                                       .with_component(error_component::catalog)
+                                       .with_message("Catalog content is not a dictionary")
+                                       .build());
+
+        auto pages_ref = d->get_indirect_reference("Pages");
         if (!pages_ref)
         {
             return std::unexpected(error_builder::create()

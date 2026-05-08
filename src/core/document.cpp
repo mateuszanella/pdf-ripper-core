@@ -309,7 +309,7 @@ namespace ripper::core
         dict.set("Type", value{name{"Catalog"}});
 
         auto cat = std::make_unique<catalog_t>(
-            object{indirect_object{*this, ref}, std::move(dict)});
+            object{indirect_object{*this, ref}, value{std::move(dict)}});
 
         auto *raw = xref.commit(ref, std::move(cat));
         if (!raw)

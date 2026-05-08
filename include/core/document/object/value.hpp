@@ -157,6 +157,9 @@ namespace ripper::core
         /// Returns a pointer to the held dictionary, or `nullptr` if this is not a dictionary value.
         [[nodiscard]] const dictionary *as_dictionary() const noexcept;
 
+        /// Returns a pointer to the held dictionary, or `nullptr` if this is not a dictionary value.
+        [[nodiscard]] dictionary *as_dictionary() noexcept;
+
         /// Returns a pointer to the held indirect reference, or `nullptr` if this is not an indirect reference value.
         [[nodiscard]] const indirect_reference *as_indirect_reference() const noexcept;
 

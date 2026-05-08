@@ -154,6 +154,34 @@ namespace
             return;
         }
 
+        auto dict = pages->dictionary();
+        if (! dict)
+        {
+            std::println("\nPages content is not a dictionary.");
+            return;
+        }
+
+        auto mediaBox = dict->get_array("MediaBox");
+        if (mediaBox)
+        {
+            std::println("\nMediaBox found for pages:");
+            std::println("  MediaBox: [");
+            for (const auto &entry : *mediaBox)
+            {
+                if (auto *d = std::get_if<double>(&entry.variant()))
+                    std::println("    {}", *d);
+                else if (auto *i = std::get_if<int64_t>(&entry.variant()))
+                    std::println("    {}", *i);
+                else
+                    std::println("    (non-numeric value)");
+            }
+            std::println("  ]");
+        }
+        else
+        {
+            std::println("\nMediaBox not found in pages dictionary.");
+        }
+
         std::println("\nPages parsed successfully. Page count: {}", pageCount.value());
     }
 }

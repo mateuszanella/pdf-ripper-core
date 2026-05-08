@@ -4,6 +4,8 @@
 
 namespace ripper::core
 {
+    /// Value implementation
+
     value::value() noexcept
         : value_(null{})
     {
@@ -149,6 +151,13 @@ namespace ripper::core
         return ptr ? ptr->get() : nullptr;
     }
 
+    dictionary *value::as_dictionary() noexcept
+    {
+        auto *ptr = std::get_if<std::unique_ptr<dictionary>>(&value_);
+
+        return ptr ? ptr->get() : nullptr;
+    }
+
     const indirect_reference *value::as_indirect_reference() const noexcept
     {
         return std::get_if<indirect_reference>(&value_);
@@ -158,6 +167,8 @@ namespace ripper::core
     {
         return value_;
     }
+
+    /// Dictionary implementation
 
     dictionary::dictionary(dictionary_map_type entries) noexcept
         : entries_(std::move(entries))

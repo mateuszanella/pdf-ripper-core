@@ -17,7 +17,15 @@ namespace ripper::core
 
     std::expected<std::uint64_t, error> pages::count() const
     {
-        auto count = dictionary().get_integer("Count");
+        auto *d = dictionary();
+        if (!d)
+            return std::unexpected(error_builder::create()
+                                       .with_code(error_code::corrupted_pages)
+                                       .with_component(error_component::pages)
+                                       .with_message("Pages content is not a dictionary")
+                                       .build());
+
+        auto count = d->get_integer("Count");
         if (!count)
         {
             return std::unexpected(error_builder::create()

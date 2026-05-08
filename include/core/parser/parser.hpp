@@ -6,13 +6,15 @@
 
 #include "core/document/header.hpp"
 #include "core/document/document_structure.hpp"
-#include "core/document/catalog/catalog.hpp"
+#include "core/document/object/indirect_reference.hpp"
+#include "core/document/object/object.hpp"
 #include "core/error.hpp"
 
 namespace ripper::core
 {
     class document;
     class parser_manager;
+    class catalog;
     class pages;
     class indirect_reference;
 
@@ -48,6 +50,12 @@ namespace ripper::core
 
         /// Parse and return a pages tree rooted at `pages_ref`.
         [[nodiscard]] std::expected<pages, error> pages(indirect_reference pages_ref);
+
+        /// Parse any indirect object by reference and return the fully resolved `object`.
+        ///
+        /// The result can be cast to a typed subclass (catalog, pages, etc.) when the
+        /// caller knows the `/Type` of the object.
+        [[nodiscard]] std::expected<object, error> parse_object(indirect_reference ref);
 
     private:
         document &document_;

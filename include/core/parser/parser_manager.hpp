@@ -8,8 +8,7 @@ namespace ripper::core
     class header_parser;
     class cross_reference_table_parser;
     class trailer_parser;
-    class catalog_parser;
-    class pages_parser;
+    class object_parser;
     class document_structure_parser;
     class indirect_object_resolver;
 
@@ -38,17 +37,14 @@ namespace ripper::core
         /// Replace the trailer parser implementation.
         void set_trailer_parser(std::unique_ptr<class trailer_parser> value) noexcept;
 
-        /// Replace the catalog parser implementation.
-        void set_catalog_parser(std::unique_ptr<class catalog_parser> value) noexcept;
-
-        /// Replace the pages parser implementation.
-        void set_pages_parser(std::unique_ptr<class pages_parser> value) noexcept;
-
         /// Replace the document-structure parser implementation.
         void set_document_structure_parser(std::unique_ptr<class document_structure_parser> value) noexcept;
 
         /// Replace the indirect-object resolver implementation.
         void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> value) noexcept;
+
+        /// Replace the object parser implementation.
+        void set_object_parser(std::unique_ptr<class object_parser> value) noexcept;
 
         /// Access the configured header parser.
         [[nodiscard]] class header_parser &header_parser();
@@ -59,17 +55,14 @@ namespace ripper::core
         /// Access the configured trailer parser.
         [[nodiscard]] class trailer_parser &trailer_parser();
 
-        /// Access the configured catalog parser.
-        [[nodiscard]] class catalog_parser &catalog_parser();
-
-        /// Access the configured pages parser.
-        [[nodiscard]] class pages_parser &pages_parser();
-
         /// Access the configured document-structure parser.
         [[nodiscard]] class document_structure_parser &document_structure_parser();
 
         /// Access the configured indirect-object resolver.
         [[nodiscard]] class indirect_object_resolver &object_resolver();
+
+        /// Access the configured object parser.
+        [[nodiscard]] class object_parser &object_parser();
 
     private:
         document &document_;
@@ -77,9 +70,8 @@ namespace ripper::core
         std::unique_ptr<class header_parser> header_parser_;
         std::unique_ptr<class cross_reference_table_parser> xref_parser_;
         std::unique_ptr<class trailer_parser> trailer_parser_;
-        std::unique_ptr<class catalog_parser> catalog_parser_;
-        std::unique_ptr<class pages_parser> pages_parser_;
         std::unique_ptr<class document_structure_parser> structure_parser_;
         std::unique_ptr<class indirect_object_resolver> object_resolver_;
+        std::unique_ptr<class object_parser> object_parser_;
     };
 }

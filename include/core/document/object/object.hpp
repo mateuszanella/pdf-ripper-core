@@ -15,30 +15,36 @@ namespace ripper::core
     /// Composes three components that together represent a PDF object as defined in the spec:
     ///
     ///   - **Identity** (`indirect_object`): the object number, generation number and owning document.
-    ///   - **Dictionary** (`dictionary`): the metadata map describing the object (e.g. `/Type`, `/Pages`).
-    ///   - **Content stream** (`stream`): optional raw byte payload, present only on stream objects.
+    ///   - **Content** (`value`): any PDF direct object — null, boolean, integer, real, string,
+    ///     name, array, dictionary, or indirect reference.
+    ///   - **Content stream** (`stream`): optional raw byte payload. Only meaningful when `content()`
+    ///     holds a `dictionary`; a stream cannot be attached to a primitive value.
     ///
     /// ## Relationship to `indirect_object`
     ///
-    /// `indirect_object` carries identity only, it knows *which* object this is, not *what* it contains.
-    /// `object` is the resolved form: it pairs that identity with a parsed dictionary and optional stream.
+    /// `indirect_object` carries identity only — it knows *which* object this is, not *what* it contains.
+    /// `object` is the resolved form: it pairs that identity with a parsed content value and optional stream.
     ///
     /// ## Derived types
     ///
-    /// Semantic PDF object types (e.g. `pages`, `page`, `font`) extend this class and provide
-    /// domain-specific helpers on top of the raw dictionary and stream access provided here.
+    /// Semantic PDF object types (e.g. `catalog`, `pages`, `page`, `font`) extend this class and
+    /// provide domain-specific helpers on top of the raw content access provided here. They are
+    /// typed views over objects whose content is expected to be a dictionary; `dictionary()` returns
+    /// `nullptr` for objects whose content is a primitive.
     ///
     /// ## Ownership
     ///
-    /// `object` owns its dictionary and content stream. The `indirect_object` identity is held by value.
+    /// `object` owns its content value and content stream. The `indirect_object` identity is held by value.
     class object
     {
     public:
-        /// Construct an object with identity and dictionary, no content stream.
-        object(indirect_object identity, class dictionary dictionary) noexcept;
+        /// Construct an object with identity and content, no content stream.
+        object(indirect_object identity, value content) noexcept;
 
-        /// Construct an object with identity, dictionary and a content stream.
-        object(indirect_object identity, class dictionary dictionary, class stream stream) noexcept;
+        /// Construct an object with identity, content and a content stream.
+        ///
+        /// A stream is only meaningful when `content` holds a `dictionary`.
+        object(indirect_object identity, value content, class stream stream) noexcept;
 
         virtual ~object() = default;
 
@@ -52,11 +58,22 @@ namespace ripper::core
         /// owning document and indirect reference.
         [[nodiscard]] const indirect_object &identity() const noexcept;
 
-        /// Returns the dictionary holding this object's metadata.
-        [[nodiscard]] const dictionary &dictionary() const noexcept;
+        /// Returns the raw content value of this object.
+        ///
+        /// May hold any PDF direct object type: null, boolean, integer, real, string,
+        /// name, array, dictionary, or indirect reference.
+        [[nodiscard]] const value &content() const noexcept;
 
-        /// Returns a mutable reference to the dictionary.
-        [[nodiscard]] class dictionary &dictionary() noexcept;
+        /// Returns a mutable reference to the raw content value.
+        [[nodiscard]] value &content() noexcept;
+
+        /// Returns a pointer to the content dictionary, or `nullptr` if the content is not a dictionary.
+        ///
+        /// Derived typed classes (catalog, pages, etc.) rely on this being non-null.
+        [[nodiscard]] const class dictionary *dictionary() const noexcept;
+
+        /// Returns a mutable pointer to the content dictionary, or `nullptr` if the content is not a dictionary.
+        [[nodiscard]] class dictionary *dictionary() noexcept;
 
         /// Returns `true` if this object carries a content stream.
         [[nodiscard]] bool has_stream() const noexcept;
@@ -72,7 +89,7 @@ namespace ripper::core
 
     private:
         indirect_object identity_;
-        class dictionary dictionary_;
+        value content_;
         std::optional<class stream> stream_;
     };
 }

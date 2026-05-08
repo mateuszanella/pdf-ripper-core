@@ -6,13 +6,13 @@
 
 namespace ripper::core
 {
-    object::object(indirect_object identity, class dictionary dictionary) noexcept
-        : identity_(std::move(identity)), dictionary_(std::move(dictionary)), stream_(std::nullopt)
+    object::object(indirect_object identity, class value content) noexcept
+        : identity_(std::move(identity)), content_(std::move(content)), stream_(std::nullopt)
     {
     }
 
-    object::object(indirect_object identity, class dictionary dictionary, class stream stream) noexcept
-        : identity_(std::move(identity)), dictionary_(std::move(dictionary)), stream_(std::move(stream))
+    object::object(indirect_object identity, class value content, class stream stream) noexcept
+        : identity_(std::move(identity)), content_(std::move(content)), stream_(std::move(stream))
     {
     }
 
@@ -21,14 +21,24 @@ namespace ripper::core
         return identity_;
     }
 
-    const dictionary &object::dictionary() const noexcept
+    const value &object::content() const noexcept
     {
-        return dictionary_;
+        return content_;
     }
 
-    dictionary &object::dictionary() noexcept
+    value &object::content() noexcept
     {
-        return dictionary_;
+        return content_;
+    }
+
+    const dictionary *object::dictionary() const noexcept
+    {
+        return content_.as_dictionary();
+    }
+
+    dictionary *object::dictionary() noexcept
+    {
+        return content_.as_dictionary();
     }
 
     bool object::has_stream() const noexcept
