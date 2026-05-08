@@ -51,6 +51,22 @@ namespace
         {
             std::println("\nCross-Reference Table parsed successfully.");
             std::println("Found {} entries", xrefTable->get().size());
+            std::println("First 5 entries:");
+            size_t count = 0;
+            for (const auto &[objNum, entry] : xrefTable->get().entries())
+            {
+                std::println("  Object {}: offset={}, gen={}, in_use={}, resolved={}",
+                             objNum,
+                             entry.offset().has_value()
+                                 ? std::to_string(*entry.offset())
+                                 : "n/a",
+                             std::to_string(entry.reference().generation()),
+                             entry.in_use(),
+                             entry.is_resolved());
+
+                if (++count >= 5)
+                    break;
+            }
         }
         else
         {

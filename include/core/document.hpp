@@ -131,6 +131,12 @@ namespace ripper::core
         /// Generate a new document structure with default values.
         [[nodiscard]] std::expected<class document_structure, error> create_structure() const noexcept;
 
+        /// Parse the catalog from the file and commit it into the xref.
+        [[nodiscard]] std::expected<class catalog*, error> parse_catalog() noexcept;
+
+        /// Allocate a new catalog into the xref and set the trailer /Root.
+        [[nodiscard]] std::expected<class catalog*, error> create_catalog() noexcept;
+
         std::unique_ptr<class reader> reader_;
         std::unique_ptr<class parser> parser_;
 
@@ -140,7 +146,5 @@ namespace ripper::core
         std::optional<class header> header_;
 
         std::optional<class document_structure> structure_;
-
-        std::optional<class catalog> catalog_;
     };
 }
