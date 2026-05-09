@@ -125,7 +125,7 @@ namespace ripper::core
         }
 
         /// Build an `error` by copying current builder state.
-        [[nodiscard]] error build() const
+        [[nodiscard]] error build() const &
         {
             return error{code_, message_, context_};
         }
