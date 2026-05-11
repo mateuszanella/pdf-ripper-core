@@ -6,7 +6,7 @@
 /// Simple stream object
 ///
 /// @todo Make this decent
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class stream
     {

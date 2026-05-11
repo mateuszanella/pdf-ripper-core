@@ -8,7 +8,7 @@
 #include "core/errors/error_component.hpp"
 #include "core/errors/error_context.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Value-semantic error object.
     ///

@@ -15,7 +15,7 @@
 #include "core/parser/trailer/default_trailer_parser.hpp"
 #include "core/parser/trailer/trailer_parser.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     parser_manager::parser_manager(document &doc)
         : document_{doc}

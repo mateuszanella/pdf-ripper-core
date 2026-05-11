@@ -2,7 +2,7 @@
 
 #include <memory>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class document;
     class header_parser;

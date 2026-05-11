@@ -9,7 +9,7 @@
 
 #include "core/error.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     enum class lexer_token_type
     {

@@ -17,7 +17,7 @@
 #include "core/reader/reader.hpp"
 #include "core/util/text.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     namespace
     {

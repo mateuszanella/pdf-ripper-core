@@ -1,6 +1,6 @@
 #include "core/reader/sub_reader.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     sub_reader::sub_reader(reader &parent, std::size_t startOffset)
         : _parent{parent}, _startOffset{startOffset}

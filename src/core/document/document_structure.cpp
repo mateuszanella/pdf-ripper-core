@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     document_structure::document_structure(
         cross_reference_table compiled_xref,

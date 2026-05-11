@@ -7,7 +7,7 @@
 #include <string_view>
 #include <utility>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     file_reader::file_reader(const std::filesystem::path path)
         : _path{std::move(path)},

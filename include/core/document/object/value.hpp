@@ -9,7 +9,7 @@
 
 #include "core/document/object/indirect_reference.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// General header for all PDF value types, including primitives (null, bool, int,
     /// real, string, name) and composites (array, dictionary, indirect reference).

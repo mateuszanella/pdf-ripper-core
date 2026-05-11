@@ -5,7 +5,7 @@
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/trailer/trailer.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// The assembled PDF document structure.
     ///

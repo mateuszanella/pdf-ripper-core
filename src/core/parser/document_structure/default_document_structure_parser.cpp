@@ -14,7 +14,7 @@
 #include "core/util/text.hpp"
 #include "core/document.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     default_document_structure_parser::default_document_structure_parser(document &document)
         : default_document_structure_parser(

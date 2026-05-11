@@ -3,7 +3,7 @@
 #include "core/document/object/indirect_object.hpp"
 #include "core/document/object/object.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     cross_reference_table::cross_reference_table(entry_map entries) noexcept
         : entries_{std::move(entries)}

@@ -1,6 +1,6 @@
 #include "core/document/header.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     header::header(std::string version)
         : version_{std::move(version)}

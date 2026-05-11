@@ -1,6 +1,6 @@
 #include "core/document/object/indirect_reference.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     indirect_reference::indirect_reference() noexcept
         : object_number_{0}, generation_{0}
@@ -23,7 +23,7 @@ namespace ripper::core
     }
 }
 
-std::size_t std::hash<ripper::core::indirect_reference>::operator()(const ripper::core::indirect_reference &ref) const noexcept
+std::size_t std::hash<ripper::pdf::core::indirect_reference>::operator()(const ripper::pdf::core::indirect_reference &ref) const noexcept
 {
     auto h1 = std::hash<std::uint32_t>{}(ref.object_number());
     auto h2 = std::hash<std::uint16_t>{}(ref.generation());

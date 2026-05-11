@@ -3,7 +3,7 @@
 #include "core/document/object/value.hpp"
 #include "core/errors/error_builder.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     trailer::trailer(class dictionary dict) noexcept
         : dict_{std::move(dict)}

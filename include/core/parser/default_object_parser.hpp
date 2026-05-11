@@ -8,7 +8,7 @@
 #include "core/error.hpp"
 #include "core/parser/object_parser.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Default implementation of `object_parser`.
     ///

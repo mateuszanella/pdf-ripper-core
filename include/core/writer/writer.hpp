@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Abstract byte-oriented output interface.
     ///

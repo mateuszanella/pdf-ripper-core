@@ -7,7 +7,7 @@
 
 #include "core/document.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class header_parser
     {

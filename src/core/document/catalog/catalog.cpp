@@ -5,7 +5,7 @@
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     catalog::catalog(object &obj) noexcept
         : obj_{obj}
@@ -56,6 +56,6 @@ namespace ripper::core
         if (!result)
             return std::unexpected(result.error());
 
-        return ripper::core::pages{**result};
+        return ripper::pdf::core::pages{**result};
     }
 }

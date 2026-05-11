@@ -8,7 +8,7 @@
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     pages::pages(object &obj) noexcept
         : obj_{obj}

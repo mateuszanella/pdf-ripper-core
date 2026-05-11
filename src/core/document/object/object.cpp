@@ -4,7 +4,7 @@
 #include "core/document/object/stream.hpp"
 #include "core/document/object/value.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     object::object(indirect_object identity, class value content) noexcept
         : identity_(std::move(identity)), content_(std::move(content)), stream_(std::nullopt)

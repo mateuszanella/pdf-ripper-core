@@ -11,7 +11,7 @@
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/parser/value_parsing.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     std::expected<object, error> default_object_parser::parse(
         document &doc,

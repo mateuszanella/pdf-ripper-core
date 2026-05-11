@@ -2,7 +2,7 @@
 
 #include "core/document/object/indirect_reference.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Value implementation
 

@@ -10,7 +10,7 @@
 
 #include "core/writer/writer.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// File-backed `writer` implementation.
     ///

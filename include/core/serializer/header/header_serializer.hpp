@@ -7,7 +7,7 @@
 #include "core/document/header.hpp"
 #include "core/error.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Interface for serializing a PDF `header` into raw bytes.
     class header_serializer

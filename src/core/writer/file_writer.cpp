@@ -7,7 +7,7 @@
 #include <string_view>
 #include <utility>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Construct a file-backed writer and open the target file.
     ///

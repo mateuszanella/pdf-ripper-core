@@ -3,7 +3,7 @@
 #include <optional>
 #include <string>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /**
      * @brief Represents a PDF document identifier.

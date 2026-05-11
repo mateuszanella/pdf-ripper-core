@@ -4,7 +4,7 @@
 #include "core/error.hpp"
 #include "core/serializer/header/header_serializer.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Owns and exposes the serializer subcomponents used to process a `document`.
     ///

@@ -4,7 +4,7 @@
 #include "core/document/object/indirect_reference.hpp"
 #include "core/error.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     indirect_object::indirect_object(document &doc, indirect_reference ref) noexcept
         : document_{doc}, reference_{ref}

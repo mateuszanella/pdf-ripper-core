@@ -7,7 +7,7 @@
 #include "core/error.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Parse an indirect reference of the form `obj gen R`.
     ///

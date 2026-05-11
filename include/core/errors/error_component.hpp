@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Type-safe wrapper around error component enum with member methods.
     ///

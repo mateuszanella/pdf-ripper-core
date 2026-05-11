@@ -8,7 +8,7 @@
 #include "core/error.hpp"
 #include "core/serializer/header/default_header_serializer.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     serializer_manager::serializer_manager(const document &doc)
         : document_{doc}

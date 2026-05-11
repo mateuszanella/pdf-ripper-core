@@ -19,7 +19,7 @@
 #include "core/writer/file_writer.hpp"
 #include "core/writer/writer.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     document::document(std::unique_ptr<class reader> reader, std::unique_ptr<class writer> writer)
         : reader_(std::move(reader)),
@@ -34,12 +34,12 @@ namespace ripper::core
 
     document document::open(const std::filesystem::path &path)
     {
-        return document{std::make_unique<ripper::core::file_reader>(path), nullptr};
+        return document{std::make_unique<ripper::pdf::core::file_reader>(path), nullptr};
     }
 
     document document::create(const std::filesystem::path &path)
     {
-        return document{nullptr, std::make_unique<ripper::core::file_writer>(path)};
+        return document{nullptr, std::make_unique<ripper::pdf::core::file_writer>(path)};
     }
 
     std::expected<bool, error> document::save()
@@ -236,7 +236,7 @@ namespace ripper::core
 
         // Already resolved — return a view over the cached object.
         if (entry->is_resolved())
-            return ripper::core::catalog{*entry->object()};
+            return ripper::pdf::core::catalog{*entry->object()};
 
         // Lazy-load from file.
         return parse_catalog();
@@ -256,7 +256,7 @@ namespace ripper::core
         if (!result)
             return std::unexpected(result.error());
 
-        return ripper::core::catalog{**result};
+        return ripper::pdf::core::catalog{**result};
     }
 
     std::expected<catalog, error> document::create_catalog() noexcept
@@ -287,7 +287,7 @@ namespace ripper::core
 
         trailer_result->get().dictionary().set("Root", value{ref});
 
-        return ripper::core::catalog{*raw};
+        return ripper::pdf::core::catalog{*raw};
     }
 
     std::expected<object*, error> document::resolve_object(indirect_reference ref) noexcept
@@ -346,10 +346,10 @@ namespace ripper::core
 
     std::expected<document_structure, error> document::create_structure() const noexcept
     {
-        using xref_t = ripper::core::cross_reference_table;
-        using entry_t = ripper::core::cross_reference_entry;
-        using iref_t = ripper::core::indirect_reference;
-        using trailer_t = ripper::core::trailer;
+        using xref_t = ripper::pdf::core::cross_reference_table;
+        using entry_t = ripper::pdf::core::cross_reference_entry;
+        using iref_t = ripper::pdf::core::indirect_reference;
+        using trailer_t = ripper::pdf::core::trailer;
 
         const auto generate_initial_xref = []()
         {
@@ -389,6 +389,6 @@ namespace ripper::core
 
     std::expected<header, error> document::create_header() const noexcept
     {
-        return ripper::core::header{"1.4"};
+        return ripper::pdf::core::header{"1.4"};
     }
 }

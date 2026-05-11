@@ -6,7 +6,7 @@
 
 #include "core/reader/reader.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /**
      * @brief A reader that operates on a subset of another reader.

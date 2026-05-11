@@ -26,7 +26,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    auto document = ripper::core::document::create(path);
+    auto document = ripper::pdf::core::document::create(path);
 
     auto result = document.save();
     if (!result)

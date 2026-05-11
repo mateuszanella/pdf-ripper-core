@@ -3,7 +3,7 @@
 #include "core/document/object/indirect_object.hpp"
 #include "core/document/object/object.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     cross_reference_entry::cross_reference_entry(indirect_reference ref, std::uint64_t offset, bool in_use) noexcept
         : reference_{ref}, offset_{offset}, in_use_{in_use}, object_{nullptr}

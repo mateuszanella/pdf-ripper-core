@@ -7,7 +7,7 @@
 
 #include "core/errors/error_component.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Typed diagnostic metadata attached to an `error`.
     struct error_context

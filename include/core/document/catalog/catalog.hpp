@@ -7,7 +7,7 @@
 #include "core/document/object/object.hpp"
 #include "core/error.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Typed view over the PDF document catalog (/Type /Catalog, the /Root object).
     ///

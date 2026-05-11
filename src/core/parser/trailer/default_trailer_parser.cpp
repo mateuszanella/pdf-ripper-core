@@ -13,7 +13,7 @@
 #include "core/parser/value_parsing.hpp"
 #include "core/util/text.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     std::expected<trailer, error> default_trailer_parser::parse_dictionary(std::string_view content)
     {

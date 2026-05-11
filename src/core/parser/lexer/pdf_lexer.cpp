@@ -8,7 +8,7 @@
 #include "core/errors/error_builder.hpp"
 #include "core/util/text.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     namespace
     {

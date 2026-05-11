@@ -8,7 +8,7 @@
 #include "core/error.hpp"
 #include "core/document/object/indirect_reference.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Fluent helper for constructing `error` values.
     ///

@@ -17,7 +17,7 @@
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     parser::parser(document &doc)
         : document_{doc},

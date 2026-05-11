@@ -5,7 +5,7 @@
 #include "core/document/document_structure.hpp"
 #include "core/error.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class document_structure_parser
     {

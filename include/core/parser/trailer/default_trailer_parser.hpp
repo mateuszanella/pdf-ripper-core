@@ -7,7 +7,7 @@
 #include "core/error.hpp"
 #include "core/parser/trailer/trailer_parser.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /**
      * @brief Parses a single trailer dictionary.

@@ -9,7 +9,7 @@
 #include "core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "core/document/object/indirect_reference.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class object;
 

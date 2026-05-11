@@ -8,7 +8,7 @@
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "core/reader/reader.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /**
      * @brief Parses a single traditional (non-compressed) cross-reference table.

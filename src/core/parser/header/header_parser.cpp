@@ -11,7 +11,7 @@
 #include "core/reader/reader.hpp"
 #include "core/document.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     header_parser::header_parser(const document &document)
         : _document{document}

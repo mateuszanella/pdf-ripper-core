@@ -11,7 +11,7 @@
 #include "core/parser/trailer/trailer_parser.hpp"
 #include "core/document.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class default_document_structure_parser : public document_structure_parser
     {

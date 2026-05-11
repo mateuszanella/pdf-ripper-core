@@ -7,7 +7,7 @@
 #include "core/errors/error_builder.hpp"
 #include "core/util/text.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     std::expected<indirect_reference, error> parse_indirect_reference(pdf_lexer &lexer)
     {

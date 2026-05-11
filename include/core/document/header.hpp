@@ -4,7 +4,7 @@
 #include <string_view>
 #include <utility>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Represents the PDF file header, which contains the PDF version string.
     class header

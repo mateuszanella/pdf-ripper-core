@@ -4,7 +4,7 @@
 #include "core/error.hpp"
 #include "core/serializer/serializer_manager.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// High-level PDF serializer facade for a single `document`.
     ///

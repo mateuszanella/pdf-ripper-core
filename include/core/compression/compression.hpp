@@ -7,7 +7,7 @@
 
 #include "core/error.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /**
      * @brief Provides compression/decompression for pdf stream data.

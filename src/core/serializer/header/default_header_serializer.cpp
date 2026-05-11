@@ -6,7 +6,7 @@
 #include "core/error.hpp"
 #include "core/errors/error_builder.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     std::expected<std::vector<std::byte>, error> default_header_serializer::serialize(const header &value) const
     {

@@ -6,7 +6,7 @@
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/error.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /**
      * @brief Interface for parsing cross-reference tables.

@@ -8,7 +8,7 @@
 #include "core/document/object/stream.hpp"
 #include "core/document/object/value.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// A fully resolved PDF indirect object.
     ///

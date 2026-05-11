@@ -9,7 +9,7 @@
 #include "core/errors/error_builder.hpp"
 #include "core/util/text.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     std::expected<void, error> default_cross_reference_table_parser::parse_subsection(
         cross_reference_table::entry_map &entries,

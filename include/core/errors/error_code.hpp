@@ -4,7 +4,7 @@
 #include <string>
 #include <string_view>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class error_code
     {

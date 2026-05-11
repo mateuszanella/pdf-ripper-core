@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <span>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class reader
     {

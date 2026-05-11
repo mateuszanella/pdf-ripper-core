@@ -6,7 +6,7 @@
 #include <string_view>
 #include <system_error>
 
-namespace ripper::core::text
+namespace ripper::pdf::core::text
 {
     [[nodiscard]] constexpr std::string_view strip_line_endings(std::string_view s) noexcept
     {

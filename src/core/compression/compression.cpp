@@ -5,7 +5,7 @@
 
 #include "core/errors/error_builder.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     std::expected<std::vector<std::byte>, error>
     compression::compress(std::span<const std::byte> input)

@@ -18,7 +18,7 @@
 #include "core/serializer/serializer.hpp"
 #include "core/writer/writer.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// High-level PDF document facade and primary library entrypoint.
     ///

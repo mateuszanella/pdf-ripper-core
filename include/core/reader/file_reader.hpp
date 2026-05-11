@@ -7,7 +7,7 @@
 
 #include "core/reader/reader.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class file_reader : public reader
     {

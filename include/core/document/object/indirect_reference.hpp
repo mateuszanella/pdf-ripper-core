@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <functional>
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     /// Represents a PDF indirect object reference.
     ///
@@ -51,12 +51,12 @@ namespace ripper::core
     };
 }
 
-/// Specialization of `std::hash` for `ripper::core::indirect_reference`.
+/// Specialization of `std::hash` for `ripper::pdf::core::indirect_reference`.
 ///
 /// Enables use of `indirect_reference` as a key in `std::unordered_map` and
 /// other hash-based containers.
 template <>
-struct std::hash<ripper::core::indirect_reference>
+struct std::hash<ripper::pdf::core::indirect_reference>
 {
-    std::size_t operator()(const ripper::core::indirect_reference &ref) const noexcept;
+    std::size_t operator()(const ripper::pdf::core::indirect_reference &ref) const noexcept;
 };

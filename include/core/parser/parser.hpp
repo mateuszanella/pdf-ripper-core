@@ -10,7 +10,7 @@
 #include "core/document/object/object.hpp"
 #include "core/error.hpp"
 
-namespace ripper::core
+namespace ripper::pdf::core
 {
     class document;
     class parser_manager;
