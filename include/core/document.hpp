@@ -111,9 +111,17 @@ namespace ripper::core
         /// Changes made to the returned reference are reflected in the document on save.
         [[nodiscard]] std::expected<std::reference_wrapper<class trailer>, error> trailer() noexcept;
 
-        /// Parse and return the document catalog (cached).
-        /// Changes made to the returned reference are reflected in the document on save.
-        [[nodiscard]] std::expected<std::reference_wrapper<class catalog>, error> catalog() noexcept;
+        /// Return a view over the document catalog.
+        ///
+        /// Resolves the catalog from the xref on first access (lazy). The returned `catalog`
+        /// is a lightweight non-owning view; ownership remains with the xref entry.
+        [[nodiscard]] std::expected<class catalog, error> catalog() noexcept;
+
+        /// Resolve any indirect object by reference, lazy-loading from file if needed.
+        ///
+        /// Returns a raw non-owning pointer into the xref entry. The pointer remains valid
+        /// as long as the document (and its xref) is alive.
+        [[nodiscard]] std::expected<class object*, error> resolve_object(indirect_reference ref) noexcept;
 
     private:
         /// Parse and return the assembled document structure (xref + trailer + histories) (cached).
@@ -132,10 +140,10 @@ namespace ripper::core
         [[nodiscard]] std::expected<class document_structure, error> create_structure() const noexcept;
 
         /// Parse the catalog from the file and commit it into the xref.
-        [[nodiscard]] std::expected<class catalog*, error> parse_catalog() noexcept;
+        [[nodiscard]] std::expected<class catalog, error> parse_catalog() noexcept;
 
         /// Allocate a new catalog into the xref and set the trailer /Root.
-        [[nodiscard]] std::expected<class catalog*, error> create_catalog() noexcept;
+        [[nodiscard]] std::expected<class catalog, error> create_catalog() noexcept;
 
         std::unique_ptr<class reader> reader_;
         std::unique_ptr<class parser> parser_;

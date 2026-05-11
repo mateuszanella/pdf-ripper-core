@@ -14,8 +14,6 @@ namespace ripper::core
 {
     class document;
     class parser_manager;
-    class catalog;
-    class pages;
     class indirect_reference;
 
     /// High-level PDF parser facade for a single `document`.
@@ -44,12 +42,6 @@ namespace ripper::core
 
         /// Parse and return compiled document structure and traversal history.
         [[nodiscard]] std::expected<document_structure, error> structure();
-
-        /// Parse and return the document catalog.
-        [[nodiscard]] std::expected<catalog, error> catalog();
-
-        /// Parse and return a pages tree rooted at `pages_ref`.
-        [[nodiscard]] std::expected<pages, error> pages(indirect_reference pages_ref);
 
         /// Parse any indirect object by reference and return the fully resolved `object`.
         ///

@@ -210,24 +210,17 @@ namespace ripper::core
         return std::ref(s->get().trailer());
     }
 
-    std::expected<std::reference_wrapper<catalog>, error> document::catalog() noexcept
+    std::expected<catalog, error> document::catalog() noexcept
     {
-        using catalog_t = ripper::core::catalog;
-
         auto trailer_result = trailer();
         if (!trailer_result)
             return std::unexpected(trailer_result.error());
 
         auto root_ref = trailer_result->get().root();
 
-        // No /Root yet. First access on a new document: allocate the catalog.
+        // No /Root yet — new document: allocate the catalog.
         if (!root_ref)
-        {
-            auto result = create_catalog();
-            if (!result)
-                return std::unexpected(result.error());
-            return std::ref(*static_cast<catalog_t *>(*result));
-        }
+            return create_catalog();
 
         auto xref_result = cross_reference_table();
         if (!xref_result)
@@ -241,22 +234,16 @@ namespace ripper::core
                                        .with_component(error_component::catalog)
                                        .build());
 
-        // Already resolved (cached in the entry).
+        // Already resolved — return a view over the cached object.
         if (entry->is_resolved())
-            return std::ref(*static_cast<catalog_t *>(entry->object()));
+            return ripper::core::catalog{*entry->object()};
 
         // Lazy-load from file.
-        auto result = parse_catalog();
-        if (!result)
-            return std::unexpected(result.error());
-
-        return std::ref(*static_cast<catalog_t *>(*result));
+        return parse_catalog();
     }
 
-    std::expected<catalog *, error> document::parse_catalog() noexcept
+    std::expected<catalog, error> document::parse_catalog() noexcept
     {
-        using catalog_t = ripper::core::catalog;
-
         auto trailer_result = trailer();
         if (!trailer_result)
             return std::unexpected(trailer_result.error());
@@ -265,35 +252,15 @@ namespace ripper::core
         if (!root_ref)
             return std::unexpected(root_ref.error());
 
-        auto parser_result = parser();
-        if (!parser_result)
-            return std::unexpected(parser_result.error());
+        auto result = resolve_object(*root_ref);
+        if (!result)
+            return std::unexpected(result.error());
 
-        auto parsed = parser_result->get().catalog();
-        if (!parsed)
-            return std::unexpected(parsed.error());
-
-        auto xref_result = cross_reference_table();
-        if (!xref_result)
-            return std::unexpected(xref_result.error());
-
-        auto *entry = xref_result->get().find(*root_ref);
-        if (!entry)
-            return std::unexpected(error_builder::create()
-                                       .with_message("Root object not found in cross-reference table")
-                                       .with_code(error_code::not_found)
-                                       .with_component(error_component::catalog)
-                                       .build());
-
-        auto *raw = entry->resolve(std::make_unique<catalog_t>(std::move(*parsed)));
-
-        return static_cast<catalog_t *>(raw);
+        return ripper::core::catalog{**result};
     }
 
-    std::expected<catalog *, error> document::create_catalog() noexcept
+    std::expected<catalog, error> document::create_catalog() noexcept
     {
-        using catalog_t = ripper::core::catalog;
-
         auto xref_result = cross_reference_table();
         if (!xref_result)
             return std::unexpected(xref_result.error());
@@ -308,10 +275,9 @@ namespace ripper::core
         dictionary dict;
         dict.set("Type", value{name{"Catalog"}});
 
-        auto cat = std::make_unique<catalog_t>(
-            object{indirect_object{*this, ref}, value{std::move(dict)}});
+        auto obj = std::make_unique<object>(indirect_object{*this, ref}, value{std::move(dict)});
 
-        auto *raw = xref.commit(ref, std::move(cat));
+        auto *raw = xref.commit(ref, std::move(obj));
         if (!raw)
             return std::unexpected(error_builder::create()
                                        .with_message("Failed to commit catalog to cross-reference table")
@@ -321,7 +287,35 @@ namespace ripper::core
 
         trailer_result->get().dictionary().set("Root", value{ref});
 
-        return static_cast<catalog_t *>(raw);
+        return ripper::core::catalog{*raw};
+    }
+
+    std::expected<object*, error> document::resolve_object(indirect_reference ref) noexcept
+    {
+        auto xref_result = cross_reference_table();
+        if (!xref_result)
+            return std::unexpected(xref_result.error());
+
+        auto *entry = xref_result->get().find(ref);
+        if (!entry)
+            return std::unexpected(error_builder::create()
+                                       .with_message("Object not found in cross-reference table")
+                                       .with_code(error_code::not_found)
+                                       .build());
+
+        if (entry->is_resolved())
+            return entry->object();
+
+        auto parser_result = parser();
+        if (!parser_result)
+            return std::unexpected(parser_result.error());
+
+        auto parsed = parser_result->get().parse_object(ref);
+        if (!parsed)
+            return std::unexpected(parsed.error());
+
+        auto *raw = entry->resolve(std::make_unique<object>(std::move(*parsed)));
+        return raw;
     }
 
     std::expected<std::reference_wrapper<document_structure>, error> document::structure() noexcept

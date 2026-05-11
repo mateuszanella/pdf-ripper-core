@@ -134,7 +134,7 @@ namespace
 
     void check_pages(ripper::core::document &document)
     {
-        auto pages = document.catalog()->get().pages();
+        auto pages = document.catalog()->pages();
         if (!pages)
         {
             const auto &err = pages.error();

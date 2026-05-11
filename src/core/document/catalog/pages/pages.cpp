@@ -10,14 +10,34 @@
 
 namespace ripper::core
 {
-    pages::pages(object obj) noexcept
-        : object{std::move(obj)}
+    pages::pages(object &obj) noexcept
+        : obj_{obj}
     {
+    }
+
+    object &pages::obj() noexcept
+    {
+        return obj_.get();
+    }
+
+    const object &pages::obj() const noexcept
+    {
+        return obj_.get();
+    }
+
+    dictionary *pages::dictionary() noexcept
+    {
+        return obj_.get().dictionary();
+    }
+
+    const dictionary *pages::dictionary() const noexcept
+    {
+        return obj_.get().dictionary();
     }
 
     std::expected<std::uint64_t, error> pages::count() const
     {
-        auto *d = dictionary();
+        auto *d = obj_.get().dictionary();
         if (!d)
             return std::unexpected(error_builder::create()
                                        .with_code(error_code::corrupted_pages)

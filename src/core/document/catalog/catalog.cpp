@@ -7,17 +7,34 @@
 
 namespace ripper::core
 {
-    catalog::catalog(object obj) noexcept
-        : object{std::move(obj)}
+    catalog::catalog(object &obj) noexcept
+        : obj_{obj}
     {
+    }
+
+    object &catalog::obj() noexcept
+    {
+        return obj_.get();
+    }
+
+    const object &catalog::obj() const noexcept
+    {
+        return obj_.get();
+    }
+
+    dictionary *catalog::dictionary() noexcept
+    {
+        return obj_.get().dictionary();
+    }
+
+    const dictionary *catalog::dictionary() const noexcept
+    {
+        return obj_.get().dictionary();
     }
 
     std::expected<class pages, error> catalog::pages()
     {
-        if (pages_.has_value())
-            return pages_.value();
-
-        auto *d = dictionary();
+        auto *d = obj_.get().dictionary();
         if (!d)
             return std::unexpected(error_builder::create()
                                        .with_code(error_code::corrupted_catalog)
@@ -27,7 +44,6 @@ namespace ripper::core
 
         auto pages_ref = d->get_indirect_reference("Pages");
         if (!pages_ref)
-        {
             return std::unexpected(error_builder::create()
                                        .with_code(error_code::corrupted_catalog)
                                        .with_component(error_component::catalog)
@@ -35,18 +51,11 @@ namespace ripper::core
                                        .with_expected("indirect reference to pages object")
                                        .with_message("Catalog is missing required /Pages reference")
                                        .build());
-        }
 
-        auto parser = identity().owner().parser();
-        if (!parser)
-            return std::unexpected(parser.error());
+        auto result = obj_.get().identity().owner().resolve_object(*pages_ref);
+        if (!result)
+            return std::unexpected(result.error());
 
-        auto parsed = parser->get().pages(*pages_ref);
-        if (!parsed)
-            return std::unexpected(parsed.error());
-
-        pages_.emplace(std::move(parsed.value()));
-
-        return pages_.value();
+        return ripper::core::pages{**result};
     }
 }
