@@ -1,19 +1,17 @@
 # TODO
 
-## Parser and Architecture Refactor
-
-- [x] Split `parser` into smaller components
-  - Separate parser implementations from object-building logic, the parser class should
-        just get the correct parser implementation and build the objects through a builder class
-
----
-
 ## Errors and Diagnostics
 
-- [x] Refactor error model
-  - Replace integer-like errors with lightweight structured error objects
-  - Preserve non-exception workflow (`std::expected` style)
-  - Include richer context (location, object/ref, parser stage)
+- [ ] Refactor error model again.
+    > To be honest, using errors doesnt really seem like a smart option looking from now.
+    > Most errors are unrecoverable and should just be fatal, and the ones that are recoverable 
+    > are mostly 'element not found' type errors that can be handled with `std::optional` or similar.
+    > Just using exceptions for unrecoverable errors and `std::optional` for recoverable ones seems 
+    > like a much more straightforward approach. This is not even taking into account the fact that using
+    > `std::expected` is just really verbose and adds a lot of boilerplate for error handling that is not
+    > really necessary in this context.
+  - Remove `std::expected` and `noexcept` from all APIs and replace with exceptions for unrecoverable 
+    errors and `std::optional` for recoverable ones.
 
 ---
 
