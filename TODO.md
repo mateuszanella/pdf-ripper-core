@@ -1,25 +1,25 @@
 # TODO
 
-## 1) Parser and Architecture Refactor
+## Parser and Architecture Refactor
 
-- [ X ] Split `parser` into smaller components
+- [x] Split `parser` into smaller components
   - Separate parser implementations from object-building logic, the parser class should
         just get the correct parser implementation and build the objects through a builder class
 
 ---
 
-## 2) Errors and Diagnostics
+## Errors and Diagnostics
 
-- [ X ] Refactor error model
+- [x] Refactor error model
   - Replace integer-like errors with lightweight structured error objects
   - Preserve non-exception workflow (`std::expected` style)
   - Include richer context (location, object/ref, parser stage)
 
 ---
 
-## 3) Writing and Saving (major milestone)
+## Writing and Saving (major milestone)
 
-- [ X ] Implement output pipeline (`writer` + serializer layer)
+- [x] Implement output pipeline (`writer` + serializer layer)
   - Add a `writer` abstraction mirroring `reader` responsibilities (byte-oriented I/O only)
   - Implement file-backed writer
   - Define serializer orchestration boundary (object model -> PDF bytes)
@@ -47,7 +47,7 @@
 
 ---
 
-## 4) Testing and Validation
+## Testing and Validation
 
 - [ ] Add unit tests
 - [ ] Add workflow/integration tests
@@ -56,7 +56,7 @@
 
 ---
 
-## 5) Build and Packaging
+## Build and Packaging
 
 > Sort of done, but not checking this until I test library consumption from an external project
 
@@ -67,7 +67,7 @@
 
 ---
 
-## 6) Documentation and Developer Experience
+## Documentation and Developer Experience
 
 - [ ] Add API documentation
 - [ ] Add usage examples (read-only and read/modify/save flows)
@@ -76,23 +76,13 @@
 
 ---
 
-## 7) Feature Growth
+## Feature Growth
 
 - [ ] Add additional PDF features incrementally as needed
 - [ ] Prioritize features based on test coverage and real-world documents
 
 ---
 
-## 8) Reader/Writer error propagation and diagnostics
+## Reader/Writer error propagation and diagnostics
 
 - [ ] Add some type of error propagation for operations that may fail when reading/writing.
-
-## 9) Change the current indirect_object implementation (or add a base class to compose it) and
-     abstract away every object as a pair of `dictionary` and `content_stream`.
-
-- [ X ] Create a `pdf_value` abstraction, probably with std::variant
-- [ X ] Add a base class that abstracts away the concept of an object as a pair of `dictionary` 
-      and `content_stream`
-- [ ] Make all objects extend from that class
-- [ ] All object classes will now be just a wrapper around these two components, providing
-      helper methods to access specific keys in the dictionary and content stream.
