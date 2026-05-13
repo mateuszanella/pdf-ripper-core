@@ -2,7 +2,7 @@
 
 ## Errors and Diagnostics
 
-- [ ] Refactor error model again.
+- [x] Refactor error model again.
     > To be honest, using errors doesnt really seem like a smart option looking from now.
     > Most errors are unrecoverable and should just be fatal, and the ones that are recoverable 
     > are mostly 'element not found' type errors that can be handled with `std::optional` or similar.
@@ -83,4 +83,4 @@
 
 ## Reader/Writer error propagation and diagnostics
 
-- [ ] Add some type of error propagation for operations that may fail when reading/writing.
+- [x] Add some type of error propagation for operations that may fail when reading/writing.
