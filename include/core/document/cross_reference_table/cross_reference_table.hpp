@@ -33,6 +33,13 @@ namespace ripper::pdf::core
     ///
     /// Each `cross_reference_entry` owns its resolved `object` exclusively.
     /// The table is non-copyable.
+    ///
+    /// ## Address stability
+    ///
+    /// Entry addresses are stable for the lifetime of the table because entries are
+    /// stored in `std::map` nodes. Object addresses are stable because each entry owns
+    /// a single heap-allocated object via `std::unique_ptr`, and object replacement is
+    /// disallowed after first resolution/commit.
     class cross_reference_table
     {
     public:
@@ -65,12 +72,14 @@ namespace ripper::pdf::core
         ///
         /// Returns a pointer into the table (valid for the lifetime of the table),
         /// or `nullptr` if no entry exists for the given object number.
-        [[nodiscard]] cross_reference_entry *find(std::uint32_t object_number) const noexcept;
+        [[nodiscard]] cross_reference_entry *find(std::uint32_t object_number) noexcept;
+        [[nodiscard]] const cross_reference_entry *find(std::uint32_t object_number) const noexcept;
 
         /// Look up an entry by indirect reference.
         ///
         /// Equivalent to `find(ref.object_number())`.
-        [[nodiscard]] cross_reference_entry *find(const indirect_reference &ref) const noexcept;
+        [[nodiscard]] cross_reference_entry *find(const indirect_reference &ref) noexcept;
+        [[nodiscard]] const cross_reference_entry *find(const indirect_reference &ref) const noexcept;
 
         /// Resolve an indirect reference to its in-memory object.
         ///

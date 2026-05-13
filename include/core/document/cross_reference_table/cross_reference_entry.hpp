@@ -75,10 +75,13 @@ namespace ripper::pdf::core
         /// Caches a resolved object into this entry.
         ///
         /// Intended for lazy-loading: called by the resolver after parsing the object
-        /// from disk. Replaces any previously cached object.
+        /// from disk.
         ///
-        /// Returns a raw pointer to the resolved object, or `nullptr` if the reference
-        /// does not correspond to a reserved entry.
+        /// This operation is write-once for pointer stability: if an object has already
+        /// been cached for this entry, the call is ignored and the existing object pointer
+        /// is returned unchanged.
+        ///
+        /// Returns a raw pointer to the cached object, or `nullptr` if `obj` is null.
         [[nodiscard]] class object *resolve(std::unique_ptr<class object> obj) noexcept;
 
     private:

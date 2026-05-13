@@ -20,16 +20,30 @@ namespace ripper::pdf::core
         return entries_;
     }
 
-    cross_reference_entry *cross_reference_table::find(std::uint32_t object_number) const noexcept
+    cross_reference_entry *cross_reference_table::find(std::uint32_t object_number) noexcept
     {
         auto it = entries_.find(object_number);
         if (it == entries_.end())
             return nullptr;
 
-        return const_cast<cross_reference_entry *>(&it->second);
+        return &it->second;
     }
 
-    cross_reference_entry *cross_reference_table::find(const indirect_reference &ref) const noexcept
+    const cross_reference_entry *cross_reference_table::find(std::uint32_t object_number) const noexcept
+    {
+        auto it = entries_.find(object_number);
+        if (it == entries_.end())
+            return nullptr;
+
+        return &it->second;
+    }
+
+    cross_reference_entry *cross_reference_table::find(const indirect_reference &ref) noexcept
+    {
+        return find(ref.object_number());
+    }
+
+    const cross_reference_entry *cross_reference_table::find(const indirect_reference &ref) const noexcept
     {
         return find(ref.object_number());
     }
@@ -66,7 +80,11 @@ namespace ripper::pdf::core
         if (it == entries_.end())
             return nullptr;
 
-        return it->second.resolve(std::move(object));
+        auto &entry = it->second;
+        if (!entry.is_new() || entry.is_resolved())
+            return nullptr;
+
+        return entry.resolve(std::move(object));
     }
 
     indirect_reference cross_reference_table::allocate(std::unique_ptr<class object> object) noexcept
@@ -89,6 +107,6 @@ namespace ripper::pdf::core
         if (entries_.empty())
             return 1;
 
-        return static_cast<std::uint32_t>(entries_.size()) + 1;
+        return entries_.rbegin()->first + 1;
     }
 }

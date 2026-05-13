@@ -52,7 +52,14 @@ namespace ripper::pdf::core
 
     object *cross_reference_entry::resolve(std::unique_ptr<class object> obj) noexcept
     {
+        if (!obj)
+            return nullptr;
+
+        if (object_)
+            return object_.get();
+
         object_ = std::move(obj);
+        in_use_ = true;
 
         return object_.get();
     }
