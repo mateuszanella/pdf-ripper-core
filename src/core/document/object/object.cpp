@@ -21,6 +21,11 @@ namespace ripper::pdf::core
         return identity_;
     }
 
+    indirect_object &object::identity() noexcept
+    {
+        return identity_;
+    }
+
     const value &object::content() const noexcept
     {
         return content_;

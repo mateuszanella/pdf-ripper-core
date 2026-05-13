@@ -162,7 +162,7 @@ namespace ripper::pdf::core
         dictionary dict;
         dict.set("Type", value{name{"Catalog"}});
 
-        auto obj = std::make_unique<object>(indirect_object{*this, ref}, value{std::move(dict)});
+        auto obj = std::make_unique<object>(indirect_object{this, ref}, value{std::move(dict)});
 
         auto *raw = xref.commit(ref, std::move(obj));
         if (!raw)

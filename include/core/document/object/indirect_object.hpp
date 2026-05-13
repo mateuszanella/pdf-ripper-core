@@ -21,8 +21,8 @@ namespace ripper::pdf::core
     public:
         /// Construct an indirect object bound to `doc` and identified by `ref`.
         ///
-        /// The document is stored by reference and must outlive this object.
-        indirect_object(document &doc, indirect_reference ref);
+        /// The document pointer must not be null and must outlive this object.
+        indirect_object(document *doc, indirect_reference ref);
 
         /// Returns the indirect reference (object number + generation number) that
         /// uniquely identifies this object within its owning document.
@@ -35,7 +35,7 @@ namespace ripper::pdf::core
         [[nodiscard]] document &owner() const;
 
     private:
-        std::reference_wrapper<document> document_;
+        document *document_;
         indirect_reference reference_;
     };
 }

@@ -70,12 +70,12 @@ namespace ripper::pdf::core
                 }
 
                 return object{
-                    indirect_object{doc, ref},
+                    indirect_object{&doc, ref},
                     std::move(content),
                     stream{std::move(bytes)}};
             }
         }
 
-        return object{indirect_object{doc, ref}, std::move(content)};
+        return object{indirect_object{&doc, ref}, std::move(content)};
     }
 }

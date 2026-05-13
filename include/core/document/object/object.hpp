@@ -46,17 +46,12 @@ namespace ripper::pdf::core
         /// A stream is only meaningful when `content` holds a `dictionary`.
         object(indirect_object identity, value content, class stream stream) noexcept;
 
-        virtual ~object() = default;
-
-        object(const object &) = default;
-        object &operator=(const object &) = delete;
-
-        object(object &&) = default;
-        object &operator=(object &&) = delete;
-
         /// Returns the `indirect_object` identity of this object, which includes the
         /// owning document and indirect reference.
         [[nodiscard]] const indirect_object &identity() const noexcept;
+
+        /// Returns a mutable reference to the `indirect_object` identity of this object.
+        [[nodiscard]] indirect_object &identity() noexcept;
 
         /// Returns the raw content value of this object.
         ///

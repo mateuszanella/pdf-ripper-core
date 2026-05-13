@@ -1,13 +1,16 @@
 #include "core/document/object/indirect_object.hpp"
 
+#include <cassert>
+
 #include "core/document.hpp"
 #include "core/document/object/indirect_reference.hpp"
 
 namespace ripper::pdf::core
 {
-    indirect_object::indirect_object(document &doc, indirect_reference ref)
+    indirect_object::indirect_object(document *doc, indirect_reference ref)
         : document_{doc}, reference_{ref}
     {
+        assert(doc != nullptr && "indirect_object requires a non-null document pointer");
     }
 
     const indirect_reference &indirect_object::reference() const
@@ -17,6 +20,7 @@ namespace ripper::pdf::core
 
     document &indirect_object::owner() const
     {
-        return document_.get();
+        assert(document_ != nullptr && "indirect_object has null document pointer");
+        return *document_;
     }
 }
