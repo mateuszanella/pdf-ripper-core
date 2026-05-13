@@ -1,10 +1,9 @@
 #pragma once
 
-#include <expected>
 #include <string_view>
 
 #include "core/document/trailer/trailer.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/parser/trailer/trailer_parser.hpp"
 
 namespace ripper::pdf::core
@@ -18,9 +17,9 @@ namespace ripper::pdf::core
     public:
         default_trailer_parser() = default;
 
-        [[nodiscard]] std::expected<trailer, error> parse(std::string_view content) override;
+        [[nodiscard]] trailer parse(std::string_view content) override;
 
     private:
-        [[nodiscard]] static std::expected<trailer, error> parse_dictionary(std::string_view content);
+        [[nodiscard]] static trailer parse_dictionary(std::string_view content);
     };
 }

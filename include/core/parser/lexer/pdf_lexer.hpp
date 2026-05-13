@@ -2,12 +2,11 @@
 
 #include <cstdint>
 #include <deque>
-#include <expected>
 #include <limits>
 #include <string_view>
 #include <utility>
 
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
@@ -52,13 +51,13 @@ namespace ripper::pdf::core
         ///
         /// Returns a cached lookahead token if available, otherwise reads a new one.
         /// Returns `lexer_token_type::eof` when the end of the content is reached.
-        [[nodiscard]] std::expected<lexer_token, error> next();
+        [[nodiscard]] lexer_token next();
 
         /// Peek at a token at the given lookahead offset without consuming it.
         ///
         /// A `lookahead` of `0` returns the next token without advancing.
         /// Tokens are buffered internally as needed.
-        [[nodiscard]] std::expected<lexer_token, error> peek(std::size_t lookahead = 0);
+        [[nodiscard]] lexer_token peek(std::size_t lookahead = 0);
 
         /// Conditionally consume the next token if it matches `type` and optionally `lexeme`.
         ///
@@ -73,13 +72,13 @@ namespace ripper::pdf::core
         /// also handled.
         ///
         /// Returns `unexpected(err)` if the value cannot be skipped.
-        [[nodiscard]] std::expected<void, error> skip_value();
+        void skip_value();
 
     private:
         /// Read and return the next token from the raw content buffer.
         ///
         /// Does not interact with the lookahead cache.
-        [[nodiscard]] std::expected<lexer_token, error> read_token();
+        [[nodiscard]] lexer_token read_token();
 
         /// Advance the position past all whitespace characters and `%`-style comments.
         void skip_whitespace_and_comments();
@@ -88,7 +87,7 @@ namespace ripper::pdf::core
         ///
         /// Assumes the opening token has already been consumed.
         /// Returns `unexpected(err)` if the stream ends before the structure is closed.
-        [[nodiscard]] std::expected<void, error> skip_compound(lexer_token_type begin_token, lexer_token_type end_token);
+        void skip_compound(lexer_token_type begin_token, lexer_token_type end_token);
 
         /// Returns `true` if `ch` is a PDF whitespace character or null byte.
         [[nodiscard]] static bool is_whitespace(char ch);

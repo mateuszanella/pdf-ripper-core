@@ -1,18 +1,15 @@
 #include "core/parser/indirect_object_resolver.hpp"
 
 #include <array>
-#include <charconv>
 #include <cstddef>
 #include <cstdint>
-#include <expected>
 #include <limits>
 #include <span>
 #include <string>
 #include <vector>
 
 #include "core/document.hpp"
-#include "core/error.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 #include "core/reader/reader.hpp"
 #include "core/util/text.hpp"
@@ -47,119 +44,54 @@ namespace ripper::pdf::core
         }
     }
 
-    indirect_object_resolver::indirect_object_resolver(document &document) noexcept
+    indirect_object_resolver::indirect_object_resolver(document &document)
         : document_{document}
     {
     }
 
-    std::expected<std::string, error> indirect_object_resolver::resolve(indirect_reference ref) const
+    std::string indirect_object_resolver::resolve(indirect_reference ref) const
     {
-        auto reader_result = document_.reader();
-        if (!reader_result)
-        {
-            return std::unexpected(reader_result.error());
-        }
+        auto *reader_ptr = document_.reader();
+        if (!reader_ptr)
+            throw io_exception{"No reader backend available"};
 
-        auto &r = reader_result->get();
+        auto &r = *reader_ptr;
 
         if (!r.is_open())
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::reader_not_open)
-                                       .with_component(error_component::reader)
-                                       .with_message("The provided reader is not open while trying to resolve an indirect object")
-                                       .build());
-        }
+            throw io_exception{"The provided reader is not open while trying to resolve an indirect object"};
 
-        // Resolve the object location from the compiled xref table. We only proceed
-        // with an in-use entry and the exact generation requested by the caller, so
-        // we do not accidentally return another revision.
-        auto xref = document_.cross_reference_table();
-        if (!xref)
-        {
-            return std::unexpected(xref.error());
-        }
+        auto &xref = document_.cross_reference_table();
+        const auto entry = xref.find(ref);
+        if (!entry)
+            throw parse_exception{"XRef entry not found for object"};
 
-        const auto entry = xref->get().find(ref);
         if (!entry->in_use())
-        {
-            return std::unexpected(error_builder::xref_entry_not_in_use(ref));
-        }
+            throw parse_exception{"XRef entry is not in use"};
 
         if (entry->reference().generation() != ref.generation())
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::generation_mismatch)
-                                       .with_component(error_component::cross_reference)
-                                       .with_reference(ref)
-                                       .with_message("Generation mismatch for indirect object")
-                                       .build());
-        }
+            throw parse_exception{"Generation mismatch for indirect object"};
 
         const std::uint64_t file_size_u64 = r.size();
         if (file_size_u64 == 0)
-        {
-            const std::string error_message = "Read size zero when trying to resolve indirect object " +
-                                              std::to_string(ref.object_number()) + " " +
-                                              std::to_string(ref.generation());
-
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::io_error)
-                                       .with_component(error_component::reader)
-                                       .with_reference(ref)
-                                       .with_message(error_message)
-                                       .build());
-        }
+            throw io_exception{"Read size zero while trying to resolve an indirect object"};
 
         const auto offset_u64 = entry->offset();
         if (!offset_u64.has_value())
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::missing_object)
-                                       .with_component(error_component::cross_reference)
-                                       .with_reference(ref)
-                                       .with_message("XRef entry is missing file offset")
-                                       .build());
-        }
+            throw parse_exception{"XRef entry is missing file offset"};
 
         if (offset_u64.value() >= file_size_u64)
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::offset_out_of_bounds)
-                                       .with_component(error_component::cross_reference)
-                                       .with_reference(ref)
-                                       .with_message("Offset is out of bounds")
-                                       .build());
-        }
+            throw parse_exception{"Object offset is out of bounds"};
 
         if (offset_u64.value() > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::offset_out_of_bounds)
-                                       .with_component(error_component::cross_reference)
-                                       .with_reference(ref)
-                                       .with_message("Offset is too large to handle")
-                                       .build());
-        }
+            throw parse_exception{"Object offset is too large to handle"};
 
-        // Read from the xref-resolved byte offset to EOF. This narrows parsing
-        // to the region where the target indirect object is expected to exist,
-        // instead of scanning from byte 0.
         const std::size_t offset = static_cast<std::size_t>(offset_u64.value());
         const std::size_t to_read = static_cast<std::size_t>(file_size_u64 - offset_u64.value());
 
         std::vector<std::byte> bytes(to_read);
         const std::size_t read = r.read_at(std::span<std::byte>{bytes.data(), bytes.size()}, offset);
         if (read == 0)
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::io_error)
-                                       .with_component(error_component::reader)
-                                       .with_reference(ref)
-                                       .with_offset(offset)
-                                       .with_message("Received zero bytes from reader while attempting to read at offset: " + std::to_string(offset))
-                                       .build());
-        }
+            throw io_exception{"Received zero bytes from reader while attempting to read object content"};
 
         std::string source(read, '\0');
         for (std::size_t i = 0; i < read; ++i)
@@ -169,13 +101,6 @@ namespace ripper::pdf::core
 
         pdf_lexer lexer{source};
 
-        // We then scan the source for an indirect object header:
-        //
-        //   "<object_number> <generation> obj"
-        //
-        // We keep a 3-token sliding window and compare parsed numbers to
-        // `ref` to ensure that we parse the exact object revision requested
-        //  by the caller.
         std::array<observed_token, 3> window{};
         std::size_t window_size = 0;
 
@@ -194,19 +119,7 @@ namespace ripper::pdf::core
 
         while (true)
         {
-            auto token_result = lexer.next();
-            if (!token_result)
-            {
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::tokenization_error)
-                                           .with_component(error_component::lexer)
-                                           .with_reference(ref)
-                                           .with_offset(offset)
-                                           .with_message("Failed to parse token")
-                                           .build());
-            }
-
-            const auto token = *token_result;
+            const auto token = lexer.next();
             if (token.type == lexer_token_type::eof)
             {
                 break;
@@ -244,7 +157,6 @@ namespace ripper::pdf::core
                 continue;
             }
 
-            // Header match gate: confirms this is exactly "N G obj" for `ref`.
             if (*object_number != ref.object_number() || *generation != ref.generation())
             {
                 continue;
@@ -252,47 +164,17 @@ namespace ripper::pdf::core
 
             const std::size_t object_start = a.offset;
 
-            // After matching the header, continue lexing until "endobj" and return
-            // the exact source slice covering the full indirect object.
             while (true)
             {
-                auto end_token_result = lexer.next();
-                if (!end_token_result)
-                {
-                    return std::unexpected(error_builder::create()
-                                               .with_code(error_code::tokenization_error)
-                                               .with_component(error_component::lexer)
-                                               .with_reference(ref)
-                                               .with_offset(offset + object_start)
-                                               .with_message("Failed to parse token while scanning to endobj")
-                                               .build());
-                }
-
-                const auto end_token = *end_token_result;
+                const auto end_token = lexer.next();
                 if (end_token.type == lexer_token_type::eof)
-                {
-                    return std::unexpected(error_builder::create()
-                                               .with_code(error_code::unexpected_eof)
-                                               .with_component(error_component::parser)
-                                               .with_reference(ref)
-                                               .with_offset(offset + object_start)
-                                               .with_message("Unexpected end of file while scanning to endobj")
-                                               .build());
-                }
+                    throw parse_exception{"Unexpected end of file while scanning to endobj"};
 
                 if (end_token.type == lexer_token_type::keyword && end_token.lexeme == "endobj")
                 {
                     const std::size_t end_offset = token_offset_in(source, end_token);
                     if (end_offset == std::string::npos || end_offset < object_start)
-                    {
-                        return std::unexpected(error_builder::create()
-                                                   .with_code(error_code::invalid_object_boundary)
-                                                   .with_component(error_component::parser)
-                                                   .with_reference(ref)
-                                                   .with_offset(offset + object_start)
-                                                   .with_message("Invalid object end offset")
-                                                   .build());
-                    }
+                        throw parse_exception{"Invalid object end offset"};
 
                     const std::size_t object_end = end_offset + end_token.lexeme.size();
                     return source.substr(object_start, object_end - object_start);
@@ -300,11 +182,6 @@ namespace ripper::pdf::core
             }
         }
 
-        return std::unexpected(error_builder::create()
-                                   .with_code(error_code::not_found)
-                                   .with_component(error_component::parser)
-                                   .with_reference(ref)
-                                   .with_message("Indirect object not found")
-                                   .build());
+        throw parse_exception{"Indirect object not found"};
     }
 }

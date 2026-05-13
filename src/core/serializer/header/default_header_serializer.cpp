@@ -3,23 +3,17 @@
 #include <string_view>
 #include <vector>
 
-#include "core/error.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
-    std::expected<std::vector<std::byte>, error> default_header_serializer::serialize(const header &value) const
+    std::vector<std::byte> default_header_serializer::serialize(const header &value) const
     {
         const std::string_view version = value.version();
 
         if (version.empty())
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::invalid_argument)
-                                       .with_component(error_component::serializer)
-                                       .with_field("header.version")
-                                       .with_message("Header version cannot be empty")
-                                       .build());
+            throw logic_exception{"Header version cannot be empty"};
         }
 
         const std::string header_line = "%PDF-" + std::string{version} + "\n";

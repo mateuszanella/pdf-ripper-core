@@ -1,6 +1,5 @@
 #pragma once
 
-#include <expected>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -12,7 +11,7 @@
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/parser/parser.hpp"
 #include "core/reader/reader.hpp"
 #include "core/serializer/serializer.hpp"
@@ -66,84 +65,89 @@ namespace ripper::pdf::core
 
         /// Save the document to the configured writer backend.
         ///
-        /// Returns `true` on success, or an `error` on failure.
-        [[nodiscard]] std::expected<bool, error> save();
+        /// Returns `true` on success, or an `false` on failure.
+        [[nodiscard]] bool save();
 
         /// Returns whether a reader backend is available.
-        [[nodiscard]] bool has_reader() const noexcept;
+        [[nodiscard]] bool has_reader() const;
 
         /// Returns whether a parser facade is available.
-        [[nodiscard]] bool has_parser() const noexcept;
+        [[nodiscard]] bool has_parser() const;
 
         /// Returns whether a writer backend is available.
-        [[nodiscard]] bool has_writer() const noexcept;
+        [[nodiscard]] bool has_writer() const;
 
         /// Returns whether a serializer facade is available.
-        [[nodiscard]] bool has_serializer() const noexcept;
+        [[nodiscard]] bool has_serializer() const;
 
         /// Access the underlying reader backend.
-        [[nodiscard]] std::expected<std::reference_wrapper<class reader>, error> reader() const noexcept;
+        ///
+        /// Returns `nullptr` when no reader is configured.
+        [[nodiscard]] class reader *reader() const;
 
         /// Access the parser facade.
         ///
-        /// Returns `unexpected(error)` when no parser is configured.
-        /// Individual parse operations also validate backend availability.
-        [[nodiscard]] std::expected<std::reference_wrapper<class parser>, error> parser() const noexcept;
+        /// Returns `nullptr` when no parser is configured.
+        [[nodiscard]] class parser *parser() const;
 
         /// Access the underlying writer backend.
-        [[nodiscard]] std::expected<std::reference_wrapper<class writer>, error> writer() const noexcept;
+        ///
+        /// Returns `nullptr` when no writer is configured.
+        [[nodiscard]] class writer *writer() const;
 
         /// Access the serializer facade.
-        [[nodiscard]] std::expected<std::reference_wrapper<class serializer>, error> serializer() const noexcept;
+        ///
+        /// Returns `nullptr` when no serializer is configured.
+        [[nodiscard]] class serializer *serializer() const;
 
-        /// Return the PDF header.
+        /// Return the PDF header object.
         ///
         /// If `reader` is set, the header is parsed from the input upon first access and cached
         /// for subsequent accesses. Otherwise, a new header with default values is created and cached.
-        /// Changes made to the returned reference are reflected in the document on save.
-        [[nodiscard]] std::expected<std::reference_wrapper<class header>, error> header() noexcept;
+        /// Changes made to the returned value are reflected in the document on save.
+        [[nodiscard]] class header &header();
 
         /// Parse and return the compiled cross-reference table (cached).
-        /// Changes made to the returned reference are reflected in the document on save.
-        [[nodiscard]] std::expected<std::reference_wrapper<class cross_reference_table>, error> cross_reference_table() noexcept;
+        /// Changes made to the returned value are reflected in the document on save.
+        [[nodiscard]] class cross_reference_table &cross_reference_table();
 
         /// Parse and return the compiled trailer dictionary (cached).
-        /// Changes made to the returned reference are reflected in the document on save.
-        [[nodiscard]] std::expected<std::reference_wrapper<class trailer>, error> trailer() noexcept;
+        /// Changes made to the returned value are reflected in the document on save.
+        [[nodiscard]] class trailer &trailer();
 
         /// Return a view over the document catalog.
         ///
         /// Resolves the catalog from the xref on first access (lazy). The returned `catalog`
-        /// is a lightweight non-owning view; ownership remains with the xref entry.
-        [[nodiscard]] std::expected<class catalog, error> catalog() noexcept;
+        /// is a lightweight non-owning view. Ownership remains with the xref entry.
+        [[nodiscard]] class catalog catalog();
 
         /// Resolve any indirect object by reference, lazy-loading from file if needed.
         ///
         /// Returns a raw non-owning pointer into the xref entry. The pointer remains valid
         /// as long as the document (and its xref) is alive.
-        [[nodiscard]] std::expected<class object*, error> resolve_object(indirect_reference ref) noexcept;
+        [[nodiscard]] class object *resolve_object(indirect_reference ref);
 
     private:
         /// Parse and return the assembled document structure (xref + trailer + histories) (cached).
-        [[nodiscard]] std::expected<std::reference_wrapper<class document_structure>, error> structure() noexcept;
+        [[nodiscard]] class document_structure &structure();
 
         /// Parse and return the PDF header without caching.
-        [[nodiscard]] std::expected<class header, error> parse_header() const noexcept;
+        [[nodiscard]] class header parse_header() const;
 
         /// Generate a new PDF header with default values.
-        [[nodiscard]] std::expected<class header, error> create_header() const noexcept;
+        [[nodiscard]] class header create_header() const;
 
         /// Parse and return the document structure without caching.
-        [[nodiscard]] std::expected<class document_structure, error> parse_structure() const noexcept;
+        [[nodiscard]] class document_structure parse_structure() const;
 
         /// Generate a new document structure with default values.
-        [[nodiscard]] std::expected<class document_structure, error> create_structure() const noexcept;
+        [[nodiscard]] class document_structure create_structure() const;
 
         /// Parse the catalog from the file and commit it into the xref.
-        [[nodiscard]] std::expected<class catalog, error> parse_catalog() noexcept;
+        [[nodiscard]] class catalog parse_catalog();
 
         /// Allocate a new catalog into the xref and set the trailer /Root.
-        [[nodiscard]] std::expected<class catalog, error> create_catalog() noexcept;
+        [[nodiscard]] class catalog create_catalog();
 
         std::unique_ptr<class reader> reader_;
         std::unique_ptr<class parser> parser_;

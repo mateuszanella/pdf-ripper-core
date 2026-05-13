@@ -1,13 +1,12 @@
 #pragma once
 
 #include <cstdint>
-#include <expected>
 #include <optional>
 
 #include "core/document/identifier.hpp"
 #include "core/document/object/indirect_reference.hpp"
 #include "core/document/object/value.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
@@ -21,25 +20,25 @@ namespace ripper::pdf::core
     {
     public:
         /// Construct a trailer from a parsed PDF dictionary.
-        explicit trailer(dictionary dict) noexcept;
+        explicit trailer(dictionary dict);
 
         /// /Size — total number of objects in the cross-reference table.
-        [[nodiscard]] std::expected<std::uint64_t, error> size() const noexcept;
+        [[nodiscard]] std::uint64_t size() const;
 
         /// /Root — indirect reference to the document catalog.
-        [[nodiscard]] std::expected<indirect_reference, error> root() const noexcept;
+        [[nodiscard]] std::optional<indirect_reference> root() const;
 
         /// /Prev — byte offset of the previous cross-reference section.
-        [[nodiscard]] std::expected<std::uint64_t, error> prev() const noexcept;
+        [[nodiscard]] std::optional<std::uint64_t> prev() const;
 
         /// /ID — document identifier pair.
-        [[nodiscard]] std::expected<identifier, error> id() const noexcept;
+        [[nodiscard]] std::optional<identifier> id() const;
 
         /// Access the const reference to the underlying dictionary directly.
-        [[nodiscard]] const class dictionary &dictionary() const noexcept;
+        [[nodiscard]] const class dictionary &dictionary() const;
 
         /// Access the mutable reference to the underlying dictionary directly.
-        [[nodiscard]] class dictionary &dictionary() noexcept;
+        [[nodiscard]] class dictionary &dictionary();
 
     private:
         class dictionary dict_;

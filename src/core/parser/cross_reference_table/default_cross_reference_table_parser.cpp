@@ -5,25 +5,19 @@
 #include <string_view>
 
 #include "core/document/object/object.hpp"
-#include "core/error.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/util/text.hpp"
 
 namespace ripper::pdf::core
 {
-    std::expected<void, error> default_cross_reference_table_parser::parse_subsection(
+    void default_cross_reference_table_parser::parse_subsection(
         cross_reference_table::entry_map &entries,
         std::string_view &content)
     {
         const std::size_t newlinePos = content.find('\n');
         if (newlinePos == std::string_view::npos)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::unexpected_eof)
-                                       .with_component(error_component::cross_reference)
-                                       .with_field("subsection_header")
-                                       .with_message("Unexpected EOF while parsing xref subsection header")
-                                       .build());
+            throw parse_exception{"Unexpected EOF while parsing xref subsection header"};
         }
 
         std::string_view headerLine = content.substr(0, newlinePos);
@@ -33,14 +27,7 @@ namespace ripper::pdf::core
         const std::size_t spacePos = headerLine.find(' ');
         if (spacePos == std::string_view::npos)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::corrupted_xref_table)
-                                       .with_component(error_component::cross_reference)
-                                       .with_field("subsection_header")
-                                       .with_expected("<start> <count>")
-                                       .with_actual(std::string{headerLine})
-                                       .with_message("Invalid xref subsection header")
-                                       .build());
+            throw parse_exception{"Invalid xref subsection header"};
         }
 
         const auto startObj = text::parse_size_t(headerLine.substr(0, spacePos));
@@ -48,13 +35,7 @@ namespace ripper::pdf::core
 
         if (!startObj || !count)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::corrupted_xref_table)
-                                       .with_component(error_component::cross_reference)
-                                       .with_field("subsection_range")
-                                       .with_actual(std::string{headerLine})
-                                       .with_message("Invalid xref subsection range")
-                                       .build());
+            throw parse_exception{"Invalid xref subsection range"};
         }
 
         for (std::size_t i = 0; i < *count; ++i)
@@ -62,12 +43,7 @@ namespace ripper::pdf::core
             const std::size_t entryNewline = content.find('\n');
             if (entryNewline == std::string_view::npos)
             {
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::unexpected_eof)
-                                           .with_component(error_component::cross_reference)
-                                           .with_field("entry")
-                                           .with_message("Unexpected EOF while parsing xref entries")
-                                           .build());
+                throw parse_exception{"Unexpected EOF while parsing xref entries"};
             }
 
             std::string_view entryLine = content.substr(0, entryNewline);
@@ -76,14 +52,7 @@ namespace ripper::pdf::core
 
             if (entryLine.size() < 18)
             {
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::corrupted_xref_table)
-                                           .with_component(error_component::cross_reference)
-                                           .with_field("entry")
-                                           .with_expected("<offset:10> <generation:5> <flag>")
-                                           .with_actual(std::string{entryLine})
-                                           .with_message("Malformed xref entry")
-                                           .build());
+                throw parse_exception{"Malformed xref entry"};
             }
 
             std::uint64_t offset = 0;
@@ -94,13 +63,7 @@ namespace ripper::pdf::core
 
             if (ec1 != std::errc{})
             {
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::corrupted_xref_table)
-                                           .with_component(error_component::cross_reference)
-                                           .with_field("entry_offset")
-                                           .with_actual(std::string{entryLine.substr(0, 10)})
-                                           .with_message("Invalid xref entry offset")
-                                           .build());
+                throw parse_exception{"Invalid xref entry offset"};
             }
 
             std::uint16_t generation = 0;
@@ -111,26 +74,13 @@ namespace ripper::pdf::core
 
             if (ec2 != std::errc{})
             {
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::corrupted_xref_table)
-                                           .with_component(error_component::cross_reference)
-                                           .with_field("entry_generation")
-                                           .with_actual(std::string{entryLine.substr(11, 5)})
-                                           .with_message("Invalid xref entry generation")
-                                           .build());
+                throw parse_exception{"Invalid xref entry generation"};
             }
 
             const char flag = entryLine[17];
             if (flag != 'n' && flag != 'f')
             {
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::corrupted_xref_table)
-                                           .with_component(error_component::cross_reference)
-                                           .with_field("entry_in_use_flag")
-                                           .with_expected("n or f")
-                                           .with_actual(std::string{1, flag})
-                                           .with_message("Invalid xref in-use flag")
-                                           .build());
+                throw parse_exception{"Invalid xref in-use flag"};
             }
 
             const bool inUse = (flag == 'n');
@@ -141,10 +91,9 @@ namespace ripper::pdf::core
             entries.insert_or_assign(objectNumber, cross_reference_entry{ref, offset, inUse});
         }
 
-        return {};
     }
 
-    std::expected<cross_reference_table, error> default_cross_reference_table_parser::parse(
+    cross_reference_table default_cross_reference_table_parser::parse(
         std::string_view content)
     {
         cross_reference_table::entry_map entries;
@@ -152,26 +101,14 @@ namespace ripper::pdf::core
         const std::size_t firstNewline = content.find('\n');
         if (firstNewline == std::string_view::npos)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::unexpected_eof)
-                                       .with_component(error_component::cross_reference)
-                                       .with_field("xref")
-                                       .with_message("Unexpected EOF while parsing xref")
-                                       .build());
+            throw parse_exception{"Unexpected EOF while parsing xref"};
         }
 
         std::string_view xrefLine = content.substr(0, firstNewline);
         xrefLine = text::trim_ascii(text::strip_line_endings(xrefLine));
         if (!text::starts_with_token(xrefLine, "xref"))
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::missing_xref_table)
-                                       .with_component(error_component::cross_reference)
-                                       .with_field("xref_keyword")
-                                       .with_expected("xref")
-                                       .with_actual(std::string{xrefLine})
-                                       .with_message("Missing xref keyword")
-                                       .build());
+            throw parse_exception{"Missing xref keyword"};
         }
 
         content = content.substr(firstNewline + 1);
@@ -184,11 +121,7 @@ namespace ripper::pdf::core
                 break;
             }
 
-            auto result = parse_subsection(entries, content);
-            if (!result)
-            {
-                return std::unexpected(result.error());
-            }
+            parse_subsection(entries, content);
         }
 
         return cross_reference_table{std::move(entries)};

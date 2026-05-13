@@ -1,10 +1,9 @@
 #pragma once
 
-#include <expected>
 #include <string_view>
 
 #include "core/document/trailer/trailer.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
@@ -20,6 +19,6 @@ namespace ripper::pdf::core
          * @brief Parses a trailer dictionary from raw content.
          * @param content The raw trailer content (starting with "trailer" keyword)
          */
-        [[nodiscard]] virtual std::expected<trailer, error> parse(std::string_view content) = 0;
+        [[nodiscard]] virtual trailer parse(std::string_view content) = 0;
     };
 }

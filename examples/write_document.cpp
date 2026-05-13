@@ -2,6 +2,7 @@
 #include <print>
 
 #include "core/document.hpp"
+#include "core/exceptions/exception.hpp"
 
 int main(int argc, char **argv)
 {
@@ -26,15 +27,19 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    auto document = ripper::pdf::core::document::create(path);
-
-    auto result = document.save();
-    if (!result)
+    try
     {
-        std::print("Failed to save document: {}\n", result.error().message());
+        auto document = ripper::pdf::core::document::create(path);
+
+        (void)document.save();
+
+        std::print("Document saved successfully.\n");
+
+        return 0;
+    }
+    catch (const ripper::pdf::core::exception &ex)
+    {
+        std::print("Failed to save document: {}\n", ex.what());
         return 1;
     }
-
-    std::print("Document saved successfully.\n");
-    return 0;
 }

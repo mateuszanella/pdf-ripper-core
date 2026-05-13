@@ -1,10 +1,9 @@
 #pragma once
 
-#include <expected>
 #include <string>
 
 #include "core/document/object/indirect_reference.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
@@ -13,9 +12,9 @@ namespace ripper::pdf::core
     class indirect_object_resolver
     {
     public:
-        explicit indirect_object_resolver(document &document) noexcept;
+        explicit indirect_object_resolver(document &document);
 
-        [[nodiscard]] std::expected<std::string, error> resolve(indirect_reference ref) const;
+        [[nodiscard]] std::string resolve(indirect_reference ref) const;
 
     private:
         document &document_;

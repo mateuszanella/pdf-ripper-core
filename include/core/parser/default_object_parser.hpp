@@ -1,11 +1,10 @@
 #pragma once
 
-#include <expected>
 #include <string_view>
 
 #include "core/document/object/indirect_reference.hpp"
 #include "core/document/object/object.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/parser/object_parser.hpp"
 
 namespace ripper::pdf::core
@@ -21,7 +20,7 @@ namespace ripper::pdf::core
     public:
         default_object_parser() = default;
 
-        [[nodiscard]] std::expected<object, error> parse(
+        [[nodiscard]] object parse(
             document &doc,
             indirect_reference ref,
             std::string_view content) const override;

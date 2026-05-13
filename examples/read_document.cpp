@@ -2,6 +2,7 @@
 #include <print>
 
 #include "core/document.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace
 {
@@ -21,84 +22,37 @@ namespace
 
     void check_header(ripper::pdf::core::document &document)
     {
-        auto header = document.header();
-        if (header)
-        {
-            std::println("PDF Header Version: {}", header->get().version());
-        }
-        else
-        {
-            const auto &err = header.error();
-            std::println("Failed to read PDF header.");
-            std::println("  Error Code: {}", static_cast<ripper::pdf::core::error_code>(err.code()).to_string());
-            std::println("  Message: {}", err.detailed_message());
-
-            if (err.code() == ripper::pdf::core::error_code::missing_header)
-            {
-                std::println("  Suggestion: File may not be a valid PDF (missing header signature)");
-            }
-            else if (err.code() == ripper::pdf::core::error_code::corrupted_header)
-            {
-                std::println("  Suggestion: PDF header is malformed; file may be corrupted");
-            }
-        }
+        std::println("PDF Header Version: {}", document.header().version());
     }
 
     void check_cross_reference_table(ripper::pdf::core::document &document)
     {
-        auto xrefTable = document.cross_reference_table();
-        if (xrefTable)
+        auto &xrefTable = document.cross_reference_table();
+        std::println("\nCross-Reference Table parsed successfully.");
+        std::println("Found {} entries", xrefTable.size());
+        std::println("First 5 entries:");
+        size_t count = 0;
+        for (const auto &[objNum, entry] : xrefTable.entries())
         {
-            std::println("\nCross-Reference Table parsed successfully.");
-            std::println("Found {} entries", xrefTable->get().size());
-            std::println("First 5 entries:");
-            size_t count = 0;
-            for (const auto &[objNum, entry] : xrefTable->get().entries())
-            {
-                std::println("  Object {}: offset={}, gen={}, in_use={}, resolved={}",
-                             objNum,
-                             entry.offset().has_value()
-                                 ? std::to_string(*entry.offset())
-                                 : "n/a",
-                             std::to_string(entry.reference().generation()),
-                             entry.in_use(),
-                             entry.is_resolved());
+            std::println("  Object {}: offset={}, gen={}, in_use={}, resolved={}",
+                         objNum,
+                         entry.offset().has_value()
+                             ? std::to_string(*entry.offset())
+                             : "n/a",
+                         std::to_string(entry.reference().generation()),
+                         entry.in_use(),
+                         entry.is_resolved());
 
-                if (++count >= 5)
-                    break;
-            }
-        }
-        else
-        {
-            const auto &err = xrefTable.error();
-            std::println("\nFailed to parse cross-reference table.");
-            std::println("  Error Code: {}", static_cast<ripper::pdf::core::error_code>(err.code()).to_string());
-            std::println("  Message: {}", err.detailed_message());
-
-            if (err.code() == ripper::pdf::core::error_code::missing_xref_table)
-            {
-                std::println("  Suggestion: Document structure is missing xref section");
-            }
-            else if (err.code() == ripper::pdf::core::error_code::corrupted_xref_table)
-            {
-                std::println("  Suggestion: XRef table is malformed; structural integrity compromised");
-            }
+            if (++count >= 5)
+                break;
         }
     }
 
     void check_trailer(ripper::pdf::core::document &document)
     {
-        auto trailer = document.trailer();
-        if (!trailer)
-        {
-            const auto &err = trailer.error();
-            std::println("\nFailed to parse trailer.");
-            std::println("  Error Code: {}", static_cast<ripper::pdf::core::error_code>(err.code()).to_string());
-            std::println("  Message: {}", err.detailed_message());
-            return;
-        }
+        auto &trailer = document.trailer();
 
-        auto id = trailer->get().id();
+        auto id = trailer.id();
         if (id)
         {
             std::println("\nDocument ID:");
@@ -111,7 +65,7 @@ namespace
         }
         else
         {
-            std::println("\nDocument ID not available: {}", id.error().detailed_message());
+            std::println("\nDocument ID not available.");
         }
 
         std::println("\nTrailer parsed successfully.");
@@ -119,43 +73,19 @@ namespace
 
     void check_catalog(ripper::pdf::core::document &document)
     {
-        auto catalog = document.catalog();
-        if (!catalog)
-        {
-            const auto &err = catalog.error();
-            std::println("\nFailed to parse catalog.");
-            std::println("  Error Code: {}", static_cast<ripper::pdf::core::error_code>(err.code()).to_string());
-            std::println("  Message: {}", err.detailed_message());
-            return;
-        }
+        (void)document.catalog();
 
         std::println("\nCatalog parsed successfully.");
     }
 
     void check_pages(ripper::pdf::core::document &document)
     {
-        auto pages = document.catalog()->pages();
-        if (!pages)
-        {
-            const auto &err = pages.error();
-            std::println("\nFailed to parse pages.");
-            std::println("  Error Code: {}", static_cast<ripper::pdf::core::error_code>(err.code()).to_string());
-            std::println("  Message: {}", err.detailed_message());
-            return;
-        }
+        auto pages = document.catalog().pages();
 
-        auto pageCount = pages->count();
-        if (!pageCount)
-        {
-            const auto &err = pageCount.error();
-            std::println("\nFailed to get page count.");
-            std::println("  Error Code: {}", static_cast<ripper::pdf::core::error_code>(err.code()).to_string());
-            std::println("  Message: {}", err.detailed_message());
-            return;
-        }
+        auto pageCount = pages.count();
 
-        auto dict = pages->dictionary();
-        if (! dict)
+        auto dict = pages.dictionary();
+        if (!dict)
         {
             std::println("\nPages content is not a dictionary.");
             return;
@@ -182,7 +112,7 @@ namespace
             std::println("\nMediaBox not found in pages dictionary.");
         }
 
-        std::println("\nPages parsed successfully. Page count: {}", pageCount.value());
+        std::println("\nPages parsed successfully. Page count: {}", pageCount);
     }
 }
 
@@ -192,18 +122,26 @@ int main(int argc, char **argv)
                                            ? std::filesystem::current_path() / std::filesystem::path{argv[1]}
                                            : std::filesystem::current_path() / "../example/test.pdf";
 
-    auto document = ripper::pdf::core::document::open(path);
-
-    if (!check_file_open(document.reader()->get()))
+    try
     {
+        auto document = ripper::pdf::core::document::open(path);
+
+        if (!document.reader() || !check_file_open(*document.reader()))
+        {
+            return 1;
+        }
+
+        check_header(document);
+        check_cross_reference_table(document);
+        check_trailer(document);
+        check_catalog(document);
+        check_pages(document);
+
+        return 0;
+    }
+    catch (const ripper::pdf::core::exception &ex)
+    {
+        std::println("Failure: {}", ex.what());
         return 1;
     }
-
-    check_header(document);
-    check_cross_reference_table(document);
-    check_trailer(document);
-    check_catalog(document);
-    check_pages(document);
-
-    return 0;
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <expected>
 #include <memory>
 #include <vector>
 
@@ -8,7 +7,7 @@
 #include "core/document/document_structure.hpp"
 #include "core/document/object/indirect_reference.hpp"
 #include "core/document/object/object.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
@@ -19,7 +18,7 @@ namespace ripper::pdf::core
     /// High-level PDF parser facade for a single `document`.
     ///
     /// This type orchestrates parsing by delegating to components managed by
-    /// `parser_manager`, and returns failures through `std::expected<..., error>`.
+    /// `parser_manager`, and throws on failures.
     class parser
     {
     public:
@@ -38,16 +37,16 @@ namespace ripper::pdf::core
         [[nodiscard]] parser_manager &manager();
 
         /// Parse and return the document header.
-        [[nodiscard]] std::expected<header, error> header();
+        [[nodiscard]] header header();
 
         /// Parse and return compiled document structure and traversal history.
-        [[nodiscard]] std::expected<document_structure, error> structure();
+        [[nodiscard]] document_structure structure();
 
         /// Parse any indirect object by reference and return the fully resolved `object`.
         ///
         /// The result can be cast to a typed subclass (catalog, pages, etc.) when the
         /// caller knows the `/Type` of the object.
-        [[nodiscard]] std::expected<object, error> parse_object(indirect_reference ref);
+        [[nodiscard]] object parse_object(indirect_reference ref);
 
     private:
         document &document_;

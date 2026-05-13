@@ -1,11 +1,10 @@
 #pragma once
 
-#include <expected>
 #include <functional>
 
 #include "core/document/catalog/pages/pages.hpp"
 #include "core/document/object/object.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
@@ -17,21 +16,21 @@ namespace ripper::pdf::core
     {
     public:
         /// Construct a catalog view over an existing object.
-        explicit catalog(object &obj) noexcept;
+        explicit catalog(object &obj);
 
         /// Returns the underlying object.
-        [[nodiscard]] object &obj() noexcept;
-        [[nodiscard]] const object &obj() const noexcept;
+        [[nodiscard]] object &obj();
+        [[nodiscard]] const object &obj() const;
 
         /// Returns a pointer to the content dictionary, or `nullptr` if content is not a dictionary.
-        [[nodiscard]] class dictionary *dictionary() noexcept;
-        [[nodiscard]] const class dictionary *dictionary() const noexcept;
+        [[nodiscard]] class dictionary *dictionary();
+        [[nodiscard]] const class dictionary *dictionary() const;
 
         /// Return a pages view for this catalog's page tree.
         ///
         /// Resolves the /Pages indirect reference through the owning document's
         /// cross-reference table, parsing and caching the object on first access.
-        [[nodiscard]] std::expected<class pages, error> pages();
+        [[nodiscard]] class pages pages();
 
     private:
         std::reference_wrapper<object> obj_;

@@ -1,11 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include <expected>
 #include <functional>
 
 #include "core/document/object/object.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
@@ -16,18 +15,18 @@ namespace ripper::pdf::core
     class pages
     {
     public:
-        explicit pages(object &obj) noexcept;
+        explicit pages(object &obj);
 
         /// Returns the underlying object.
-        [[nodiscard]] object &obj() noexcept;
-        [[nodiscard]] const object &obj() const noexcept;
+        [[nodiscard]] object &obj();
+        [[nodiscard]] const object &obj() const;
 
         /// Returns a pointer to the content dictionary, or `nullptr` if content is not a dictionary.
-        [[nodiscard]] class dictionary *dictionary() noexcept;
-        [[nodiscard]] const class dictionary *dictionary() const noexcept;
+        [[nodiscard]] class dictionary *dictionary();
+        [[nodiscard]] const class dictionary *dictionary() const;
 
         /// Returns the total page count from the /Count entry.
-        [[nodiscard]] std::expected<std::uint64_t, error> count() const;
+        [[nodiscard]] std::uint64_t count() const;
 
     private:
         std::reference_wrapper<object> obj_;

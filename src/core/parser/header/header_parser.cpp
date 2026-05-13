@@ -2,12 +2,10 @@
 
 #include <array>
 #include <cctype>
-#include <expected>
 #include <string>
 #include <string_view>
 
-#include "core/error.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/reader/reader.hpp"
 #include "core/document.hpp"
 
@@ -18,13 +16,13 @@ namespace ripper::pdf::core
     {
     }
 
-    std::expected<header, error> header_parser::parse()
+    header header_parser::parse()
     {
-        auto reader_result = _document.reader();
-        if (!reader_result)
-            return std::unexpected(reader_result.error());
+        auto *_reader_ptr = _document.reader();
+        if (!_reader_ptr)
+            throw io_exception{"No reader backend available"};
 
-        auto &_reader = reader_result->get();
+        auto &_reader = *_reader_ptr;
 
         constexpr std::string_view kMagic = "%PDF-";
         constexpr std::size_t kMaxHeaderLineLength = 256;
@@ -36,15 +34,7 @@ namespace ripper::pdf::core
         const std::size_t read = _reader.read_line(buffer);
         if (read == 0)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::unexpected_eof)
-                                       .with_component(error_component::parser)
-                                       .with_offset(0)
-                                       .with_field("header")
-                                       .with_expected("%PDF-")
-                                       .with_actual("empty")
-                                       .with_message("File is empty while reading PDF header")
-                                       .build());
+            throw parse_exception{"File is empty while reading PDF header"};
         }
 
         const std::string_view line{
@@ -54,15 +44,7 @@ namespace ripper::pdf::core
         const std::size_t pos = line.find(kMagic);
         if (pos == std::string_view::npos)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::missing_header)
-                                       .with_component(error_component::parser)
-                                       .with_offset(0)
-                                       .with_field("header_signature")
-                                       .with_expected("%PDF-")
-                                       .with_actual(std::string{line})
-                                       .with_message("Missing PDF header signature")
-                                       .build());
+            throw parse_exception{"Missing PDF header signature"};
         }
 
         const std::string_view rest = line.substr(pos + kMagic.size());
@@ -78,43 +60,19 @@ namespace ripper::pdf::core
 
         if (len == 0)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::corrupted_header)
-                                       .with_component(error_component::parser)
-                                       .with_offset(pos + kMagic.size())
-                                       .with_field("header_version")
-                                       .with_expected("digit[.digit]")
-                                       .with_actual(std::string{rest})
-                                       .with_message("Invalid PDF header version")
-                                       .build());
+            throw parse_exception{"Invalid PDF header version"};
         }
 
         const std::string_view version = rest.substr(0, len);
         const std::size_t dotPos = version.find('.');
         if (dotPos == std::string_view::npos || dotPos == 0 || dotPos + 1 >= version.size())
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::corrupted_header)
-                                       .with_component(error_component::parser)
-                                       .with_offset(pos + kMagic.size())
-                                       .with_field("header_version")
-                                       .with_expected("major.minor")
-                                       .with_actual(std::string{version})
-                                       .with_message("Invalid PDF header version format")
-                                       .build());
+            throw parse_exception{"Invalid PDF header version format"};
         }
 
         if (version.find('.', dotPos + 1) != std::string_view::npos)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::corrupted_header)
-                                       .with_component(error_component::parser)
-                                       .with_offset(pos + kMagic.size())
-                                       .with_field("header_version")
-                                       .with_expected("single dot in major.minor")
-                                       .with_actual(std::string{version})
-                                       .with_message("Invalid PDF header version format")
-                                       .build());
+            throw parse_exception{"Invalid PDF header version format"};
         }
 
         return header{std::string{version}};

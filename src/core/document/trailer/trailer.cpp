@@ -1,80 +1,56 @@
 #include "core/document/trailer/trailer.hpp"
 
 #include "core/document/object/value.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
-    trailer::trailer(class dictionary dict) noexcept
+    trailer::trailer(class dictionary dict)
         : dict_{std::move(dict)}
     {
     }
 
-    std::expected<std::uint64_t, error> trailer::size() const noexcept
+    std::uint64_t trailer::size() const
     {
         const auto *v = dict_.get_integer("Size");
         if (!v)
-            return std::unexpected(error_builder::create()
-                .with_message("Trailer missing /Size entry")
-                .with_code(error_code::not_found)
-                .with_component(error_component::trailer)
-                .build());
+            throw parse_exception{"Trailer missing /Size entry"};
 
         return static_cast<std::uint64_t>(*v);
     }
 
-    std::expected<indirect_reference, error> trailer::root() const noexcept
+    std::optional<indirect_reference> trailer::root() const
     {
         const auto *v = dict_.get("Root");
         if (!v)
-            return std::unexpected(error_builder::create()
-                .with_message("Trailer missing /Root entry")
-                .with_code(error_code::not_found)
-                .with_component(error_component::trailer)
-                .build());
+            return std::nullopt;
 
         const auto *ref = v->as_indirect_reference();
         if (!ref)
-            return std::unexpected(error_builder::create()
-                .with_message("Trailer /Root is not an indirect reference")
-                .with_code(error_code::invalid_token)
-                .with_component(error_component::trailer)
-                .build());
+            throw parse_exception{"Trailer /Root is not an indirect reference"};
 
         return *ref;
     }
 
-    std::expected<std::uint64_t, error> trailer::prev() const noexcept
+    std::optional<std::uint64_t> trailer::prev() const
     {
         const auto *v = dict_.get_integer("Prev");
         if (!v)
-            return std::unexpected(error_builder::create()
-                .with_message("Trailer missing /Prev entry")
-                .with_code(error_code::not_found)
-                .with_component(error_component::trailer)
-                .build());
+            return std::nullopt;
 
         return static_cast<std::uint64_t>(*v);
     }
 
-    std::expected<identifier, error> trailer::id() const noexcept
+    std::optional<identifier> trailer::id() const
     {
         const auto *v = dict_.get_array("ID");
         if (!v || v->empty())
-            return std::unexpected(error_builder::create()
-                .with_message("Trailer missing or empty /ID entry")
-                .with_code(error_code::not_found)
-                .with_component(error_component::trailer)
-                .build());
+            return std::nullopt;
 
         const auto &arr = *v;
         const auto *orig = arr[0].as_string();
         if (!orig)
-            return std::unexpected(error_builder::create()
-                .with_message("Trailer /ID first element is not a string")
-                .with_code(error_code::invalid_token)
-                .with_component(error_component::trailer)
-                .build());
+            throw parse_exception{"Trailer /ID first element is not a string"};
 
         if (arr.size() >= 2)
         {
@@ -86,12 +62,12 @@ namespace ripper::pdf::core
         return identifier{*orig};
     }
 
-    const dictionary &trailer::dictionary() const noexcept
+    const dictionary &trailer::dictionary() const
     {
         return dict_;
     }
 
-    dictionary &trailer::dictionary() noexcept
+    dictionary &trailer::dictionary()
     {
         return dict_;
     }

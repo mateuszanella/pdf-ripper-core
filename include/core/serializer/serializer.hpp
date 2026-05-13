@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/document.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/serializer/serializer_manager.hpp"
 
 namespace ripper::pdf::core
@@ -9,7 +9,7 @@ namespace ripper::pdf::core
     /// High-level PDF serializer facade for a single `document`.
     ///
     /// This type orchestrates serialization by delegating to components managed by
-    /// `serializer_manager`, and returns failures through `std::expected<..., error>`.
+    /// `serializer_manager`, and throws on failures.
     class serializer
     {
     public:
@@ -24,7 +24,7 @@ namespace ripper::pdf::core
         [[nodiscard]] class serializer_manager &manager();
 
         /// Serialize a PDF header to a byte buffer.
-        [[nodiscard]] std::expected<std::vector<std::byte>, error> serialize_header(const header &value);
+        [[nodiscard]] std::vector<std::byte> serialize_header(const header &value);
 
     private:
         const document &document_;

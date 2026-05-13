@@ -5,7 +5,6 @@
 
 #include "core/document.hpp"
 #include "core/document/header.hpp"
-#include "core/error.hpp"
 #include "core/serializer/header/default_header_serializer.hpp"
 
 namespace ripper::pdf::core
@@ -15,7 +14,7 @@ namespace ripper::pdf::core
     {
     }
 
-    void serializer_manager::set_header_serializer(std::unique_ptr<class header_serializer> value) noexcept
+    void serializer_manager::set_header_serializer(std::unique_ptr<class header_serializer> value)
     {
         header_serializer_ = std::move(value);
     }

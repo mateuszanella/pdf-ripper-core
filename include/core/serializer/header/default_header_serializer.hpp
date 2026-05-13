@@ -1,11 +1,10 @@
 #pragma once
 
 #include <cstddef>
-#include <expected>
 #include <vector>
 
 #include "core/document/header.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/serializer/header/header_serializer.hpp"
 
 namespace ripper::pdf::core
@@ -17,6 +16,6 @@ namespace ripper::pdf::core
         virtual ~default_header_serializer() = default;
 
         /// Serialize `value` to a byte buffer.
-        [[nodiscard]] std::expected<std::vector<std::byte>, error> serialize(const header &value) const override;
+        [[nodiscard]] std::vector<std::byte> serialize(const header &value) const override;
     };
 }

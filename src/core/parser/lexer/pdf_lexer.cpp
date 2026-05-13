@@ -4,8 +4,7 @@
 #include <limits>
 #include <string>
 
-#include "core/error.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/util/text.hpp"
 
 namespace ripper::pdf::core
@@ -23,7 +22,7 @@ namespace ripper::pdf::core
     {
     }
 
-    std::expected<lexer_token, error> pdf_lexer::next()
+    lexer_token pdf_lexer::next()
     {
         if (!_lookahead_tokens.empty())
         {
@@ -35,17 +34,11 @@ namespace ripper::pdf::core
         return read_token();
     }
 
-    std::expected<lexer_token, error> pdf_lexer::peek(std::size_t lookahead)
+    lexer_token pdf_lexer::peek(std::size_t lookahead)
     {
         while (_lookahead_tokens.size() <= lookahead)
         {
-            auto token_result = read_token();
-            if (!token_result)
-            {
-                return std::unexpected(token_result.error());
-            }
-
-            _lookahead_tokens.push_back(*token_result);
+            _lookahead_tokens.push_back(read_token());
         }
 
         return _lookahead_tokens[lookahead];
@@ -53,13 +46,7 @@ namespace ripper::pdf::core
 
     bool pdf_lexer::consume(lexer_token_type type, std::string_view lexeme)
     {
-        auto token_result = peek();
-        if (!token_result)
-        {
-            return false;
-        }
-
-        const auto token = *token_result;
+        const auto token = peek();
         if (token.type != type)
         {
             return false;
@@ -74,7 +61,7 @@ namespace ripper::pdf::core
         return true;
     }
 
-    std::expected<lexer_token, error> pdf_lexer::read_token()
+    lexer_token pdf_lexer::read_token()
     {
         skip_whitespace_and_comments();
 
@@ -103,14 +90,7 @@ namespace ripper::pdf::core
 
             if (_position >= _content.size())
             {
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::unterminated_hex_string)
-                                           .with_component(error_component::lexer)
-                                           .with_offset(start)
-                                           .with_field("hex_string")
-                                           .with_expected(">")
-                                           .with_message("Unterminated hex string")
-                                           .build());
+                throw parse_exception{"Unterminated hex string"};
             }
 
             const std::size_t end = _position;
@@ -127,15 +107,7 @@ namespace ripper::pdf::core
                 return lexer_token{lexer_token_type::dictionary_end, ">>"};
             }
 
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::invalid_token)
-                                       .with_component(error_component::lexer)
-                                       .with_offset(_position)
-                                       .with_field("dictionary_end")
-                                       .with_expected(">>")
-                                       .with_actual(std::string{1, ch})
-                                       .with_message("Invalid token")
-                                       .build());
+            throw parse_exception{"Invalid dictionary end token"};
         }
 
         if (ch == '[')
@@ -211,14 +183,7 @@ namespace ripper::pdf::core
                 }
             }
 
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::unterminated_literal_string)
-                                       .with_component(error_component::lexer)
-                                       .with_offset(start)
-                                       .with_field("literal_string")
-                                       .with_expected(")")
-                                       .with_message("Unterminated literal string")
-                                       .build());
+            throw parse_exception{"Unterminated literal string"};
         }
 
         if (is_number_start(ch))
@@ -252,14 +217,7 @@ namespace ripper::pdf::core
             const std::string_view lexeme = _content.substr(start, _position - start);
             if (!saw_digit || is_invalid_number_lexeme(lexeme))
             {
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::invalid_token)
-                                           .with_component(error_component::lexer)
-                                           .with_offset(start)
-                                           .with_field("numeric_token")
-                                           .with_actual(std::string{lexeme})
-                                           .with_message("Invalid numeric token")
-                                           .build());
+                throw parse_exception{"Invalid numeric token"};
             }
 
             return lexer_token{
@@ -281,14 +239,7 @@ namespace ripper::pdf::core
 
         if (_position == start)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::invalid_token)
-                                       .with_component(error_component::lexer)
-                                       .with_offset(_position)
-                                       .with_field("token")
-                                       .with_actual(std::string{1, ch})
-                                       .with_message("Invalid token")
-                                       .build());
+            throw parse_exception{"Invalid token"};
         }
 
         return lexer_token{lexer_token_type::keyword, _content.substr(start, _position - start)};
@@ -357,50 +308,31 @@ namespace ripper::pdf::core
         return std::isdigit(static_cast<unsigned char>(ch)) != 0 || ch == '+' || ch == '-' || ch == '.';
     }
 
-    std::expected<void, error> pdf_lexer::skip_compound(
+    void pdf_lexer::skip_compound(
         lexer_token_type begin_token,
         lexer_token_type end_token)
     {
         std::size_t depth = 1;
         while (depth > 0)
         {
-            auto token_result = next();
-            if (!token_result)
-                return std::unexpected(token_result.error());
-
-            const auto token = *token_result;
+            const auto token = next();
             if (token.type == lexer_token_type::eof)
-                return std::unexpected(error_builder::create()
-                                           .with_code(error_code::unexpected_eof)
-                                           .with_component(error_component::lexer)
-                                           .with_offset(_position)
-                                           .with_message("Unexpected EOF while skipping compound structure")
-                                           .build());
+                throw parse_exception{"Unexpected EOF while skipping compound structure"};
 
             if (token.type == begin_token)
                 ++depth;
             else if (token.type == end_token)
                 --depth;
         }
-        return {};
     }
 
-    std::expected<void, error> pdf_lexer::skip_value()
+    void pdf_lexer::skip_value()
     {
-        auto token_result = next();
-        if (!token_result)
-            return std::unexpected(token_result.error());
-
-        const auto token = *token_result;
+        const auto token = next();
         if (token.type == lexer_token_type::eof ||
             token.type == lexer_token_type::dictionary_end ||
             token.type == lexer_token_type::array_end)
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::invalid_token)
-                                       .with_component(error_component::lexer)
-                                       .with_offset(_position)
-                                       .with_message("Expected a value but got an invalid or unexpected token")
-                                       .build());
+            throw parse_exception{"Expected a value but got an invalid or unexpected token"};
 
         if (token.type == lexer_token_type::dictionary_begin)
             return skip_compound(lexer_token_type::dictionary_begin, lexer_token_type::dictionary_end);
@@ -412,17 +344,14 @@ namespace ripper::pdf::core
         {
             auto gen = peek();
             auto marker = peek(1);
-            if (gen && marker &&
-                gen->type == lexer_token_type::integer &&
-                marker->type == lexer_token_type::keyword &&
-                marker->lexeme == "R")
+            if (gen.type == lexer_token_type::integer &&
+                marker.type == lexer_token_type::keyword &&
+                marker.lexeme == "R")
             {
                 (void)next();
                 (void)next();
             }
         }
-
-        return {};
     }
 
 }

@@ -13,7 +13,7 @@
 
 namespace ripper::pdf::core
 {
-    std::expected<object, error> default_object_parser::parse(
+    object default_object_parser::parse(
         document &doc,
         indirect_reference ref,
         std::string_view content_sv) const
@@ -23,26 +23,20 @@ namespace ripper::pdf::core
         // Skip the `N G obj` header. The reference is already known from the xref.
         for (int i = 0; i < 3; ++i)
         {
-            auto tok = lexer.next();
-            if (!tok)
-                return std::unexpected(tok.error());
+            (void)lexer.next();
         }
 
         // Parse the content as any PDF direct value (primitive, array, dictionary, etc.).
         auto content = parse_value(lexer);
-        if (!content)
-            return std::unexpected(content.error());
 
         // A content stream is only possible when the content is a dictionary.
-        if (content->is_dictionary())
+        if (content.is_dictionary())
         {
             auto peek_result = lexer.peek();
-            if (!peek_result)
-                return std::unexpected(peek_result.error());
 
-            if (peek_result->type == lexer_token_type::keyword && peek_result->lexeme == "stream")
+            if (peek_result.type == lexer_token_type::keyword && peek_result.lexeme == "stream")
             {
-                auto stream_tok = *lexer.next();
+                auto stream_tok = lexer.next();
 
                 // Stream content begins after the `stream` keyword and its mandatory
                 // line ending (either \r\n or \n per the PDF spec, section 7.3.8.1).
@@ -77,11 +71,11 @@ namespace ripper::pdf::core
 
                 return object{
                     indirect_object{doc, ref},
-                    std::move(*content),
+                    std::move(content),
                     stream{std::move(bytes)}};
             }
         }
 
-        return object{indirect_object{doc, ref}, std::move(*content)};
+        return object{indirect_object{doc, ref}, std::move(content)};
     }
 }

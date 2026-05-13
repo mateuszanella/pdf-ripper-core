@@ -1,8 +1,8 @@
 #include "core/document.hpp"
 
-#include <exception>
-#include <fstream>
 #include <memory>
+#include <span>
+#include <string_view>
 #include <utility>
 
 #include "core/document/catalog/catalog.hpp"
@@ -10,8 +10,7 @@
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
-#include "core/error.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/parser/parser.hpp"
 #include "core/reader/file_reader.hpp"
 #include "core/reader/reader.hpp"
@@ -42,234 +41,122 @@ namespace ripper::pdf::core
         return document{nullptr, std::make_unique<ripper::pdf::core::file_writer>(path)};
     }
 
-    std::expected<bool, error> document::save()
+    bool document::save()
     {
-        // Sanity checks to ensure we have the necessary components to perform a save operation.
         if (!has_writer())
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_message("No writer backend available")
-                                       .with_code(error_code::not_found)
-                                       .with_component(error_component::writer)
-                                       .build());
-        }
+            throw logic_exception{"No writer backend available"};
 
         if (!has_serializer())
-        {
-            return std::unexpected(error_builder::create()
-                                       .with_message("No serializer available")
-                                       .with_code(error_code::not_found)
-                                       .with_component(error_component::serializer)
-                                       .build());
-        }
+            throw logic_exception{"No serializer available"};
 
-        auto &w = writer().value().get();
-        auto &s = serializer().value().get();
+        auto &w = *writer();
+        auto &s = *serializer();
 
-        // Header serialization
-        auto header = this->header();
-        if (!header)
-        {
-            return std::unexpected(header.error());
-        }
+        auto serialized_header = s.serialize_header(this->header());
 
-        auto serialized_header = s.serialize_header(header.value());
-        if (!serialized_header)
-        {
-            return std::unexpected(serialized_header.error());
-        }
+        (void)w.write(serialized_header);
 
-        // TODO: check for written bytes
-        (void)w.write(serialized_header.value());
-
-        // TODO: do everything else
-        // The idea should probalby be:
-        // - Keep track of elements that have been created in memory, not sure if
-        //   through a change_set member of the document, or trough the xref itself,
-        //   by adding either a flag or by just having the offest() be optional and
-        //   empty for new elements
-        // - Write catalog -> pages -> page, leave content empty for now
-        // - Should probably add page element now
-        // - Set the correct offsets on the xref using the current write position when
-        //   writing each element
-        // - Serialize and write xref and trailer
-        // - Finally, write the EOF marker
-
-        // EOF serialization
         constexpr std::string_view eof_marker = "%%EOF\n";
-
-        // TODO: check for written bytes
         (void)w.write(std::as_bytes(std::span{eof_marker.data(), eof_marker.size()}));
 
-        // Finish the output stream
         w.close();
 
         return true;
     }
 
-    bool document::has_reader() const noexcept
+    bool document::has_reader() const
     {
         return static_cast<bool>(reader_);
     }
 
-    bool document::has_parser() const noexcept
+    bool document::has_parser() const
     {
         return static_cast<bool>(parser_);
     }
 
-    bool document::has_writer() const noexcept
+    bool document::has_writer() const
     {
         return static_cast<bool>(writer_);
     }
 
-    bool document::has_serializer() const noexcept
+    bool document::has_serializer() const
     {
         return static_cast<bool>(serializer_);
     }
 
-    std::expected<std::reference_wrapper<reader>, error> document::reader() const noexcept
+    reader *document::reader() const
     {
-        if (!reader_)
-            return std::unexpected(error_builder::create()
-                                       .with_message("No reader backend available")
-                                       .with_code(error_code::not_found)
-                                       .with_component(error_component::reader)
-                                       .build());
-
-        return std::ref(*reader_);
+        return reader_.get();
     }
 
-    std::expected<std::reference_wrapper<parser>, error> document::parser() const noexcept
+    parser *document::parser() const
     {
-        if (!parser_)
-            return std::unexpected(error_builder::create()
-                                       .with_message("No parser available")
-                                       .with_code(error_code::not_found)
-                                       .with_component(error_component::parser)
-                                       .build());
-
-        return std::ref(*parser_);
+        return parser_.get();
     }
 
-    std::expected<std::reference_wrapper<writer>, error> document::writer() const noexcept
+    writer *document::writer() const
     {
-        if (!writer_)
-            return std::unexpected(error_builder::create()
-                                       .with_message("No writer backend available")
-                                       .with_code(error_code::not_found)
-                                       .with_component(error_component::writer)
-                                       .build());
-
-        return std::ref(*writer_);
+        return writer_.get();
     }
 
-    std::expected<std::reference_wrapper<serializer>, error> document::serializer() const noexcept
+    serializer *document::serializer() const
     {
-        if (!serializer_)
-            return std::unexpected(error_builder::create()
-                                       .with_message("No serializer available")
-                                       .with_code(error_code::not_found)
-                                       .with_component(error_component::serializer)
-                                       .build());
-
-        return std::ref(*serializer_);
+        return serializer_.get();
     }
 
-    std::expected<std::reference_wrapper<header>, error> document::header() noexcept
+    header &document::header()
     {
         if (header_.has_value())
-            return std::ref(*header_);
+            return *header_;
 
-        auto result = has_parser()
-                          ? parse_header()
-                          : create_header();
+        header_ = has_parser()
+                      ? parse_header()
+                      : create_header();
 
-        if (!result)
-            return std::unexpected(result.error());
-
-        header_ = std::move(*result);
-
-        return std::ref(*header_);
+        return *header_;
     }
 
-    std::expected<std::reference_wrapper<cross_reference_table>, error> document::cross_reference_table() noexcept
+    cross_reference_table &document::cross_reference_table()
     {
-        auto s = structure();
-        if (!s)
-            return std::unexpected(s.error());
-
-        return std::ref(s->get().xref());
+        return structure().xref();
     }
 
-    std::expected<std::reference_wrapper<trailer>, error> document::trailer() noexcept
+    trailer &document::trailer()
     {
-        auto s = structure();
-        if (!s)
-            return std::unexpected(s.error());
-
-        return std::ref(s->get().trailer());
+        return structure().trailer();
     }
 
-    std::expected<catalog, error> document::catalog() noexcept
+    catalog document::catalog()
     {
-        auto trailer_result = trailer();
-        if (!trailer_result)
-            return std::unexpected(trailer_result.error());
+        auto root_ref = trailer().root();
 
-        auto root_ref = trailer_result->get().root();
-
-        // No /Root yet — new document: allocate the catalog.
         if (!root_ref)
             return create_catalog();
 
-        auto xref_result = cross_reference_table();
-        if (!xref_result)
-            return std::unexpected(xref_result.error());
-
-        auto *entry = xref_result->get().find(*root_ref);
+        auto *entry = cross_reference_table().find(*root_ref);
         if (!entry)
-            return std::unexpected(error_builder::create()
-                                       .with_message("Root object not found in cross-reference table")
-                                       .with_code(error_code::not_found)
-                                       .with_component(error_component::catalog)
-                                       .build());
+            throw parse_exception{"Root object not found in cross-reference table"};
 
-        // Already resolved — return a view over the cached object.
         if (entry->is_resolved())
             return ripper::pdf::core::catalog{*entry->object()};
 
-        // Lazy-load from file.
         return parse_catalog();
     }
 
-    std::expected<catalog, error> document::parse_catalog() noexcept
+    catalog document::parse_catalog()
     {
-        auto trailer_result = trailer();
-        if (!trailer_result)
-            return std::unexpected(trailer_result.error());
-
-        auto root_ref = trailer_result->get().root();
+        auto root_ref = trailer().root();
         if (!root_ref)
-            return std::unexpected(root_ref.error());
+            throw parse_exception{"Trailer is missing required /Root reference"};
 
-        auto result = resolve_object(*root_ref);
-        if (!result)
-            return std::unexpected(result.error());
-
-        return ripper::pdf::core::catalog{**result};
+        return ripper::pdf::core::catalog{*resolve_object(*root_ref)};
     }
 
-    std::expected<catalog, error> document::create_catalog() noexcept
+    catalog document::create_catalog()
     {
-        auto xref_result = cross_reference_table();
-        if (!xref_result)
-            return std::unexpected(xref_result.error());
+        auto &xref = cross_reference_table();
+        auto &trl = trailer();
 
-        auto trailer_result = trailer();
-        if (!trailer_result)
-            return std::unexpected(trailer_result.error());
-
-        auto &xref = xref_result->get();
         auto ref = xref.reserve();
 
         dictionary dict;
@@ -279,72 +166,51 @@ namespace ripper::pdf::core
 
         auto *raw = xref.commit(ref, std::move(obj));
         if (!raw)
-            return std::unexpected(error_builder::create()
-                                       .with_message("Failed to commit catalog to cross-reference table")
-                                       .with_code(error_code::internal_error)
-                                       .with_component(error_component::catalog)
-                                       .build());
+            throw logic_exception{"Failed to commit catalog to cross-reference table"};
 
-        trailer_result->get().dictionary().set("Root", value{ref});
+        trl.dictionary().set("Root", value{ref});
 
         return ripper::pdf::core::catalog{*raw};
     }
 
-    std::expected<object*, error> document::resolve_object(indirect_reference ref) noexcept
+    object *document::resolve_object(indirect_reference ref)
     {
-        auto xref_result = cross_reference_table();
-        if (!xref_result)
-            return std::unexpected(xref_result.error());
-
-        auto *entry = xref_result->get().find(ref);
+        auto *entry = cross_reference_table().find(ref);
         if (!entry)
-            return std::unexpected(error_builder::create()
-                                       .with_message("Object not found in cross-reference table")
-                                       .with_code(error_code::not_found)
-                                       .build());
+            throw parse_exception{"Object not found in cross-reference table"};
 
         if (entry->is_resolved())
             return entry->object();
 
-        auto parser_result = parser();
-        if (!parser_result)
-            return std::unexpected(parser_result.error());
+        if (!has_parser())
+            throw logic_exception{"No parser available to resolve unresolved object"};
 
-        auto parsed = parser_result->get().parse_object(ref);
-        if (!parsed)
-            return std::unexpected(parsed.error());
+        auto parsed = parser_->parse_object(ref);
 
-        auto *raw = entry->resolve(std::make_unique<object>(std::move(*parsed)));
-        return raw;
+        return entry->resolve(std::make_unique<object>(std::move(parsed)));
     }
 
-    std::expected<std::reference_wrapper<document_structure>, error> document::structure() noexcept
+    document_structure &document::structure()
     {
         if (structure_.has_value())
-            return std::ref(*structure_);
+            return *structure_;
 
-        auto result = has_parser()
-                          ? parse_structure()
-                          : create_structure();
+        structure_ = has_parser()
+                         ? parse_structure()
+                         : create_structure();
 
-        if (!result)
-            return std::unexpected(result.error());
-
-        structure_ = std::move(*result);
-
-        return std::ref(*structure_);
+        return *structure_;
     }
 
-    std::expected<document_structure, error> document::parse_structure() const noexcept
+    document_structure document::parse_structure() const
     {
-        auto parser_result = parser();
-        if (!parser_result)
-            return std::unexpected(parser_result.error());
+        if (!parser_)
+            throw logic_exception{"No parser available"};
 
-        return parser_result->get().structure();
+        return parser_->structure();
     }
 
-    std::expected<document_structure, error> document::create_structure() const noexcept
+    document_structure document::create_structure() const
     {
         using xref_t = ripper::pdf::core::cross_reference_table;
         using entry_t = ripper::pdf::core::cross_reference_entry;
@@ -354,9 +220,7 @@ namespace ripper::pdf::core
         const auto generate_initial_xref = []()
         {
             xref_t::entry_map entries;
-
             entries.emplace(0, entry_t{iref_t{0, 65535}, 0, false});
-
             return xref_t{std::move(entries)};
         };
 
@@ -378,16 +242,15 @@ namespace ripper::pdf::core
             std::move(trailer_history)};
     }
 
-    std::expected<header, error> document::parse_header() const noexcept
+    header document::parse_header() const
     {
-        auto parser_result = parser();
-        if (!parser_result)
-            return std::unexpected(parser_result.error());
+        if (!parser_)
+            throw logic_exception{"No parser available"};
 
-        return parser_result->get().header();
+        return parser_->header();
     }
 
-    std::expected<header, error> document::create_header() const noexcept
+    header document::create_header() const
     {
         return ripper::pdf::core::header{"1.4"};
     }

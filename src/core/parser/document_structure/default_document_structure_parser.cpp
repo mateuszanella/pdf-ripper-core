@@ -3,12 +3,12 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <utility>
 
-#include "core/error.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
 #include "core/util/text.hpp"
@@ -38,11 +38,11 @@ namespace ripper::pdf::core
             _trailer_parser = std::make_unique<default_trailer_parser>();
     }
 
-    std::expected<std::size_t, error> default_document_structure_parser::extract_prev_offset(const trailer &trailer)
+    std::optional<std::size_t> default_document_structure_parser::extract_prev_offset(const trailer &trailer)
     {
         auto prev = trailer.prev();
         if (!prev)
-            return std::unexpected(prev.error());
+            return std::nullopt;
 
         return static_cast<std::size_t>(*prev);
     }
@@ -51,7 +51,7 @@ namespace ripper::pdf::core
      * @todo Technically, this implementation does not really get the last startxref,
      *       since the startxref keyword could appear in the last 1024 bytes multiple times.
      */
-    std::expected<std::size_t, error> default_document_structure_parser::find_start_xref_offset(reader &reader)
+    std::optional<std::size_t> default_document_structure_parser::find_start_xref_offset(reader &reader)
     {
         constexpr std::string_view start_xref_keyword = "startxref";
         constexpr std::size_t line_buffer_size = 256;
@@ -88,25 +88,13 @@ namespace ripper::pdf::core
 
         if (!found_keyword)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::missing_xref_table)
-                                       .with_component(error_component::cross_reference)
-                                       .with_field("startxref")
-                                       .with_expected("startxref section")
-                                       .with_message("Missing startxref section")
-                                       .build());
+            return std::nullopt;
         }
 
         const std::size_t bytes_read = reader.read_line(buffer);
         if (bytes_read == 0)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::unexpected_eof)
-                                       .with_component(error_component::cross_reference)
-                                       .with_field("startxref_offset")
-                                       .with_expected("numeric offset line")
-                                       .with_message("Missing startxref offset line")
-                                       .build());
+            throw parse_exception{"Missing startxref offset line"};
         }
 
         const std::string_view offset_line{
@@ -116,34 +104,28 @@ namespace ripper::pdf::core
         const auto offset = text::parse_size_t(offset_line);
         if (!offset)
         {
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::corrupted_xref_table)
-                                       .with_component(error_component::cross_reference)
-                                       .with_field("startxref_offset")
-                                       .with_actual(std::string{offset_line})
-                                       .with_message("Invalid startxref offset")
-                                       .build());
+            throw parse_exception{"Invalid startxref offset"};
         }
 
         return offset.value();
     }
 
-    std::expected<document_structure, error> default_document_structure_parser::parse()
+    document_structure default_document_structure_parser::parse()
     {
-        auto reader_result = _document.reader();
-        if (!reader_result)
-            return std::unexpected(reader_result.error());
+        auto *reader_ptr = _document.reader();
+        if (!reader_ptr)
+            throw io_exception{"No reader backend available"};
 
-        auto &reader = reader_result->get();
+        auto &reader = *reader_ptr;
 
         auto start_xref_result = find_start_xref_offset(reader);
         if (!start_xref_result)
-            return std::unexpected(start_xref_result.error());
+            throw parse_exception{"Missing startxref section"};
 
         std::vector<cross_reference_table> xref_history;
         std::vector<trailer> trailer_history;
         std::unordered_set<std::size_t> visited_offsets;
-        std::size_t current_offset = start_xref_result.value();
+        std::size_t current_offset = *start_xref_result;
 
         // In this main loop, we iterate through the whole chain of xref/trailer
         // pairs starting from the last one (pointed by startxref) and following
@@ -195,42 +177,18 @@ namespace ripper::pdf::core
             {
                 if (xref_history.empty())
                 {
-                    return std::unexpected(error_builder::create()
-                                               .with_code(error_code::missing_trailer)
-                                               .with_component(error_component::document)
-                                               .with_field("trailer")
-                                               .with_expected("complete trailer dictionary")
-                                               .with_message("Unable to find complete trailer while parsing document structure")
-                                               .build());
+                    throw parse_exception{"Unable to find complete trailer while parsing document structure"};
                 }
                 break;
             }
 
             // Step 3: Parse xref from collected bytes
             auto cross_reference_table = _xref_parser->parse(collected_content);
-            if (!cross_reference_table)
-            {
-                if (xref_history.empty())
-                {
-                    return std::unexpected(cross_reference_table.error());
-                }
-                break;
-            }
-
-            xref_history.push_back(std::move(cross_reference_table.value()));
+            xref_history.push_back(std::move(cross_reference_table));
 
             // Step 4: Parse trailer from collected bytes
             auto trailerResult = _trailer_parser->parse(collected_content);
-            if (!trailerResult)
-            {
-                if (trailer_history.empty())
-                {
-                    return std::unexpected(trailerResult.error());
-                }
-                break;
-            }
-
-            trailer_history.push_back(std::move(trailerResult.value()));
+            trailer_history.push_back(std::move(trailerResult));
 
             // Step 5: Check for /Prev to repeat
             auto prev_offset_result = extract_prev_offset(trailer_history.back());

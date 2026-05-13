@@ -1,11 +1,11 @@
 #pragma once
 
-#include <expected>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "core/document.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "core/parser/document_structure/document_structure_parser.hpp"
 #include "core/parser/trailer/trailer_parser.hpp"
@@ -23,7 +23,7 @@ namespace ripper::pdf::core
             std::unique_ptr<class cross_reference_table_parser> xref_parser,
             std::unique_ptr<class trailer_parser> trailer_parser);
 
-        [[nodiscard]] std::expected<document_structure, error> parse();
+        [[nodiscard]] document_structure parse();
 
     private:
         document &_document;
@@ -31,7 +31,7 @@ namespace ripper::pdf::core
         std::unique_ptr<class cross_reference_table_parser> _xref_parser;
         std::unique_ptr<class trailer_parser> _trailer_parser;
 
-        [[nodiscard]] std::expected<std::size_t, error> find_start_xref_offset(class reader &reader);
-        [[nodiscard]] std::expected<std::size_t, error> extract_prev_offset(const class trailer &trailer);
+        [[nodiscard]] std::optional<std::size_t> find_start_xref_offset(class reader &reader);
+        [[nodiscard]] std::optional<std::size_t> extract_prev_offset(const class trailer &trailer);
     };
 }

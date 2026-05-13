@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/document.hpp"
-#include "core/error.hpp"
 #include "core/serializer/header/header_serializer.hpp"
 
 namespace ripper::pdf::core
@@ -20,7 +19,7 @@ namespace ripper::pdf::core
         explicit serializer_manager(const document &doc);
 
         /// Replace the header parser implementation.
-        void set_header_serializer(std::unique_ptr<class header_serializer> value) noexcept;
+        void set_header_serializer(std::unique_ptr<class header_serializer> value);
 
         /// Access the configured header parser.
         [[nodiscard]] class header_serializer &header_serializer();

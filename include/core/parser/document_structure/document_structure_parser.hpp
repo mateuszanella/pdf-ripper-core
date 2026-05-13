@@ -1,9 +1,7 @@
 #pragma once
 
-#include <expected>
-
 #include "core/document/document_structure.hpp"
-#include "core/error.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
@@ -11,6 +9,6 @@ namespace ripper::pdf::core
     {
     public:
         virtual ~document_structure_parser() = default;
-        virtual std::expected<document_structure, error> parse() = 0;
+        virtual document_structure parse() = 0;
     };
 }

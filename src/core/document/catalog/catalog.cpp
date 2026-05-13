@@ -2,60 +2,47 @@
 
 #include "core/document.hpp"
 #include "core/document/catalog/pages/pages.hpp"
-#include "core/error.hpp"
-#include "core/errors/error_builder.hpp"
+#include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
-    catalog::catalog(object &obj) noexcept
+    catalog::catalog(object &obj)
         : obj_{obj}
     {
     }
 
-    object &catalog::obj() noexcept
+    object &catalog::obj()
     {
         return obj_.get();
     }
 
-    const object &catalog::obj() const noexcept
+    const object &catalog::obj() const
     {
         return obj_.get();
     }
 
-    dictionary *catalog::dictionary() noexcept
+    dictionary *catalog::dictionary()
     {
         return obj_.get().dictionary();
     }
 
-    const dictionary *catalog::dictionary() const noexcept
+    const dictionary *catalog::dictionary() const
     {
         return obj_.get().dictionary();
     }
 
-    std::expected<class pages, error> catalog::pages()
+    class pages catalog::pages()
     {
         auto *d = obj_.get().dictionary();
         if (!d)
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::corrupted_catalog)
-                                       .with_component(error_component::catalog)
-                                       .with_message("Catalog content is not a dictionary")
-                                       .build());
+            throw parse_exception{"Catalog content is not a dictionary"};
 
         auto pages_ref = d->get_indirect_reference("Pages");
         if (!pages_ref)
-            return std::unexpected(error_builder::create()
-                                       .with_code(error_code::corrupted_catalog)
-                                       .with_component(error_component::catalog)
-                                       .with_field("Pages")
-                                       .with_expected("indirect reference to pages object")
-                                       .with_message("Catalog is missing required /Pages reference")
-                                       .build());
+            throw parse_exception{"Catalog is missing required /Pages reference"};
 
-        auto result = obj_.get().identity().owner().resolve_object(*pages_ref);
-        if (!result)
-            return std::unexpected(result.error());
+        auto *resolved = obj_.get().identity().owner().resolve_object(*pages_ref);
 
-        return ripper::pdf::core::pages{**result};
+        return ripper::pdf::core::pages{*resolved};
     }
 }

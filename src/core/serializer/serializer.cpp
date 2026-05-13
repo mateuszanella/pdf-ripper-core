@@ -6,7 +6,6 @@
 #include "core/document.hpp"
 #include "core/document/header.hpp"
 #include "core/serializer/serializer_manager.hpp"
-#include "core/error.hpp"
 
 namespace ripper::pdf::core
 {
@@ -24,7 +23,7 @@ namespace ripper::pdf::core
         return *manager_;
     }
 
-    std::expected<std::vector<std::byte>, error> serializer::serialize_header(const header &value)
+    std::vector<std::byte> serializer::serialize_header(const header &value)
     {
         return manager().header_serializer().serialize(value);
     }

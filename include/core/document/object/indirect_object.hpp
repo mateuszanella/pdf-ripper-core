@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "core/document/object/indirect_reference.hpp"
-#include "core/error.hpp"
 
 namespace ripper::pdf::core
 {
@@ -23,17 +22,17 @@ namespace ripper::pdf::core
         /// Construct an indirect object bound to `doc` and identified by `ref`.
         ///
         /// The document is stored by reference and must outlive this object.
-        indirect_object(document &doc, indirect_reference ref) noexcept;
+        indirect_object(document &doc, indirect_reference ref);
 
         /// Returns the indirect reference (object number + generation number) that
         /// uniquely identifies this object within its owning document.
-        [[nodiscard]] const indirect_reference &reference() const noexcept;
+        [[nodiscard]] const indirect_reference &reference() const;
 
         /// Returns the owning document.
         ///
         /// Derived classes may use this to navigate the document structure or
         /// resolve other indirect references.
-        [[nodiscard]] document &owner() const noexcept;
+        [[nodiscard]] document &owner() const;
 
     private:
         std::reference_wrapper<document> document_;

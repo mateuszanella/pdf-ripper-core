@@ -1,6 +1,5 @@
 #pragma once
 
-#include <expected>
 #include <string>
 #include <optional>
 #include <vector>
@@ -14,7 +13,7 @@ namespace ripper::pdf::core
     public:
         explicit header_parser(const document &document);
 
-        [[nodiscard]] std::expected<header, error> parse();
+        [[nodiscard]] header parse();
 
     private:
         const document &_document;
