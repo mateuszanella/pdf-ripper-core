@@ -35,7 +35,7 @@ namespace ripper::pdf::core
         ///
         /// The object is not yet resolved; it will be lazy-loaded on first access
         /// via `cross_reference_table::resolve()`.
-        cross_reference_entry(indirect_reference ref, std::uint64_t offset, bool in_use) noexcept;
+        explicit cross_reference_entry(indirect_reference ref, std::uint64_t offset, bool in_use) noexcept;
 
         /// Construct a pending reserved entry with no file backing and no object yet.
         ///
@@ -48,7 +48,7 @@ namespace ripper::pdf::core
         /// Used when creating new objects programmatically.
         /// The object is immediately available; no file offset will ever exist
         /// until the document is saved.
-        cross_reference_entry(indirect_reference ref, std::unique_ptr<object> object) noexcept;
+        explicit cross_reference_entry(indirect_reference ref, std::unique_ptr<object> object) noexcept;
 
         /// Returns the indirect reference (object number + generation) for this entry.
         [[nodiscard]] const indirect_reference &reference() const noexcept;
