@@ -7,34 +7,14 @@
 
 namespace ripper::pdf::core
 {
-    pages::pages(object &obj)
-        : obj_{obj}
+    pages::pages(object &obj) noexcept
+        : object_view(obj)
     {
-    }
-
-    object &pages::obj()
-    {
-        return obj_.get();
-    }
-
-    const object &pages::obj() const
-    {
-        return obj_.get();
-    }
-
-    dictionary *pages::dictionary()
-    {
-        return obj_.get().dictionary();
-    }
-
-    const dictionary *pages::dictionary() const
-    {
-        return obj_.get().dictionary();
     }
 
     std::uint64_t pages::count() const
     {
-        auto *d = obj_.get().dictionary();
+        auto *d = obj().dictionary();
         if (!d)
             throw parse_exception{"Pages content is not a dictionary"};
 

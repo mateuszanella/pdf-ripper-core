@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "core/document/object/object.hpp"
+#include "core/document/object/object_view.hpp"
 #include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
@@ -12,23 +13,12 @@ namespace ripper::pdf::core
     ///
     /// Non-owning wrapper around an `object` stored in the cross-reference table.
     /// Ownership remains with the `cross_reference_entry` that holds the object.
-    class pages
+    class pages : public object_view
     {
     public:
-        explicit pages(object &obj);
-
-        /// Returns the underlying object.
-        [[nodiscard]] object &obj();
-        [[nodiscard]] const object &obj() const;
-
-        /// Returns a pointer to the content dictionary, or `nullptr` if content is not a dictionary.
-        [[nodiscard]] class dictionary *dictionary();
-        [[nodiscard]] const class dictionary *dictionary() const;
+        explicit pages(object &obj) noexcept;
 
         /// Returns the total page count from the /Count entry.
         [[nodiscard]] std::uint64_t count() const;
-
-    private:
-        std::reference_wrapper<object> obj_;
     };
 }
