@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "core/document/object/indirect_reference.hpp"
+#include "core/document/object/stream.hpp"
 
 namespace ripper::pdf::core
 {
@@ -30,6 +31,7 @@ namespace ripper::pdf::core
 
     class object;
     class dictionary;
+    class object_stream;
 
     /// Type alias for a PDF array representing an ordered sequence of `object` objects.
     using array = std::vector<object>;
@@ -64,15 +66,16 @@ namespace ripper::pdf::core
     public:
         /// The underlying variant type holding all possible PDF object alternatives.
         using variant_type = std::variant<
-            null,                       ///> null
-            bool,                       ///> boolean
-            std::int64_t,               ///> integer
-            double,                     ///> real
-            std::string,                ///> string
-            name,                       ///> name
-            indirect_reference,         ///> reference
-            array,                      ///> array
-            std::unique_ptr<dictionary> ///> dictionary
+            null,                          ///> null
+            bool,                          ///> boolean
+            std::int64_t,                  ///> integer
+            double,                        ///> real
+            std::string,                   ///> string
+            name,                          ///> name
+            indirect_reference,            ///> reference
+            array,                         ///> array
+            std::unique_ptr<dictionary>,   ///> dictionary
+            std::unique_ptr<object_stream> ///> stream
             >;
 
         /// Construct a null PDF object.
@@ -98,6 +101,9 @@ namespace ripper::pdf::core
 
         /// Construct a dictionary PDF object.
         explicit object(dictionary value) noexcept;
+
+        /// Construct a stream PDF object.
+        explicit object(object_stream value) noexcept;
 
         /// Construct an indirect reference PDF object.
         explicit object(indirect_reference value) noexcept;
@@ -134,6 +140,9 @@ namespace ripper::pdf::core
         /// Returns `true` if this object holds a PDF dictionary object.
         [[nodiscard]] bool is_dictionary() const noexcept;
 
+        /// Returns `true` if this object holds a PDF stream object.
+        [[nodiscard]] bool is_stream() const noexcept;
+
         /// Returns `true` if this object holds a PDF indirect reference.
         [[nodiscard]] bool is_indirect_reference() const noexcept;
 
@@ -160,6 +169,12 @@ namespace ripper::pdf::core
 
         /// Returns a pointer to the held dictionary, or `nullptr` if this is not a dictionary object.
         [[nodiscard]] dictionary *as_dictionary() noexcept;
+
+        /// Returns a pointer to the held stream, or `nullptr` if this is not a stream object.
+        [[nodiscard]] const class object_stream *as_stream() const noexcept;
+
+        /// Returns a pointer to the held stream, or `nullptr` if this is not a stream object.
+        [[nodiscard]] class object_stream *as_stream() noexcept;
 
         /// Returns a pointer to the held indirect reference, or `nullptr` if this is not an indirect reference object.
         [[nodiscard]] const indirect_reference *as_indirect_reference() const noexcept;
@@ -262,4 +277,33 @@ namespace ripper::pdf::core
     private:
         dictionary_map_type entries_;
     };
+
+    /// A PDF stream object. Consists of a content dictionary and a byte stream payload.
+    ///
+    /// The content dictionary holds metadata about the stream (e.g. `/Length`, `/Filter`).
+    /// The byte stream holds the actual data payload, which may be preloaded in memory
+    /// or deferred for later loading.
+    class object_stream
+    {
+    public:
+        /// Construct a stream with the given content dictionary and byte stream.
+        explicit object_stream(class dictionary dict, class stream stream) noexcept;
+
+        /// Returns a const reference to the content dictionary of this stream.
+        [[nodiscard]] const class dictionary &dictionary() const noexcept;
+
+        /// Returns a mutable reference to the content dictionary of this stream.
+        [[nodiscard]] class dictionary &dictionary() noexcept;
+
+        /// Returns a const reference to the byte stream payload of this stream.
+        [[nodiscard]] const class stream &stream() const noexcept;
+
+        /// Returns a mutable reference to the byte stream payload of this stream.
+        [[nodiscard]] class stream &stream() noexcept;
+
+    private:
+        class dictionary dict_;
+        class stream stream_;
+    };
+
 }

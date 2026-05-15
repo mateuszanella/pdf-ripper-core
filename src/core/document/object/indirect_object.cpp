@@ -2,17 +2,10 @@
 
 #include "core/document/object/indirect_object.hpp"
 #include "core/document/object/stream.hpp"
-#include "core/document/object/object.hpp"
-
 namespace ripper::pdf::core
 {
     indirect_object::indirect_object(object_identity identity, class object content) noexcept
-        : identity_(std::move(identity)), content_(std::move(content)), stream_(std::nullopt)
-    {
-    }
-
-    indirect_object::indirect_object(object_identity identity, class object content, class stream stream) noexcept
-        : identity_(std::move(identity)), content_(std::move(content)), stream_(std::move(stream))
+        : identity_(std::move(identity)), content_(std::move(content))
     {
     }
 
@@ -44,25 +37,5 @@ namespace ripper::pdf::core
     dictionary *indirect_object::dictionary() noexcept
     {
         return content_.as_dictionary();
-    }
-
-    bool indirect_object::has_stream() const noexcept
-    {
-        return stream_.has_value();
-    }
-
-    const stream *indirect_object::stream() const noexcept
-    {
-        return stream_ ? &stream_.value() : nullptr;
-    }
-
-    stream *indirect_object::stream() noexcept
-    {
-        return stream_ ? &stream_.value() : nullptr;
-    }
-
-    void indirect_object::set_stream(class stream stream) noexcept
-    {
-        stream_ = std::move(stream);
     }
 }

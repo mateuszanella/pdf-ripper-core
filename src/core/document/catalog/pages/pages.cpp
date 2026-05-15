@@ -20,9 +20,7 @@ namespace ripper::pdf::core
 
         auto count = d->get_integer("Count");
         if (!count)
-        {
             throw parse_exception{"Pages indirect_object is missing required /Count entry"};
-        }
 
         return static_cast<std::uint64_t>(*count);
     }

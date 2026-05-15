@@ -23,6 +23,7 @@ namespace ripper::pdf::core
         [[nodiscard]] indirect_object parse(
             document &doc,
             indirect_reference ref,
-            std::string_view content) const override;
+            std::string_view content,
+            bool preload_stream = true) const override;
     };
 }

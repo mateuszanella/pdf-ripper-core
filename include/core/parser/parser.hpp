@@ -46,7 +46,7 @@ namespace ripper::pdf::core
         ///
         /// The result can be cast to a typed subclass (catalog, pages, etc.) when the
         /// caller knows the `/Type` of the object.
-        [[nodiscard]] indirect_object parse_object(indirect_reference ref);
+        [[nodiscard]] indirect_object parse_object(indirect_reference ref, bool preload_stream = true);
 
     private:
         document &document_;

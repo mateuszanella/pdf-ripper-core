@@ -16,7 +16,8 @@ namespace ripper::pdf::core
     indirect_object default_object_parser::parse(
         document &doc,
         indirect_reference ref,
-        std::string_view content_sv) const
+        std::string_view content_sv,
+        bool preload_stream) const
     {
         pdf_lexer lexer{content_sv};
 
@@ -32,7 +33,10 @@ namespace ripper::pdf::core
         // A content stream is only possible when the content is a dictionary.
         if (content.is_dictionary())
         {
+            const auto *dict_ptr = content.as_dictionary();
             auto peek_result = lexer.peek();
+
+            /// TODO: implement streams correctly and also add a way to create a proper deferred stream.
 
             if (peek_result.type == lexer_token_type::keyword && peek_result.lexeme == "stream")
             {
@@ -56,6 +60,7 @@ namespace ripper::pdf::core
                 const auto endstream_pos = remainder.find("endstream");
 
                 std::vector<std::byte> bytes;
+                std::size_t payload_size = 0;
                 if (endstream_pos != std::string_view::npos)
                 {
                     // Trim the mandatory line ending before `endstream`.
@@ -65,14 +70,31 @@ namespace ripper::pdf::core
                     if (len > 0 && remainder[len - 1] == '\r')
                         --len;
 
-                    bytes.resize(len);
-                    std::memcpy(bytes.data(), stream_start, len);
+                    payload_size = len;
+
+                    if (preload_stream)
+                    {
+                        bytes.resize(len);
+                        std::memcpy(bytes.data(), stream_start, len);
+                    }
                 }
+
+                dictionary stream_dict{};
+                if (dict_ptr)
+                    stream_dict = *dict_ptr;
+
+                const auto *length = stream_dict.get_integer("Length");
+                const std::size_t expected_size = length
+                                                      ? static_cast<std::size_t>(*length)
+                                                      : payload_size;
+
+                stream parsed_stream = preload_stream
+                                           ? stream{std::move(bytes)}
+                                           : stream::deferred(expected_size);
 
                 return indirect_object{
                     object_identity{&doc, ref},
-                    std::move(content),
-                    stream{std::move(bytes)}};
+                    object{object_stream{std::move(stream_dict), std::move(parsed_stream)}}};
             }
         }
 

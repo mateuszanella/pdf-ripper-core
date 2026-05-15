@@ -26,6 +26,7 @@ namespace ripper::pdf::core
         [[nodiscard]] virtual indirect_object parse(
             document &doc,
             indirect_reference ref,
-            std::string_view content) const = 0;
+            std::string_view content,
+            bool preload_stream = true) const = 0;
     };
 }

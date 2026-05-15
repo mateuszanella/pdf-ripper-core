@@ -46,6 +46,11 @@ namespace ripper::pdf::core
     {
     }
 
+    object::object(object_stream value) noexcept
+        : value_(std::make_unique<object_stream>(std::move(value)))
+    {
+    }
+
     object::object(indirect_reference value) noexcept
         : value_(std::move(value))
     {
@@ -55,8 +60,11 @@ namespace ripper::pdf::core
         : value_(std::visit([](const auto &v) -> variant_type
                             {
         using T = std::decay_t<decltype(v)>;
+
         if constexpr (std::is_same_v<T, std::unique_ptr<dictionary>>)
             return std::make_unique<dictionary>(*v);
+        else if constexpr (std::is_same_v<T, std::unique_ptr<object_stream>>)
+            return std::make_unique<object_stream>(*v);
         else
             return v; }, other.value_))
     {
@@ -109,6 +117,11 @@ namespace ripper::pdf::core
         return std::holds_alternative<std::unique_ptr<dictionary>>(value_);
     }
 
+    bool object::is_stream() const noexcept
+    {
+        return std::holds_alternative<std::unique_ptr<object_stream>>(value_);
+    }
+
     bool object::is_indirect_reference() const noexcept
     {
         return std::holds_alternative<indirect_reference>(value_);
@@ -148,13 +161,43 @@ namespace ripper::pdf::core
     {
         const auto *ptr = std::get_if<std::unique_ptr<dictionary>>(&value_);
 
-        return ptr ? ptr->get() : nullptr;
+        if (ptr)
+            return ptr->get();
+
+        const auto *stream_ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
+        if (!stream_ptr)
+            return nullptr;
+
+        return stream_ptr->get()
+                   ? &stream_ptr->get()->dictionary()
+                   : nullptr;
     }
 
     dictionary *object::as_dictionary() noexcept
     {
         auto *ptr = std::get_if<std::unique_ptr<dictionary>>(&value_);
 
+        if (ptr)
+            return ptr->get();
+
+        auto *stream_ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
+        if (!stream_ptr)
+            return nullptr;
+
+        return stream_ptr->get()
+                   ? &stream_ptr->get()->dictionary()
+                   : nullptr;
+    }
+
+    const object_stream *object::as_stream() const noexcept
+    {
+        const auto *ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
+        return ptr ? ptr->get() : nullptr;
+    }
+
+    object_stream *object::as_stream() noexcept
+    {
+        auto *ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
         return ptr ? ptr->get() : nullptr;
     }
 
@@ -166,6 +209,33 @@ namespace ripper::pdf::core
     const object::variant_type &object::variant() const noexcept
     {
         return value_;
+    }
+
+    /// Object stream implementation
+
+    object_stream::object_stream(class dictionary dict, class stream stream) noexcept
+        : dict_(std::move(dict)), stream_(std::move(stream))
+    {
+    }
+
+    const dictionary &object_stream::dictionary() const noexcept
+    {
+        return dict_;
+    }
+
+    dictionary &object_stream::dictionary() noexcept
+    {
+        return dict_;
+    }
+
+    const stream &object_stream::stream() const noexcept
+    {
+        return stream_;
+    }
+
+    stream &object_stream::stream() noexcept
+    {
+        return stream_;
     }
 
     /// Dictionary implementation
