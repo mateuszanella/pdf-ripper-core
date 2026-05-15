@@ -15,7 +15,7 @@ namespace ripper::pdf::core
     {
     }
 
-    cross_reference_entry::cross_reference_entry(indirect_reference ref, std::unique_ptr<class object> obj) noexcept
+    cross_reference_entry::cross_reference_entry(indirect_reference ref, std::unique_ptr<class indirect_object> obj) noexcept
         : reference_{ref}, offset_{std::nullopt}, in_use_{true}, object_{std::move(obj)}
     {
     }
@@ -45,12 +45,12 @@ namespace ripper::pdf::core
         return !offset_.has_value();
     }
 
-    object *cross_reference_entry::object() const noexcept
+    indirect_object *cross_reference_entry::indirect_object() const noexcept
     {
         return object_.get();
     }
 
-    object *cross_reference_entry::resolve(std::unique_ptr<class object> obj) noexcept
+    indirect_object *cross_reference_entry::resolve(std::unique_ptr<class indirect_object> obj) noexcept
     {
         if (!obj)
             return nullptr;

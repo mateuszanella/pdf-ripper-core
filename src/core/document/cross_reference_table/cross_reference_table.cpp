@@ -48,7 +48,7 @@ namespace ripper::pdf::core
         return find(ref.object_number());
     }
 
-    class object *cross_reference_table::resolve(const indirect_reference &ref, const loader_fn &loader)
+    class indirect_object *cross_reference_table::resolve(const indirect_reference &ref, const loader_fn &loader)
     {
         auto it = entries_.find(ref.object_number());
         if (it == entries_.end())
@@ -63,7 +63,7 @@ namespace ripper::pdf::core
                 return entry.resolve(std::move(obj));
         }
 
-        return entry.object();
+        return entry.indirect_object();
     }
 
     indirect_reference cross_reference_table::reserve() noexcept
@@ -74,7 +74,7 @@ namespace ripper::pdf::core
         return ref;
     }
 
-    class object *cross_reference_table::commit(const indirect_reference &ref, std::unique_ptr<class object> object) noexcept
+    class indirect_object *cross_reference_table::commit(const indirect_reference &ref, std::unique_ptr<class indirect_object> indirect_object) noexcept
     {
         auto it = entries_.find(ref.object_number());
         if (it == entries_.end())
@@ -84,15 +84,15 @@ namespace ripper::pdf::core
         if (!entry.is_new() || entry.is_resolved())
             return nullptr;
 
-        return entry.resolve(std::move(object));
+        return entry.resolve(std::move(indirect_object));
     }
 
-    indirect_reference cross_reference_table::allocate(std::unique_ptr<class object> object) noexcept
+    indirect_reference cross_reference_table::allocate(std::unique_ptr<class indirect_object> indirect_object) noexcept
     {
         std::uint32_t number = next_object_number();
         indirect_reference ref{number, 0};
 
-        entries_.emplace(number, cross_reference_entry{ref, std::move(object)});
+        entries_.emplace(number, cross_reference_entry{ref, std::move(indirect_object)});
 
         return ref;
     }

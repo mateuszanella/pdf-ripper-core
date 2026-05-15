@@ -5,7 +5,7 @@
 
 #include "core/document/identifier.hpp"
 #include "core/document/object/indirect_reference.hpp"
-#include "core/document/object/value.hpp"
+#include "core/document/object/object.hpp"
 #include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core

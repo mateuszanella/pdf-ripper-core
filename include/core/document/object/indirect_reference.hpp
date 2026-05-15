@@ -5,15 +5,15 @@
 
 namespace ripper::pdf::core
 {
-    /// Represents a PDF indirect object reference.
+    /// Represents a PDF indirect reference.
     ///
     /// In the PDF specification, indirect references identify objects by a unique
     /// combination of an object number and a generation number, written as
     /// `<object_number> <generation> R` in PDF syntax (e.g. `12 0 R`).
     ///
-    /// Object numbers are assigned sequentially and uniquely identify an object
+    /// Object numbers are assigned sequentially and uniquely identify an indirect_object
     /// within a document. Generation numbers start at 0 and are incremented when
-    /// an object is replaced in an incremental update.
+    /// an indirect_object is replaced in an incremental update.
     ///
     /// This type is hashable and fully ordered, making it suitable for use as a
     /// key in associative containers such as `std::unordered_map` or `std::map`.
@@ -23,13 +23,10 @@ namespace ripper::pdf::core
         /// Construct a null indirect reference.
         ///
         /// Both `object_number` and `generation` are initialized to zero.
-        /// A null reference does not correspond to any valid PDF object.
+        /// A null reference does not correspond to any valid PDF indirect_object.
         indirect_reference() noexcept;
 
         /// Construct an indirect reference from an object number and generation.
-        ///
-        /// @param object_number  The unique object number within the PDF document.
-        /// @param generation     The generation number; typically 0 for new objects.
         indirect_reference(std::uint32_t object_number, std::uint16_t generation) noexcept;
 
         /// Return the object number component of this reference.

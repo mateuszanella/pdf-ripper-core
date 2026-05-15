@@ -7,9 +7,9 @@
 
 namespace ripper::pdf::core
 {
-    std::vector<std::byte> default_header_serializer::serialize(const header &value) const
+    std::vector<std::byte> default_header_serializer::serialize(const header &object) const
     {
-        const std::string_view version = value.version();
+        const std::string_view version = object.version();
 
         if (version.empty())
         {

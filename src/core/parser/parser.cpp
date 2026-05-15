@@ -43,7 +43,7 @@ namespace ripper::pdf::core
         return manager().document_structure_parser().parse();
     }
 
-    object parser::parse_object(indirect_reference ref)
+    indirect_object parser::parse_object(indirect_reference ref)
     {
         auto content = manager().object_resolver().resolve(ref);
         return manager().object_parser().parse(document_, ref, content);

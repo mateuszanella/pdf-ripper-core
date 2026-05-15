@@ -1,6 +1,6 @@
 #include "core/document/trailer/trailer.hpp"
 
-#include "core/document/object/value.hpp"
+#include "core/document/object/object.hpp"
 #include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core

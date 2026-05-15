@@ -5,7 +5,7 @@
 #include <string_view>
 
 #include "core/document/identifier.hpp"
-#include "core/document/object/value.hpp"
+#include "core/document/object/object.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
@@ -32,7 +32,7 @@ namespace ripper::pdf::core
                 found_dictionary = true;
         }
 
-        // Iteratively parse key-value pairs from the trailer dictionary.
+        // Iteratively parse key-object pairs from the trailer dictionary.
         // We only extract the fields we care about (Size, Prev, Root, ID)
         // and skip everything else to stay resilient against unknown entries.
         while (true)
@@ -73,7 +73,7 @@ namespace ripper::pdf::core
                     (void)lexer.next();
                     if (val)
                         // Finally, if we successfully parsed a valid integer, set the corresponding field in the dictionary.
-                        dict.set(std::string{key_token.lexeme}, value{static_cast<std::int64_t>(*val)});
+                        dict.set(std::string{key_token.lexeme}, object{static_cast<std::int64_t>(*val)});
                 }
                 else
                 {
@@ -84,13 +84,13 @@ namespace ripper::pdf::core
                 continue;
             }
 
-            // /Root — indirect reference to the document catalog object (required).
+            // /Root — indirect reference to the document catalog indirect_object (required).
             // This is the entry point for the entire logical document structure.
             if (key_token.lexeme == "Root")
             {
                 auto ref = parse_indirect_reference(lexer);
 
-                dict.set("Root", value{ref});
+                dict.set("Root", object{ref});
 
                 continue;
             }
@@ -102,7 +102,7 @@ namespace ripper::pdf::core
             {
                 auto begin_result = lexer.next();
 
-                // ID must be an array, if it isn't, skip whatever value is there.
+                // ID must be an array, if it isn't, skip whatever object is there.
                 if (begin_result.type != lexer_token_type::array_begin)
                 {
                     lexer.skip_value();
@@ -118,10 +118,10 @@ namespace ripper::pdf::core
                     original_result.type == lexer_token_type::literal_string;
 
                 if (!original_is_string)
-                    throw parse_exception{"Trailer ID original value must be a string"};
+                    throw parse_exception{"Trailer ID original object must be a string"};
 
                 array id_array{};
-                id_array.emplace_back(value{std::string{original_result.lexeme}});
+                id_array.emplace_back(object{std::string{original_result.lexeme}});
 
                 // Some PDFs only include one ID string instead of the required two,
                 // so we need to check if the next token is the closing ] before
@@ -132,7 +132,7 @@ namespace ripper::pdf::core
                 {
                     (void)lexer.next();
 
-                    dict.set("ID", value{std::move(id_array)});
+                    dict.set("ID", object{std::move(id_array)});
 
                     continue;
                 }
@@ -145,7 +145,7 @@ namespace ripper::pdf::core
                     current_result.type == lexer_token_type::literal_string;
 
                 if (!current_is_string)
-                    throw parse_exception{"Trailer ID current value must be a string"};
+                    throw parse_exception{"Trailer ID current object must be a string"};
 
                 // Expect the closing ] of the ID array.
                 auto end_result = lexer.next();
@@ -153,14 +153,14 @@ namespace ripper::pdf::core
                 if (end_result.type != lexer_token_type::array_end)
                     throw parse_exception{"Trailer ID array is not properly terminated"};
 
-                id_array.emplace_back(value{std::string{current_result.lexeme}});
+                id_array.emplace_back(object{std::string{current_result.lexeme}});
 
-                dict.set("ID", value{std::move(id_array)});
+                dict.set("ID", object{std::move(id_array)});
 
                 continue;
             }
 
-            // Unknown or unhandled key. Skip it and its value to stay resilient
+            // Unknown or unhandled key. Skip it and its object to stay resilient
             // against future PDF extensions that may introduce new trailer fields.
                 lexer.skip_value();
         }

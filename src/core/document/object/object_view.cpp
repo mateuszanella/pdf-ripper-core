@@ -2,16 +2,16 @@
 
 namespace ripper::pdf::core
 {
-    object_view::object_view(object &obj) noexcept : obj_{obj}
+    object_view::object_view(indirect_object &obj) noexcept : obj_{obj}
     {
     }
 
-    object &object_view::obj() noexcept
+    indirect_object &object_view::obj() noexcept
     {
         return obj_.get();
     }
 
-    const object &object_view::obj() const noexcept
+    const indirect_object &object_view::obj() const noexcept
     {
         return obj_.get();
     }

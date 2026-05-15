@@ -63,7 +63,7 @@ namespace ripper::pdf::core
         auto &xref = document_.cross_reference_table();
         const auto entry = xref.find(ref);
         if (!entry)
-            throw parse_exception{"XRef entry not found for object"};
+            throw parse_exception{"XRef entry not found for indirect object"};
 
         if (!entry->in_use())
             throw parse_exception{"XRef entry is not in use"};
@@ -91,7 +91,7 @@ namespace ripper::pdf::core
         std::vector<std::byte> bytes(to_read);
         const std::size_t read = r.read_at(std::span<std::byte>{bytes.data(), bytes.size()}, offset);
         if (read == 0)
-            throw io_exception{"Received zero bytes from reader while attempting to read object content"};
+            throw io_exception{"Received zero bytes from reader while attempting to read indirect object content"};
 
         std::string source(read, '\0');
         for (std::size_t i = 0; i < read; ++i)
@@ -174,7 +174,7 @@ namespace ripper::pdf::core
                 {
                     const std::size_t end_offset = token_offset_in(source, end_token);
                     if (end_offset == std::string::npos || end_offset < object_start)
-                        throw parse_exception{"Invalid object end offset"};
+                        throw parse_exception{"Invalid indirect object end offset"};
 
                     const std::size_t object_end = end_offset + end_token.lexeme.size();
                     return source.substr(object_start, object_end - object_start);

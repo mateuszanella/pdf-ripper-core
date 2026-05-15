@@ -20,7 +20,7 @@ namespace ripper::pdf::core
     public:
         default_object_parser() = default;
 
-        [[nodiscard]] object parse(
+        [[nodiscard]] indirect_object parse(
             document &doc,
             indirect_reference ref,
             std::string_view content) const override;

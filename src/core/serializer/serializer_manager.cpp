@@ -14,9 +14,9 @@ namespace ripper::pdf::core
     {
     }
 
-    void serializer_manager::set_header_serializer(std::unique_ptr<class header_serializer> value)
+    void serializer_manager::set_header_serializer(std::unique_ptr<class header_serializer> object)
     {
-        header_serializer_ = std::move(value);
+        header_serializer_ = std::move(object);
     }
 
     header_serializer &serializer_manager::header_serializer()

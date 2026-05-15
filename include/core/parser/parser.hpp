@@ -42,11 +42,11 @@ namespace ripper::pdf::core
         /// Parse and return compiled document structure and traversal history.
         [[nodiscard]] document_structure structure();
 
-        /// Parse any indirect object by reference and return the fully resolved `object`.
+        /// Parse any indirect object by reference and return the fully resolved `indirect_object`.
         ///
         /// The result can be cast to a typed subclass (catalog, pages, etc.) when the
         /// caller knows the `/Type` of the object.
-        [[nodiscard]] object parse_object(indirect_reference ref);
+        [[nodiscard]] indirect_object parse_object(indirect_reference ref);
 
     private:
         document &document_;

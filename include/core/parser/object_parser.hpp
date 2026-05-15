@@ -2,8 +2,8 @@
 
 #include <string_view>
 
+#include "core/document/object/indirect_object.hpp"
 #include "core/document/object/indirect_reference.hpp"
-#include "core/document/object/object.hpp"
 #include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
@@ -15,7 +15,7 @@ namespace ripper::pdf::core
     /// The `content` passed to `parse()` is the raw byte slice starting at the
     /// xref-resolved byte offset for `ref`, i.e. it begins with `N G obj`.
     ///
-    /// The returned `object` holds the fully parsed dictionary and, when present,
+    /// The returned `indirect_object` holds the fully parsed dictionary and, when present,
     /// the raw content stream bytes. The caller is responsible for casting the
     /// result to the appropriate typed subclass (catalog, pages, etc.).
     class object_parser
@@ -23,7 +23,7 @@ namespace ripper::pdf::core
     public:
         virtual ~object_parser() = default;
 
-        [[nodiscard]] virtual object parse(
+        [[nodiscard]] virtual indirect_object parse(
             document &doc,
             indirect_reference ref,
             std::string_view content) const = 0;

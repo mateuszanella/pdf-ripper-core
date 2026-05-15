@@ -135,10 +135,10 @@ namespace ripper::pdf::core
 
         auto *entry = cross_reference_table().find(*root_ref);
         if (!entry)
-            throw parse_exception{"Root object not found in cross-reference table"};
+            throw parse_exception{"Root indirect_object not found in cross-reference table"};
 
         if (entry->is_resolved())
-            return ripper::pdf::core::catalog{*entry->object()};
+            return ripper::pdf::core::catalog{*entry->indirect_object()};
 
         return parse_catalog();
     }
@@ -160,34 +160,34 @@ namespace ripper::pdf::core
         auto ref = xref.reserve();
 
         dictionary dict;
-        dict.set("Type", value{name{"Catalog"}});
+        dict.set("Type", object{name{"Catalog"}});
 
-        auto obj = std::make_unique<object>(indirect_object{this, ref}, value{std::move(dict)});
+        auto obj = std::make_unique<indirect_object>(object_identity{this, ref}, object{std::move(dict)});
 
         auto *raw = xref.commit(ref, std::move(obj));
         if (!raw)
             throw logic_exception{"Failed to commit catalog to cross-reference table"};
 
-        trl.dictionary().set("Root", value{ref});
+        trl.dictionary().set("Root", object{ref});
 
         return ripper::pdf::core::catalog{*raw};
     }
 
-    object *document::resolve_object(indirect_reference ref)
+    indirect_object *document::resolve_object(indirect_reference ref)
     {
         auto *entry = cross_reference_table().find(ref);
         if (!entry)
             throw parse_exception{"Object not found in cross-reference table"};
 
         if (entry->is_resolved())
-            return entry->object();
+            return entry->indirect_object();
 
         if (!has_parser())
-            throw logic_exception{"No parser available to resolve unresolved object"};
+            throw logic_exception{"No parser available to resolve unresolved indirect_object"};
 
         auto parsed = parser_->parse_object(ref);
 
-        return entry->resolve(std::make_unique<object>(std::move(parsed)));
+        return entry->resolve(std::make_unique<indirect_object>(std::move(parsed)));
     }
 
     document_structure &document::structure()

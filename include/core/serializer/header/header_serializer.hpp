@@ -14,7 +14,7 @@ namespace ripper::pdf::core
     public:
         virtual ~header_serializer() = default;
 
-        /// Serialize `value` to a byte buffer.
-        [[nodiscard]] virtual std::vector<std::byte> serialize(const header &value) const = 0;
+        /// Serialize `header` to a byte buffer.
+        [[nodiscard]] virtual std::vector<std::byte> serialize(const header &header) const = 0;
     };
 }

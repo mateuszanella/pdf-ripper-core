@@ -86,7 +86,7 @@ namespace ripper::pdf::core
         return dict;
     }
 
-    value parse_value(pdf_lexer &lexer)
+    object parse_value(pdf_lexer &lexer)
     {
         auto p = lexer.peek();
 
@@ -99,15 +99,15 @@ namespace ripper::pdf::core
                 p2.type == lexer_token_type::keyword && p2.lexeme == "R")
             {
                 auto ref = parse_indirect_reference(lexer);
-                return value{ref};
+                return object{ref};
             }
 
             const auto tok = lexer.next();
             std::int64_t i = 0;
             auto [ptr, ec] = std::from_chars(tok.lexeme.data(), tok.lexeme.data() + tok.lexeme.size(), i);
             if (ec == std::errc{})
-                return value{i};
-            return value{std::string{tok.lexeme}};
+                return object{i};
+            return object{std::string{tok.lexeme}};
         }
 
         if (p.type == lexer_token_type::real)
@@ -116,33 +116,33 @@ namespace ripper::pdf::core
             double d = 0.0;
             auto [ptr, ec] = std::from_chars(tok.lexeme.data(), tok.lexeme.data() + tok.lexeme.size(), d);
             if (ec == std::errc{})
-                return value{d};
-            return value{std::string{tok.lexeme}};
+                return object{d};
+            return object{std::string{tok.lexeme}};
         }
 
         if (p.type == lexer_token_type::name)
         {
             const auto tok = lexer.next();
-            return value{name{std::string{tok.lexeme}}};
+            return object{name{std::string{tok.lexeme}}};
         }
 
         if (p.type == lexer_token_type::literal_string ||
             p.type == lexer_token_type::hex_string)
         {
             const auto tok = lexer.next();
-            return value{std::string{tok.lexeme}};
+            return object{std::string{tok.lexeme}};
         }
 
         if (p.type == lexer_token_type::keyword)
         {
             const auto tok = lexer.next();
             if (tok.lexeme == "true")
-                return value{true};
+                return object{true};
 
             if (tok.lexeme == "false")
-                return value{false};
+                return object{false};
 
-            return value{};
+            return object{};
         }
 
         if (p.type == lexer_token_type::array_begin)
@@ -150,7 +150,7 @@ namespace ripper::pdf::core
             (void)lexer.next();
 
             auto arr = parse_array(lexer);
-            return value{std::move(arr)};
+            return object{std::move(arr)};
         }
 
         if (p.type == lexer_token_type::dictionary_begin)
@@ -158,12 +158,12 @@ namespace ripper::pdf::core
             (void)lexer.next();
 
             auto dict = parse_dictionary(lexer);
-            return value{std::move(dict)};
+            return object{std::move(dict)};
         }
 
         // Skip unrecognized tokens
         lexer.skip_value();
 
-        return value{};
+        return object{};
     }
 }

@@ -3,7 +3,7 @@
 #include <optional>
 
 #include "core/document/object/indirect_reference.hpp"
-#include "core/document/object/value.hpp"
+#include "core/document/object/object.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
 
@@ -14,16 +14,16 @@ namespace ripper::pdf::core
     /// Consumes exactly three tokens and validates their types.
     [[nodiscard]] indirect_reference parse_indirect_reference(pdf_lexer &lexer);
 
-    /// Parse a single PDF value from the current position of `lexer`.
+    /// Parse a single PDF object from the current position of `lexer`.
     ///
-    /// Handles all PDF value types: null, boolean, integer, real, name, literal
+    /// Handles all PDF object types: null, boolean, integer, real, name, literal
     /// string, hex string, indirect reference, array, and dictionary.
     ///
     /// Indirect references (`obj gen R`) are detected by peeking ahead two tokens
     /// before consuming, so no tokens are lost if the lookahead does not match.
     ///
-    /// On unrecognised tokens the token is consumed and a null value is returned.
-    [[nodiscard]] value parse_value(pdf_lexer &lexer);
+    /// On unrecognised tokens the token is consumed and a null object is returned.
+    [[nodiscard]] object parse_value(pdf_lexer &lexer);
 
     /// Parse a `[ ... ]` array from `lexer`.
     ///

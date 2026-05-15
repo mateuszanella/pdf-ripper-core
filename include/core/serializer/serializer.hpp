@@ -24,7 +24,7 @@ namespace ripper::pdf::core
         [[nodiscard]] class serializer_manager &manager();
 
         /// Serialize a PDF header to a byte buffer.
-        [[nodiscard]] std::vector<std::byte> serialize_header(const header &value);
+        [[nodiscard]] std::vector<std::byte> serialize_header(const header &header);
 
     private:
         const document &document_;

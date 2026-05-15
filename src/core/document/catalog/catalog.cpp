@@ -7,7 +7,7 @@
 
 namespace ripper::pdf::core
 {
-    catalog::catalog(object &obj) noexcept
+    catalog::catalog(indirect_object &obj) noexcept
         : object_view(obj)
     {
     }

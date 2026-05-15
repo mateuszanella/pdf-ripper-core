@@ -215,7 +215,7 @@ namespace ripper::pdf::core
 
         // Compile merged trailer: iterate oldest-to-newest so that newer updates
         // take precedence over older ones. Each key set by a later revision will
-        // overwrite the value from an earlier one (last write wins = newest wins).
+        // overwrite the object from an earlier one (last write wins = newest wins).
         dictionary compiled_dict{};
 
         for (auto it = trailer_history.begin(); it != trailer_history.end(); ++it)

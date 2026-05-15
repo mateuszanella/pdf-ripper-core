@@ -104,15 +104,15 @@ namespace ripper::pdf::core
         ///
         /// If `reader` is set, the header is parsed from the input upon first access and cached
         /// for subsequent accesses. Otherwise, a new header with default values is created and cached.
-        /// Changes made to the returned value are reflected in the document on save.
+        /// Changes made to the returned header are reflected in the document on save.
         [[nodiscard]] class header &header();
 
         /// Parse and return the compiled cross-reference table (cached).
-        /// Changes made to the returned value are reflected in the document on save.
+        /// Changes made to the returned table are reflected in the document on save.
         [[nodiscard]] class cross_reference_table &cross_reference_table();
 
         /// Parse and return the compiled trailer dictionary (cached).
-        /// Changes made to the returned value are reflected in the document on save.
+        /// Changes made to the returned trailer are reflected in the document on save.
         [[nodiscard]] class trailer &trailer();
 
         /// Return a view over the document catalog.
@@ -125,7 +125,7 @@ namespace ripper::pdf::core
         ///
         /// Returns a raw non-owning pointer into the xref entry. The pointer remains valid
         /// as long as the document (and its xref) is alive.
-        [[nodiscard]] class object *resolve_object(indirect_reference ref);
+        [[nodiscard]] class indirect_object *resolve_object(indirect_reference ref);
 
     private:
         /// Parse and return the assembled document structure (xref + trailer + histories) (cached).

@@ -23,8 +23,8 @@ namespace ripper::pdf::core
         return *manager_;
     }
 
-    std::vector<std::byte> serializer::serialize_header(const header &value)
+    std::vector<std::byte> serializer::serialize_header(const header &object)
     {
-        return manager().header_serializer().serialize(value);
+        return manager().header_serializer().serialize(object);
     }
 }

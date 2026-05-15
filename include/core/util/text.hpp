@@ -65,32 +65,32 @@ namespace ripper::pdf::core::text
             return std::nullopt;
         }
 
-        std::size_t value = 0;
+        std::size_t object = 0;
         const char *begin = s.data();
         const char *end = s.data() + s.size();
 
-        auto [ptr, ec] = std::from_chars(begin, end, value);
+        auto [ptr, ec] = std::from_chars(begin, end, object);
         if (ec != std::errc{})
         {
             return std::nullopt;
         }
 
-        return value;
+        return object;
     }
 
     [[nodiscard]] inline std::optional<std::uint32_t> parse_u32(std::string_view text) noexcept
     {
-        std::uint32_t value{};
+        std::uint32_t object{};
         const char *first = text.data();
         const char *last = text.data() + text.size();
-        auto [ptr, ec] = std::from_chars(first, last, value);
+        auto [ptr, ec] = std::from_chars(first, last, object);
 
         if (ec != std::errc{} || ptr != last)
         {
             return std::nullopt;
         }
 
-        return value;
+        return object;
     }
 
     [[nodiscard]] inline std::optional<std::uint16_t> parse_u16(std::string_view text) noexcept

@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstddef>
 
-/// Simple stream object
+/// Simple stream indirect_object
 ///
 /// @todo Make this decent
 namespace ripper::pdf::core

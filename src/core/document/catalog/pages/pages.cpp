@@ -7,7 +7,7 @@
 
 namespace ripper::pdf::core
 {
-    pages::pages(object &obj) noexcept
+    pages::pages(indirect_object &obj) noexcept
         : object_view(obj)
     {
     }
@@ -21,7 +21,7 @@ namespace ripper::pdf::core
         auto count = d->get_integer("Count");
         if (!count)
         {
-            throw parse_exception{"Pages object is missing required /Count entry"};
+            throw parse_exception{"Pages indirect_object is missing required /Count entry"};
         }
 
         return static_cast<std::uint64_t>(*count);

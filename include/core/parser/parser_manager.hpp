@@ -29,22 +29,22 @@ namespace ripper::pdf::core
         ~parser_manager();
 
         /// Replace the header parser implementation.
-        void set_header_parser(std::unique_ptr<class header_parser> value);
+        void set_header_parser(std::unique_ptr<class header_parser> object);
 
         /// Replace the cross-reference-table parser implementation.
-        void set_cross_reference_table_parser(std::unique_ptr<class cross_reference_table_parser> value);
+        void set_cross_reference_table_parser(std::unique_ptr<class cross_reference_table_parser> object);
 
         /// Replace the trailer parser implementation.
-        void set_trailer_parser(std::unique_ptr<class trailer_parser> value);
+        void set_trailer_parser(std::unique_ptr<class trailer_parser> object);
 
         /// Replace the document-structure parser implementation.
-        void set_document_structure_parser(std::unique_ptr<class document_structure_parser> value);
+        void set_document_structure_parser(std::unique_ptr<class document_structure_parser> object);
 
-        /// Replace the indirect-object resolver implementation.
-        void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> value);
+        /// Replace the indirect-indirect_object resolver implementation.
+        void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> object);
 
-        /// Replace the object parser implementation.
-        void set_object_parser(std::unique_ptr<class object_parser> value);
+        /// Replace the indirect_object parser implementation.
+        void set_object_parser(std::unique_ptr<class object_parser> object);
 
         /// Access the configured header parser.
         [[nodiscard]] class header_parser &header_parser();
@@ -58,10 +58,10 @@ namespace ripper::pdf::core
         /// Access the configured document-structure parser.
         [[nodiscard]] class document_structure_parser &document_structure_parser();
 
-        /// Access the configured indirect-object resolver.
+        /// Access the configured indirect-indirect_object resolver.
         [[nodiscard]] class indirect_object_resolver &object_resolver();
 
-        /// Access the configured object parser.
+        /// Access the configured indirect_object parser.
         [[nodiscard]] class object_parser &object_parser();
 
     private:

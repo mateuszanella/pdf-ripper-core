@@ -13,7 +13,7 @@
 
 namespace ripper::pdf::core
 {
-    object default_object_parser::parse(
+    indirect_object default_object_parser::parse(
         document &doc,
         indirect_reference ref,
         std::string_view content_sv) const
@@ -69,13 +69,13 @@ namespace ripper::pdf::core
                     std::memcpy(bytes.data(), stream_start, len);
                 }
 
-                return object{
-                    indirect_object{&doc, ref},
+                return indirect_object{
+                    object_identity{&doc, ref},
                     std::move(content),
                     stream{std::move(bytes)}};
             }
         }
 
-        return object{indirect_object{&doc, ref}, std::move(content)};
+        return indirect_object{object_identity{&doc, ref}, std::move(content)};
     }
 }
