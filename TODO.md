@@ -1,20 +1,5 @@
 # TODO
 
-## Errors and Diagnostics
-
-- [x] Refactor error model again.
-    > To be honest, using errors doesnt really seem like a smart option looking from now.
-    > Most errors are unrecoverable and should just be fatal, and the ones that are recoverable 
-    > are mostly 'element not found' type errors that can be handled with `std::optional` or similar.
-    > Just using exceptions for unrecoverable errors and `std::optional` for recoverable ones seems 
-    > like a much more straightforward approach. This is not even taking into account the fact that using
-    > `std::expected` is just really verbose and adds a lot of boilerplate for error handling that is not
-    > really necessary in this context.
-  - Remove `std::expected` and `noexcept` from all APIs and replace with exceptions for unrecoverable 
-    errors and `std::optional` for recoverable ones.
-
----
-
 ## Writing and Saving (major milestone)
 
 - [x] Implement output pipeline (`writer` + serializer layer)
@@ -44,6 +29,14 @@
   - Handle generation/free-entry rules for deleted/reused objects
 
 ---
+
+## Move Reader / Writer to a separate library
+
+> If I plan on actually create modular libraries with similar interfaces, having the reader/writer in
+> the same library would just be a lot of repeated code. Having them in separate libraries makes a lot
+> of sense, since they are a simple generic abstraction that should remain stable and reusable.
+
+- [ ] Create a new library target (e.g. `ripper_pdf_io`) for reader/writer and related utilities
 
 ## Testing and Validation
 
@@ -78,9 +71,3 @@
 
 - [ ] Add additional PDF features incrementally as needed
 - [ ] Prioritize features based on test coverage and real-world documents
-
----
-
-## Reader/Writer error propagation and diagnostics
-
-- [x] Add some type of error propagation for operations that may fail when reading/writing.
