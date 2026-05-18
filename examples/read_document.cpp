@@ -114,6 +114,39 @@ namespace
 
         std::println("\nPages parsed successfully. Page count: {}", pageCount);
     }
+
+    void check_page(ripper::pdf::core::document &document)
+    {
+        document.catalog().pages().each([](ripper::pdf::core::page &page) {
+            auto dict = page.obj().dictionary();
+            if (!dict)
+            {
+                std::println("\nPage content is not a dictionary.");
+                return;
+            }
+
+            auto mediaBox = dict->get_array("MediaBox");
+            if (mediaBox)
+            {
+                std::println("\nMediaBox found for page:");
+                std::println("  MediaBox: [");
+                for (const auto &entry : *mediaBox)
+                {
+                    if (auto *d = std::get_if<double>(&entry.variant()))
+                        std::println("    {}", *d);
+                    else if (auto *i = std::get_if<int64_t>(&entry.variant()))
+                        std::println("    {}", *i);
+                    else
+                        std::println("    (non-numeric value)");
+                }
+                std::println("  ]");
+            }
+            else
+            {
+                std::println("\nMediaBox not found in page dictionary.");
+            }
+        });
+    }
 }
 
 int main(int argc, char **argv)
@@ -137,6 +170,7 @@ int main(int argc, char **argv)
         check_trailer(document);
         check_catalog(document);
         check_pages(document);
+        check_page(document);
 
         return 0;
     }

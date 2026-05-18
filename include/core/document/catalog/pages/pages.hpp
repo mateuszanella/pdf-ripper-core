@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 
+#include "core/document/catalog/pages/page/page.hpp"
 #include "core/document/object/object.hpp"
 #include "core/document/object/object_view.hpp"
 #include "core/exceptions/exception.hpp"
@@ -20,5 +21,21 @@ namespace ripper::pdf::core
 
         /// Returns the total page count from the /Count entry.
         [[nodiscard]] std::uint64_t count() const;
+
+        /// Returns an optional page view for the page at `index` in the page tree, or
+        /// `std::nullopt` if the page does not exist.
+        ///
+        /// The index starts at 0 and must be less than the total page count. Pages are
+        /// ordered according to a depth-first traversal of the page tree.
+        [[nodiscard]] std::optional<class page> page(std::uint64_t index);
+
+        /// Returns an optional page view for the page based on an indirect reference,
+        /// or `std::nullopt` if the page does not exist.
+        [[nodiscard]] std::optional<class page> page(indirect_reference ref);
+
+        /// Executes `callback` for each page in index order.
+        ///
+        /// Throws if callback is empty or if an expected page cannot be resolved.
+        void each(const std::function<void(class page &)> &callback);
     };
 }
