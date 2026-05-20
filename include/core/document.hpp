@@ -10,6 +10,7 @@
 #include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
+#include "core/document/object_factory.hpp"
 #include "core/document/trailer/trailer.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/parser.hpp"
@@ -127,27 +128,15 @@ namespace ripper::pdf::core
         /// as long as the document (and its xref) is alive.
         [[nodiscard]] class indirect_object *resolve_object(indirect_reference ref);
 
+        /// Access the object factory for parsing and creating PDF objects.
+        ///
+        /// The factory encapsulates all logic for constructing document components
+        /// (catalog, pages, objects, etc.) from both file data and in-memory creation.
+        [[nodiscard]] class object_factory &factory();
+
     private:
         /// Parse and return the assembled document structure (xref + trailer + histories) (cached).
         [[nodiscard]] class document_structure &structure();
-
-        /// Parse and return the PDF header without caching.
-        [[nodiscard]] class header parse_header() const;
-
-        /// Generate a new PDF header with default values.
-        [[nodiscard]] class header create_header() const;
-
-        /// Parse and return the document structure without caching.
-        [[nodiscard]] class document_structure parse_structure() const;
-
-        /// Generate a new document structure with default values.
-        [[nodiscard]] class document_structure create_structure() const;
-
-        /// Parse the catalog from the file and commit it into the xref.
-        [[nodiscard]] class catalog parse_catalog();
-
-        /// Allocate a new catalog into the xref and set the trailer /Root.
-        [[nodiscard]] class catalog create_catalog();
 
         std::unique_ptr<class reader> reader_;
         std::unique_ptr<class parser> parser_;
@@ -158,5 +147,7 @@ namespace ripper::pdf::core
         std::optional<class header> header_;
 
         std::optional<class document_structure> structure_;
+
+        class object_factory factory_;
     };
 }

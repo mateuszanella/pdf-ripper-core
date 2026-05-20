@@ -22,7 +22,8 @@ namespace ripper::pdf::core
 {
     document::document(std::unique_ptr<class reader> reader, std::unique_ptr<class writer> writer)
         : reader_(std::move(reader)),
-          writer_(std::move(writer))
+          writer_(std::move(writer)),
+          factory_(*this)
     {
         if (reader_)
             parser_ = std::make_unique<class parser>(*this);
@@ -110,8 +111,8 @@ namespace ripper::pdf::core
             return *header_;
 
         header_ = has_parser()
-                      ? parse_header()
-                      : create_header();
+                      ? factory_.parse_header()
+                      : factory_.create_header();
 
         return *header_;
     }
@@ -131,7 +132,7 @@ namespace ripper::pdf::core
         auto root_ref = trailer().root();
 
         if (!root_ref)
-            return create_catalog();
+            return factory_.create_catalog();
 
         auto *entry = cross_reference_table().find(*root_ref);
         if (!entry)
@@ -140,37 +141,7 @@ namespace ripper::pdf::core
         if (entry->is_resolved())
             return ripper::pdf::core::catalog{*entry->indirect_object()};
 
-        return parse_catalog();
-    }
-
-    catalog document::parse_catalog()
-    {
-        auto root_ref = trailer().root();
-        if (!root_ref)
-            throw parse_exception{"Trailer is missing required /Root reference"};
-
-        return ripper::pdf::core::catalog{*resolve_object(*root_ref)};
-    }
-
-    catalog document::create_catalog()
-    {
-        auto &xref = cross_reference_table();
-        auto &trl = trailer();
-
-        auto ref = xref.reserve();
-
-        dictionary dict;
-        dict.set("Type", object{name{"Catalog"}});
-
-        auto obj = std::make_unique<indirect_object>(object_identity{this, ref}, object{std::move(dict)});
-
-        auto *raw = xref.commit(ref, std::move(obj));
-        if (!raw)
-            throw logic_exception{"Failed to commit catalog to cross-reference table"};
-
-        trl.dictionary().set("Root", object{ref});
-
-        return ripper::pdf::core::catalog{*raw};
+        return factory_.parse_catalog();
     }
 
     indirect_object *document::resolve_object(indirect_reference ref)
@@ -196,62 +167,14 @@ namespace ripper::pdf::core
             return *structure_;
 
         structure_ = has_parser()
-                         ? parse_structure()
-                         : create_structure();
+                         ? factory_.parse_structure()
+                         : factory_.create_structure();
 
         return *structure_;
     }
 
-    document_structure document::parse_structure() const
+    object_factory &document::factory()
     {
-        if (!parser_)
-            throw logic_exception{"No parser available"};
-
-        return parser_->structure();
-    }
-
-    document_structure document::create_structure() const
-    {
-        using xref_t = ripper::pdf::core::cross_reference_table;
-        using entry_t = ripper::pdf::core::cross_reference_entry;
-        using iref_t = ripper::pdf::core::indirect_reference;
-        using trailer_t = ripper::pdf::core::trailer;
-
-        const auto generate_initial_xref = []()
-        {
-            xref_t::entry_map entries;
-            entries.emplace(0, entry_t{iref_t{0, 65535}, 0, false});
-            return xref_t{std::move(entries)};
-        };
-
-        const auto generate_initial_trailer = []()
-        {
-            return trailer_t{dictionary{}};
-        };
-
-        std::vector<xref_t> xref_history;
-        xref_history.push_back(generate_initial_xref());
-
-        std::vector<trailer_t> trailer_history;
-        trailer_history.push_back(generate_initial_trailer());
-
-        return document_structure{
-            std::invoke(generate_initial_xref),
-            std::move(xref_history),
-            std::invoke(generate_initial_trailer),
-            std::move(trailer_history)};
-    }
-
-    header document::parse_header() const
-    {
-        if (!parser_)
-            throw logic_exception{"No parser available"};
-
-        return parser_->header();
-    }
-
-    header document::create_header() const
-    {
-        return ripper::pdf::core::header{"1.4"};
+        return factory_;
     }
 }
