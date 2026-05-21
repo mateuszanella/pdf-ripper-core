@@ -32,7 +32,7 @@ namespace ripper::pdf::core::byte
     }
 
     /// Append the bytes of a char to an existing byte buffer.
-    inline void append_bytes(std::vector<std::byte> &out, char c)
+    inline void append_bytes(std::vector<std::byte> &out, const char &c)
     {
         out.push_back(std::byte{static_cast<unsigned char>(c)});
     }
