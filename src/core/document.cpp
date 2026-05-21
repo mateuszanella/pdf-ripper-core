@@ -57,6 +57,29 @@ namespace ripper::pdf::core
 
         (void)w.write(serialized_header);
 
+        // Pseudocode because I believe that my entry implementation and object
+        // resolve logic will bite me in the ass, but I want to make sure that
+        // the idea behind saving a document is documented here.
+        //
+        // For each entry on cross reference:
+        //   if (! entry.in_use()) continue;
+        //
+        //   if (! entry.resolved()) {
+        //       resolve the entry object, no need to use all of the documer/xref/entry resolve bs, just read from the parser
+        //   }
+        //
+        //   data = serialize the object
+        //
+        //   if (entry.is_new()) { i.e has no offset set
+        //       set the entry offset to the current writer position
+        //   }
+        //
+        //   write(data)
+        // end
+        //
+        // write xref
+        // write trailer
+
         constexpr std::string_view eof_marker = "%%EOF\n";
         (void)w.write(std::as_bytes(std::span{eof_marker.data(), eof_marker.size()}));
 
