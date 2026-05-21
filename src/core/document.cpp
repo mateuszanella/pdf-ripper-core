@@ -57,6 +57,8 @@ namespace ripper::pdf::core
 
         (void)w.write(serialized_header);
 
+        // TODO: In reality, we should not actually use the whole xref, but use the
+        // history instead. We should also resolve objects through the history.
         for (auto &[number, entry] : cross_reference_table().entries())
         {
             if (!entry.in_use())
