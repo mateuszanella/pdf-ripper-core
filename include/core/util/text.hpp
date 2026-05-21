@@ -1,10 +1,14 @@
 #pragma once
 
+#include <algorithm>
 #include <charconv>
 #include <cctype>
+#include <cstddef>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace ripper::pdf::core::text
 {
@@ -102,5 +106,47 @@ namespace ripper::pdf::core::text
         }
 
         return static_cast<std::uint16_t>(*v32);
+    }
+
+    [[nodiscard]] inline std::string escape_literal_string(std::string_view value)
+    {
+        std::string escaped;
+        escaped.reserve(value.size() + 8);
+
+        for (const char ch : value)
+        {
+            switch (ch)
+            {
+            case '\\':
+                escaped += "\\\\";
+                break;
+            case '(':
+                escaped += "\\(";
+                break;
+            case ')':
+                escaped += "\\)";
+                break;
+            case '\n':
+                escaped += "\\n";
+                break;
+            case '\r':
+                escaped += "\\r";
+                break;
+            case '\t':
+                escaped += "\\t";
+                break;
+            case '\b':
+                escaped += "\\b";
+                break;
+            case '\f':
+                escaped += "\\f";
+                break;
+            default:
+                escaped += ch;
+                break;
+            }
+        }
+
+        return escaped;
     }
 }

@@ -50,4 +50,14 @@ namespace ripper::pdf::core
         {
         }
     };
+
+    /// Exception for not yet implemented features.
+    class not_implemented_exception : public exception
+    {
+    public:
+        explicit not_implemented_exception(std::string message)
+            : exception(std::move(message))
+        {
+        }
+    };
 }

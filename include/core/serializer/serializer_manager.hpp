@@ -1,7 +1,10 @@
 #pragma once
 
+#include <memory>
+
 #include "core/document.hpp"
 #include "core/serializer/header/header_serializer.hpp"
+#include "core/serializer/indirect_object/indirect_object_serializer.hpp"
 
 namespace ripper::pdf::core
 {
@@ -21,12 +24,19 @@ namespace ripper::pdf::core
         /// Replace the header parser implementation.
         void set_header_serializer(std::unique_ptr<class header_serializer> object);
 
+        /// Replace the indirect-object serializer implementation.
+        void set_indirect_object_serializer(std::unique_ptr<class indirect_object_serializer> object);
+
         /// Access the configured header parser.
         [[nodiscard]] class header_serializer &header_serializer();
+
+        /// Access the configured indirect-object serializer.
+        [[nodiscard]] class indirect_object_serializer &indirect_object_serializer();
 
     private:
         const document &document_;
 
         std::unique_ptr<class header_serializer> header_serializer_;
+        std::unique_ptr<class indirect_object_serializer> indirect_object_serializer_;
     };
 }
