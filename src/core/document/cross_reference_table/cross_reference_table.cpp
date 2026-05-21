@@ -48,24 +48,6 @@ namespace ripper::pdf::core
         return find(ref.object_number());
     }
 
-    class indirect_object *cross_reference_table::resolve(const indirect_reference &ref, const loader_fn &loader)
-    {
-        auto it = entries_.find(ref.object_number());
-        if (it == entries_.end())
-            return nullptr;
-
-        auto &entry = it->second;
-
-        if (!entry.is_resolved())
-        {
-            auto obj = loader(entry);
-            if (obj)
-                return entry.resolve(std::move(obj));
-        }
-
-        return entry.indirect_object();
-    }
-
     indirect_reference cross_reference_table::reserve() noexcept
     {
         std::uint32_t number = next_object_number();

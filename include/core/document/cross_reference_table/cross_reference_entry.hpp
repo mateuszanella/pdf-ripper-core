@@ -58,6 +58,11 @@ namespace ripper::pdf::core
         /// Returns `std::nullopt` for new in-memory objects that have not yet been written.
         [[nodiscard]] const std::optional<std::uint64_t> &offset() const noexcept;
 
+        /// Record the byte offset at which this entry's indirect object was written.
+        ///
+        /// Called during serialization to track the position of newly written objects.
+        void set_offset(std::uint64_t offset) noexcept;
+
         /// Returns whether this entry is marked as in-use (as opposed to a free entry).
         [[nodiscard]] bool in_use() const noexcept;
 

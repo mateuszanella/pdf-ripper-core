@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -46,12 +45,6 @@ namespace ripper::pdf::core
         /// Type alias for the internal mapping of object numbers to cross-reference entries.
         using entry_map = std::map<std::uint32_t, cross_reference_entry>;
 
-        /// Type alias for the loader function used to load and parse an indirect object from file on first access.
-        ///
-        /// Receives the unresolved entry (which carries the byte offset) and must return
-        /// a heap-allocated `indirect_object`, or `nullptr` on failure.
-        using loader_fn = std::function<std::unique_ptr<class indirect_object>(const cross_reference_entry &)>;
-
         /// Construct a cross-reference table from a pre-built entry map.
         ///
         /// Typically called by the parser after reading the xref section from disk.
@@ -80,14 +73,6 @@ namespace ripper::pdf::core
         /// Equivalent to `find(ref.object_number())`.
         [[nodiscard]] cross_reference_entry *find(const indirect_reference &ref) noexcept;
         [[nodiscard]] const cross_reference_entry *find(const indirect_reference &ref) const noexcept;
-
-        /// Resolve an indirect reference to its in-memory indirect object.
-        ///
-        /// If the indirect object is already cached in the entry, it is returned immediately.
-        /// Otherwise, `loader` is invoked to parse the indirect object from disk and cache it.
-        ///
-        /// Returns `nullptr` if the entry does not exist or the loader fails.
-        [[nodiscard]] class indirect_object *resolve(const indirect_reference &ref, const loader_fn &loader);
 
         /// Reserve a slot for a new indirect object, returning its assigned indirect reference.
         ///

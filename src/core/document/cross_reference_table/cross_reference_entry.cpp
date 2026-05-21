@@ -30,6 +30,11 @@ namespace ripper::pdf::core
         return offset_;
     }
 
+    void cross_reference_entry::set_offset(std::uint64_t offset) noexcept
+    {
+        offset_ = offset;
+    }
+
     bool cross_reference_entry::in_use() const noexcept
     {
         return in_use_;
