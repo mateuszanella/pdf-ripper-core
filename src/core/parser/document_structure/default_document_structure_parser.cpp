@@ -10,6 +10,7 @@
 
 #include "core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "core/document/cross_reference_table/cross_reference_section.hpp"
+#include "core/document/trailer/trailer_manager.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
@@ -206,25 +207,14 @@ namespace ripper::pdf::core
         // Sections were collected newest-first (following /Prev from end of file toward beginning).
         // Reverse to chronological order (oldest first, newest last) before building the manager.
         std::reverse(xref_sections.begin(), xref_sections.end());
+        std::reverse(trailer_history.begin(), trailer_history.end());
 
         cross_reference_manager xref_manager{std::move(xref_sections)};
-
-        // Compile merged trailer: trailer_history[0] = newest, back = oldest.
-        // Iterate oldest-to-newest (rbegin → rend) so that newer values overwrite older ones.
-        dictionary compiled_dict{};
-
-        for (auto it = trailer_history.rbegin(); it != trailer_history.rend(); ++it)
-        {
-            for (const auto &[key, val] : it->dictionary().entries())
-            {
-                compiled_dict.set(key, val);
-            }
-        }
+        trailer_manager trailer_mgr{std::move(trailer_history)};
 
         return document_structure{
             std::move(xref_manager),
-            trailer{std::move(compiled_dict)},
-            std::move(trailer_history),
+            std::move(trailer_mgr),
         };
     }
 }

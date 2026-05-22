@@ -11,7 +11,7 @@
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/object_factory.hpp"
-#include "core/document/trailer/trailer.hpp"
+#include "core/document/trailer/trailer_manager.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/parser.hpp"
 #include "core/reader/reader.hpp"
@@ -112,9 +112,10 @@ namespace ripper::pdf::core
         /// Changes made to the returned manager are reflected in the document on save.
         [[nodiscard]] class cross_reference_manager &cross_reference_table();
 
-        /// Parse and return the compiled trailer dictionary (cached).
-        /// Changes made to the returned trailer are reflected in the document on save.
-        [[nodiscard]] class trailer &trailer();
+        /// Parse and return the trailer manager (cached).
+        /// Use `trailer().compiled()` for the merged view, or `trailer().active_trailer()`
+        /// to modify the current revision's trailer.
+        [[nodiscard]] class trailer_manager &trailer();
 
         /// Return a view over the document catalog.
         ///

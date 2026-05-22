@@ -9,7 +9,7 @@
 #include "core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
-#include "core/document/trailer/trailer.hpp"
+#include "core/document/trailer/trailer_manager.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/parser.hpp"
 #include "core/reader/file_reader.hpp"
@@ -150,14 +150,14 @@ namespace ripper::pdf::core
         return structure().xref();
     }
 
-    trailer &document::trailer()
+    trailer_manager &document::trailer()
     {
         return structure().trailer();
     }
 
     catalog document::catalog()
     {
-        auto root_ref = trailer().root();
+        auto root_ref = trailer().compiled().root();
 
         if (!root_ref)
             return factory_.create_catalog();

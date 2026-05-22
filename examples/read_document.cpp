@@ -51,9 +51,9 @@ namespace
 
     void check_trailer(ripper::pdf::core::document &document)
     {
-        auto &trailer = document.trailer();
+        auto compiled = document.trailer().compiled();
 
-        auto id = trailer.id();
+        auto id = compiled.id();
         if (id)
         {
             std::println("\nDocument ID:");

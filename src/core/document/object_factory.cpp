@@ -11,6 +11,7 @@
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
+#include "core/document/trailer/trailer_manager.hpp"
 #include "core/document/object/object.hpp"
 #include "core/document/object/indirect_object.hpp"
 #include "core/exceptions/exception.hpp"
@@ -25,7 +26,7 @@ namespace ripper::pdf::core
 
     catalog object_factory::parse_catalog()
     {
-        auto root_ref = doc_.trailer().root();
+        auto root_ref = doc_.trailer().compiled().root();
         if (!root_ref)
             throw parse_exception{"Trailer is missing required /Root reference"};
 
@@ -35,7 +36,7 @@ namespace ripper::pdf::core
     catalog object_factory::create_catalog()
     {
         auto &xref = doc_.cross_reference_table();
-        auto &trl = doc_.trailer();
+        auto &trl = doc_.trailer().active_trailer();
 
         auto ref = xref.reserve();
 
@@ -66,6 +67,7 @@ namespace ripper::pdf::core
         using entry_t = ripper::pdf::core::cross_reference_entry;
         using iref_t = ripper::pdf::core::indirect_reference;
         using trailer_t = ripper::pdf::core::trailer;
+        using trailer_manager_t = ripper::pdf::core::trailer_manager;
 
         // Build the initial section with a single subsection containing object 0 (free-list head)
         cross_reference_subsection::entry_map entries;
@@ -80,13 +82,11 @@ namespace ripper::pdf::core
         cross_reference_manager xref_manager{std::move(sections)};
 
         trailer_t initial_trailer{dictionary{}};
-        std::vector<trailer_t> trailer_history;
-        trailer_history.push_back(initial_trailer);
+        trailer_manager_t trailer_mgr{std::vector<trailer_t>{std::move(initial_trailer)}};
 
         return document_structure{
             std::move(xref_manager),
-            initial_trailer,
-            std::move(trailer_history)};
+            std::move(trailer_mgr)};
     }
 
     header object_factory::parse_header() const
