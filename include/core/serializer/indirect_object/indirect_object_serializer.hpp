@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "core/document/object/indirect_object.hpp"
+#include "core/serializer/object/object_serializer.hpp"
 
 namespace ripper::pdf::core
 {
@@ -16,19 +17,24 @@ namespace ripper::pdf::core
         /// Serialize `indirect_object` to a byte buffer.
         [[nodiscard]] virtual std::vector<std::byte> serialize(const indirect_object &obj) const = 0;
 
+        /// Rebind the object value serializer used internally.
+        ///
+        /// The default implementation is a no-op; concrete subclasses should override this.
+        virtual void set_object_serializer(class object_serializer &serializer) {}
+
         /// Set the character used for mid-object breaks in serialized output (default is `\n`).
-        void set_object_break_character(char line_break_char)
+        virtual void set_object_break_character(char c)
         {
-            object_break_character_ = line_break_char;
+            object_break_character_ = c;
         }
 
         /// Set the character used for line breaks in serialized output (default is `\n`).
         ///
         /// According to the PDF specification, line breaks in PDF content can be either
         /// LF (`\n`), CR (`\r`), or CRLF (`\r\n`).
-        void set_line_break_character(char line_break_char)
+        virtual void set_line_break_character(char c)
         {
-            line_break_character_ = line_break_char;
+            line_break_character_ = c;
         }
 
     protected:

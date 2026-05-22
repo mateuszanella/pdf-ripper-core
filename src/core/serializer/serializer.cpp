@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "core/document.hpp"
+#include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/header.hpp"
 #include "core/document/object/indirect_object.hpp"
 #include "core/serializer/serializer_manager.hpp"
@@ -32,5 +33,10 @@ namespace ripper::pdf::core
     std::vector<std::byte> serializer::serialize_indirect_object(const indirect_object &obj)
     {
         return manager().indirect_object_serializer().serialize(obj);
+    }
+
+    std::vector<std::byte> serializer::serialize_cross_reference_table(const cross_reference_table &xref)
+    {
+        return manager().cross_reference_table_serializer().serialize(xref);
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/document.hpp"
+#include "core/document/cross_reference_table/cross_reference_table.hpp"
 #include "core/document/object/indirect_object.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/serializer/serializer_manager.hpp"
@@ -29,6 +30,9 @@ namespace ripper::pdf::core
 
         /// Serialize a PDF indirect object to a byte buffer.
         [[nodiscard]] std::vector<std::byte> serialize_indirect_object(const indirect_object &obj);
+
+        /// Serialize a PDF cross-reference table to a byte buffer.
+        [[nodiscard]] std::vector<std::byte> serialize_cross_reference_table(const cross_reference_table &xref);
 
     private:
         const document &document_;
