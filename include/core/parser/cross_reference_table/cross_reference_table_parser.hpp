@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-#include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/cross_reference_table/cross_reference_section.hpp"
 #include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
@@ -17,9 +17,9 @@ namespace ripper::pdf::core
         virtual ~cross_reference_table_parser() = default;
 
         /**
-         * @brief Parses a cross-reference table from raw content.
+         * @brief Parses a cross-reference section from raw content.
          * @param content The raw xref content (starting with "xref" keyword)
          */
-        [[nodiscard]] virtual cross_reference_table parse(std::string_view content) = 0;
+        [[nodiscard]] virtual cross_reference_section parse(std::string_view content) = 0;
     };
 }

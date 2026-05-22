@@ -5,35 +5,23 @@
 namespace ripper::pdf::core
 {
     document_structure::document_structure(
-        cross_reference_table compiled_xref,
-        std::vector<cross_reference_table> xref_history,
+        cross_reference_manager xref_manager,
         class trailer compiled_trailer,
         std::vector<class trailer> trailer_history) noexcept
-        : compiled_xref_{std::move(compiled_xref)},
-          xref_history_{std::move(xref_history)},
+        : xref_manager_{std::move(xref_manager)},
           compiled_trailer_{std::move(compiled_trailer)},
           trailer_history_{std::move(trailer_history)}
     {
     }
 
-    cross_reference_table &document_structure::xref() noexcept
+    cross_reference_manager &document_structure::xref() noexcept
     {
-        return compiled_xref_;
+        return xref_manager_;
     }
 
-    const cross_reference_table &document_structure::xref() const noexcept
+    const cross_reference_manager &document_structure::xref() const noexcept
     {
-        return compiled_xref_;
-    }
-
-    std::vector<cross_reference_table> &document_structure::xref_history() noexcept
-    {
-        return xref_history_;
-    }
-
-    const std::vector<cross_reference_table> &document_structure::xref_history() const noexcept
-    {
-        return xref_history_;
+        return xref_manager_;
     }
 
     class trailer &document_structure::trailer() noexcept

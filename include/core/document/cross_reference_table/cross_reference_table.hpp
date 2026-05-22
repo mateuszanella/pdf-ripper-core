@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <map>
 #include <memory>
-#include <optional>
 
 #include "core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "core/document/object/indirect_reference.hpp"
@@ -12,101 +11,124 @@ namespace ripper::pdf::core
 {
     class indirect_object;
 
-    /// Mutable cross-reference table and central indirect_object registry for a PDF document.
+    /// Abstract interface shared by `cross_reference_section` and `cross_reference_manager`.
     ///
-    /// Serves as the single source of truth for all indirect objects in the document,
-    /// whether parsed from an existing file (lazy-loaded on demand) or newly created
-    /// in memory.
+    /// Provides a uniform API for looking up, allocating, and iterating cross-reference
+    /// entries, regardless of whether the caller operates on the full document table
+    /// (`cross_reference_manager`) or a single revision's section (`cross_reference_section`).
     ///
     /// ## Object lifecycle
     ///
-    /// Objects from an existing file start as unresolved entries with a known byte offset.
-    /// They are materialized on first access via `resolve()`, which invokes a caller-supplied
-    /// `loader_fn` to parse the indirect_object from disk and cache it inside the entry.
-    ///
-    /// New objects are introduced either via `allocate()` (single-step) or via the
-    /// `reserve()` / `commit()` pair when the indirect_object's own constructor requires a known
+    /// New indirect objects can be introduced via `allocate()` (single-step), or via the
+    /// `reserve()` / `commit()` pair when the object's constructor requires a known
     /// `indirect_reference` before the entry can exist.
-    ///
-    /// ## Ownership
-    ///
-    /// Each `cross_reference_entry` owns its resolved `indirect_object` exclusively.
-    /// The table is non-copyable.
     ///
     /// ## Address stability
     ///
-    /// Entry addresses are stable for the lifetime of the table because entries are
-    /// stored in `std::map` nodes. Object addresses are stable because each entry owns
-    /// a single heap-allocated indirect object via `std::unique_ptr`, and object replacement is
-    /// disallowed after first resolution/commit.
+    /// Entry pointers returned by `find()` and `entries()` are stable for the lifetime of the
+    /// table as long as no mutation occurs. Entries live in `std::map` nodes; resolved objects
+    /// are owned exclusively by their entry via `std::unique_ptr`.
     class cross_reference_table
     {
     public:
-        /// Type alias for the internal mapping of object numbers to cross-reference entries.
+        /// Type alias for an owning map of object numbers to their cross-reference entries.
+        ///
+        /// Used as the storage type inside `cross_reference_subsection` and as a convenience
+        /// alias when constructing or inspecting tables directly.
         using entry_map = std::map<std::uint32_t, cross_reference_entry>;
 
-        /// Construct a cross-reference table from a pre-built entry map.
+        virtual ~cross_reference_table() = default;
+
+        /// Look up a mutable cross-reference entry by object number.
         ///
-        /// Typically called by the parser after reading the xref section from disk.
-        explicit cross_reference_table(entry_map entries) noexcept;
-
-        cross_reference_table(const cross_reference_table &) = delete;
-        cross_reference_table &operator=(const cross_reference_table &) = delete;
-        cross_reference_table(cross_reference_table &&) noexcept = default;
-        cross_reference_table &operator=(cross_reference_table &&) noexcept = default;
-
-        /// Returns a read-only view of all entries in the table.
-        [[nodiscard]] const entry_map &entries() const noexcept;
-
-        /// Returns a mutable view of all entries in the table.
-        [[nodiscard]] entry_map &entries() noexcept;
-
-        /// Look up an entry by object number.
+        /// Scans the table for an entry whose object number matches `object_number`.
         ///
-        /// Returns a pointer into the table (valid for the lifetime of the table),
+        /// Returns a raw pointer into the table (valid for the lifetime of this table),
         /// or `nullptr` if no entry exists for the given object number.
-        [[nodiscard]] cross_reference_entry *find(std::uint32_t object_number) noexcept;
-        [[nodiscard]] const cross_reference_entry *find(std::uint32_t object_number) const noexcept;
+        [[nodiscard]] virtual cross_reference_entry *find(std::uint32_t object_number) noexcept = 0;
 
-        /// Look up an entry by indirect reference.
+        /// Look up a read-only cross-reference entry by object number.
         ///
-        /// Equivalent to `find(ref.object_number())`.
-        [[nodiscard]] cross_reference_entry *find(const indirect_reference &ref) noexcept;
-        [[nodiscard]] const cross_reference_entry *find(const indirect_reference &ref) const noexcept;
+        /// Scans the table for an entry whose object number matches `object_number`.
+        ///
+        /// Returns a raw pointer into the table (valid for the lifetime of this table),
+        /// or `nullptr` if no entry exists for the given object number.
+        [[nodiscard]] virtual const cross_reference_entry *find(std::uint32_t object_number) const noexcept = 0;
 
-        /// Reserve a slot for a new indirect object, returning its assigned indirect reference.
+        /// Look up a mutable cross-reference entry by indirect reference.
         ///
-        /// The entry is created in a pending state (no indirect object, no offset).
-        /// You must call `commit()` with the constructed indirect object before the entry is usable.
+        /// Equivalent to `find(ref.object_number())`. The generation number in `ref` is
+        /// not checked; only the object number is used for the lookup.
         ///
-        /// Use this when the indirect object's constructor requires a known `indirect_reference`.
-        [[nodiscard]] indirect_reference reserve() noexcept;
+        /// Returns a raw pointer into the table, or `nullptr` if not found.
+        [[nodiscard]] virtual cross_reference_entry *find(const indirect_reference &ref) noexcept = 0;
+
+        /// Look up a read-only cross-reference entry by indirect reference.
+        ///
+        /// Equivalent to `find(ref.object_number())`. The generation number in `ref` is
+        /// not checked; only the object number is used for the lookup.
+        ///
+        /// Returns a raw pointer into the table, or `nullptr` if not found.
+        [[nodiscard]] virtual const cross_reference_entry *find(const indirect_reference &ref) const noexcept = 0;
+
+        /// Reserve a slot for a new indirect object and return its assigned indirect reference.
+        ///
+        /// Creates a pending entry with no indirect object and no file offset. The returned
+        /// `indirect_reference` can be passed to the indirect object's constructor, then the
+        /// constructed object must be submitted via `commit()` before the entry is usable.
+        ///
+        /// Use this two-step pair when the indirect object requires its own reference during
+        /// construction. Use `allocate()` for the simpler single-step case.
+        [[nodiscard]] virtual indirect_reference reserve() noexcept = 0;
 
         /// Commit a constructed indirect object to a previously reserved reference.
         ///
-        /// Transfers ownership of the indirect object to the entry and returns a raw pointer to it.
+        /// Transfers ownership of `object` into the entry identified by `ref` and marks the
+        /// entry as resolved. Returns a raw non-owning pointer to the committed indirect object.
         ///
-        /// Returns `nullptr` if the reference does not correspond to a reserved entry.
-        [[nodiscard]] class indirect_object *commit(const indirect_reference &ref, std::unique_ptr<class indirect_object> object) noexcept;
+        /// Returns `nullptr` if:
+        ///   - `ref` does not correspond to any entry in this table, or
+        ///   - the entry was not previously reserved (i.e. it is not new and unresolved).
+        [[nodiscard]] virtual class indirect_object *commit(
+            const indirect_reference &ref,
+            std::unique_ptr<class indirect_object> object) noexcept = 0;
 
         /// Allocate and immediately commit a new in-memory indirect object.
         ///
-        /// Use this when the indirect object can be constructed without knowing its reference
-        /// in advance (e.g. the reference is injected after construction).
+        /// Combines `reserve()` and `commit()` into a single step. The next available object
+        /// number is assigned, the entry is created and resolved in one operation, and the
+        /// assigned indirect reference is returned.
         ///
-        /// Returns the assigned indirect reference.
-        [[nodiscard]] indirect_reference allocate(std::unique_ptr<class indirect_object> object) noexcept;
+        /// Use this when the indirect object does not need to know its own reference during
+        /// construction. Use `reserve()` / `commit()` for the two-step case.
+        [[nodiscard]] virtual indirect_reference allocate(
+            std::unique_ptr<class indirect_object> object) noexcept = 0;
 
-        /// Returns the number of entries currently in the table.
-        [[nodiscard]] std::size_t size() const noexcept;
-
-        /// Returns the next available object number.
+        /// Return a flat non-owning pointer map of all entries.
         ///
-        /// Object numbers are assigned sequentially. This is used internally by
-        /// `reserve()` and `allocate()`, but exposed for introspection.
-        [[nodiscard]] std::uint32_t next_object_number() const noexcept;
+        /// For `cross_reference_section`, spans all entries across its subsections in a
+        /// single map keyed by object number.
+        /// For `cross_reference_manager`, returns the compiled view across all sections,
+        /// where the newest entry wins for any object number that appears in multiple revisions.
+        ///
+        /// The returned map contains raw pointers into the underlying storage. Pointers are
+        /// valid as long as this table is not modified.
+        [[nodiscard]] virtual std::map<std::uint32_t, cross_reference_entry *> entries() noexcept = 0;
 
-    private:
-        entry_map entries_;
+        /// Returns the total number of entries across this table.
+        ///
+        /// For `cross_reference_section`, this is the sum of all subsection entry counts.
+        /// For `cross_reference_manager`, this is the sum across all sections, including
+        /// duplicate object numbers from different revisions.
+        [[nodiscard]] virtual std::size_t size() const noexcept = 0;
+
+        /// Returns the next available object number for allocation.
+        ///
+        /// This is one greater than the highest object number currently present in this table.
+        /// Returns 1 if the table contains no entries (object number 0 is reserved for the
+        /// free-list head and is not a valid allocation target).
+        ///
+        /// Used internally by `reserve()` and `allocate()`, but exposed for introspection.
+        [[nodiscard]] virtual std::uint32_t next_object_number() const noexcept = 0;
     };
 }

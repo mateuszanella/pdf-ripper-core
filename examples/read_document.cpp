@@ -32,8 +32,9 @@ namespace
         std::println("Found {} entries", xrefTable.size());
         std::println("First 5 entries:");
         size_t count = 0;
-        for (const auto &[objNum, entry] : xrefTable.entries())
+        for (const auto &[objNum, entry_ptr] : xrefTable.entries())
         {
+            const auto &entry = *entry_ptr;
             std::println("  Object {}: offset={}, gen={}, in_use={}, resolved={}",
                          objNum,
                          entry.offset().has_value()

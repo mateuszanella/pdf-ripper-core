@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "core/document/cross_reference_table/cross_reference_entry.hpp"
-#include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "core/util/byte.hpp"
 
 namespace ripper::pdf::core
@@ -39,36 +39,24 @@ namespace ripper::pdf::core
         }
     }
 
-    std::vector<std::byte> default_cross_reference_table_serializer::serialize(const cross_reference_table &xref) const
+    std::vector<std::byte> default_cross_reference_table_serializer::serialize(
+        const cross_reference_manager &xref) const
     {
-        const auto &entries = xref.entries();
-
         std::vector<std::byte> out;
 
         byte::append_bytes(out, "xref\n");
 
-        if (entries.empty())
-            return out;
-
-        // Group consecutive object numbers into subsections.
-        auto it = entries.begin();
-        while (it != entries.end())
+        for (const auto &section : xref.sections())
         {
-            const std::uint32_t subsection_first = it->first;
-            const auto subsection_start = it;
-            std::uint32_t expected = subsection_first;
-
-            while (it != entries.end() && it->first == expected)
+            for (const auto &subsection : section.subsections())
             {
-                ++expected;
-                ++it;
+                byte::append_bytes(out,
+                    std::to_string(subsection.first_object_number()) + ' ' +
+                    std::to_string(subsection.count()) + '\n');
+
+                for (const auto &[num, entry] : subsection.entries())
+                    append_entry(out, entry);
             }
-
-            const std::uint32_t count = expected - subsection_first;
-            byte::append_bytes(out, std::to_string(subsection_first) + ' ' + std::to_string(count) + '\n');
-
-            for (auto jt = subsection_start; jt != it; ++jt)
-                append_entry(out, jt->second);
         }
 
         return out;

@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "core/document/catalog/catalog.hpp"
-#include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
@@ -59,8 +59,9 @@ namespace ripper::pdf::core
 
         // TODO: In reality, we should not actually use the whole xref, but use the
         // history instead. We should also resolve objects through the history.
-        for (auto &[number, entry] : cross_reference_table().entries())
+        for (auto [number, entry_ptr] : cross_reference_table().entries())
         {
+            auto &entry = *entry_ptr;
             if (!entry.in_use())
                 continue;
 
@@ -144,7 +145,7 @@ namespace ripper::pdf::core
         return *header_;
     }
 
-    cross_reference_table &document::cross_reference_table()
+    cross_reference_manager &document::cross_reference_table()
     {
         return structure().xref();
     }

@@ -8,6 +8,8 @@
 #include <unordered_set>
 #include <utility>
 
+#include "core/document/cross_reference_table/cross_reference_manager.hpp"
+#include "core/document/cross_reference_table/cross_reference_section.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "core/parser/trailer/default_trailer_parser.hpp"
@@ -122,7 +124,7 @@ namespace ripper::pdf::core
         if (!start_xref_result)
             throw parse_exception{"Missing startxref section"};
 
-        std::vector<cross_reference_table> xref_history;
+        std::vector<cross_reference_section> xref_sections;
         std::vector<trailer> trailer_history;
         std::unordered_set<std::size_t> visited_offsets;
         std::size_t current_offset = *start_xref_result;
@@ -175,16 +177,17 @@ namespace ripper::pdf::core
             // and return what we have so far.
             if (!has_trailer_end_been_found)
             {
-                if (xref_history.empty())
+                if (xref_sections.empty())
                 {
                     throw parse_exception{"Unable to find complete trailer while parsing document structure"};
                 }
                 break;
             }
 
-            // Step 3: Parse xref from collected bytes
-            auto cross_reference_table = _xref_parser->parse(collected_content);
-            xref_history.push_back(std::move(cross_reference_table));
+            // Step 3: Parse xref section from collected bytes
+            auto xref_section = _xref_parser->parse(collected_content);
+            xref_section.set_startxref_offset(static_cast<std::uint64_t>(current_offset));
+            xref_sections.push_back(std::move(xref_section));
 
             // Step 4: Parse trailer from collected bytes
             auto trailerResult = _trailer_parser->parse(collected_content);
@@ -200,25 +203,17 @@ namespace ripper::pdf::core
             current_offset = *prev_offset_result;
         }
 
-        // Compile merged xref table: iterate newest-to-oldest so that newer entries
-        // take precedence over older ones. Each object number from a later revision
-        // will overwrite the entry from an earlier one (last write wins = newest wins).
-        cross_reference_table::entry_map compiled_entries;
+        // Sections were collected newest-first (following /Prev from end of file toward beginning).
+        // Reverse to chronological order (oldest first, newest last) before building the manager.
+        std::reverse(xref_sections.begin(), xref_sections.end());
 
-        for (auto it = xref_history.begin(); it != xref_history.end(); ++it)
-        {
-            for (auto &[objectNum, entry] : it->entries())
-            {
-                compiled_entries.insert_or_assign(objectNum, std::move(entry));
-            }
-        }
+        cross_reference_manager xref_manager{std::move(xref_sections)};
 
-        // Compile merged trailer: iterate oldest-to-newest so that newer updates
-        // take precedence over older ones. Each key set by a later revision will
-        // overwrite the object from an earlier one (last write wins = newest wins).
+        // Compile merged trailer: trailer_history[0] = newest, back = oldest.
+        // Iterate oldest-to-newest (rbegin → rend) so that newer values overwrite older ones.
         dictionary compiled_dict{};
 
-        for (auto it = trailer_history.begin(); it != trailer_history.end(); ++it)
+        for (auto it = trailer_history.rbegin(); it != trailer_history.rend(); ++it)
         {
             for (const auto &[key, val] : it->dictionary().entries())
             {
@@ -227,8 +222,7 @@ namespace ripper::pdf::core
         }
 
         return document_structure{
-            cross_reference_table{std::move(compiled_entries)},
-            std::move(xref_history),
+            std::move(xref_manager),
             trailer{std::move(compiled_dict)},
             std::move(trailer_history),
         };

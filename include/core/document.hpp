@@ -7,7 +7,7 @@
 #include <functional>
 
 #include "core/document/catalog/catalog.hpp"
-#include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/object_factory.hpp"
@@ -108,9 +108,9 @@ namespace ripper::pdf::core
         /// Changes made to the returned header are reflected in the document on save.
         [[nodiscard]] class header &header();
 
-        /// Parse and return the compiled cross-reference table (cached).
-        /// Changes made to the returned table are reflected in the document on save.
-        [[nodiscard]] class cross_reference_table &cross_reference_table();
+        /// Parse and return the cross-reference manager (cached).
+        /// Changes made to the returned manager are reflected in the document on save.
+        [[nodiscard]] class cross_reference_manager &cross_reference_table();
 
         /// Parse and return the compiled trailer dictionary (cached).
         /// Changes made to the returned trailer are reflected in the document on save.

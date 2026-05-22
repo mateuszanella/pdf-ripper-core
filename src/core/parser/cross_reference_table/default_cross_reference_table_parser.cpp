@@ -4,6 +4,8 @@
 #include <string>
 #include <string_view>
 
+#include "core/document/cross_reference_table/cross_reference_entry.hpp"
+#include "core/document/cross_reference_table/cross_reference_section.hpp"
 #include "core/document/object/object.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/util/text.hpp"
@@ -11,7 +13,7 @@
 namespace ripper::pdf::core
 {
     void default_cross_reference_table_parser::parse_subsection(
-        cross_reference_table::entry_map &entries,
+        cross_reference_section &section,
         std::string_view &content)
     {
         const std::size_t newlinePos = content.find('\n');
@@ -88,16 +90,13 @@ namespace ripper::pdf::core
             const std::uint32_t objectNumber = static_cast<std::uint32_t>(*startObj + i);
             const indirect_reference ref{objectNumber, generation};
 
-            entries.insert_or_assign(objectNumber, cross_reference_entry{ref, offset, inUse});
+            section.add_entry(cross_reference_entry{ref, offset, inUse});
         }
-
     }
 
-    cross_reference_table default_cross_reference_table_parser::parse(
+    cross_reference_section default_cross_reference_table_parser::parse(
         std::string_view content)
     {
-        cross_reference_table::entry_map entries;
-
         const std::size_t firstNewline = content.find('\n');
         if (firstNewline == std::string_view::npos)
         {
@@ -113,6 +112,8 @@ namespace ripper::pdf::core
 
         content = content.substr(firstNewline + 1);
 
+        cross_reference_section section{std::vector<cross_reference_subsection>{}};
+
         while (!content.empty())
         {
             content = text::trim_ascii(content);
@@ -121,9 +122,9 @@ namespace ripper::pdf::core
                 break;
             }
 
-            parse_subsection(entries, content);
+            parse_subsection(section, content);
         }
 
-        return cross_reference_table{std::move(entries)};
+        return section;
     }
 }

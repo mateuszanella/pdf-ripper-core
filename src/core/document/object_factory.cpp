@@ -4,7 +4,10 @@
 
 #include "core/document.hpp"
 #include "core/document/catalog/catalog.hpp"
-#include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/cross_reference_table/cross_reference_entry.hpp"
+#include "core/document/cross_reference_table/cross_reference_manager.hpp"
+#include "core/document/cross_reference_table/cross_reference_section.hpp"
+#include "core/document/cross_reference_table/cross_reference_subsection.hpp"
 #include "core/document/document_structure.hpp"
 #include "core/document/header.hpp"
 #include "core/document/trailer/trailer.hpp"
@@ -60,33 +63,29 @@ namespace ripper::pdf::core
 
     document_structure object_factory::create_structure() const
     {
-        using xref_t = ripper::pdf::core::cross_reference_table;
         using entry_t = ripper::pdf::core::cross_reference_entry;
         using iref_t = ripper::pdf::core::indirect_reference;
         using trailer_t = ripper::pdf::core::trailer;
 
-        const auto generate_initial_xref = []()
-        {
-            xref_t::entry_map entries;
-            entries.emplace(0, entry_t{iref_t{0, 65535}, 0, false});
-            return xref_t{std::move(entries)};
-        };
+        // Build the initial section with a single subsection containing object 0 (free-list head)
+        cross_reference_subsection::entry_map entries;
+        entries.emplace(0, entry_t{iref_t{0, 65535}, 0, false});
 
-        const auto generate_initial_trailer = []()
-        {
-            return trailer_t{dictionary{}};
-        };
+        std::vector<cross_reference_subsection> subsections;
+        subsections.emplace_back(0, std::move(entries));
 
-        std::vector<xref_t> xref_history;
-        xref_history.push_back(generate_initial_xref());
+        std::vector<cross_reference_section> sections;
+        sections.emplace_back(std::move(subsections));
 
+        cross_reference_manager xref_manager{std::move(sections)};
+
+        trailer_t initial_trailer{dictionary{}};
         std::vector<trailer_t> trailer_history;
-        trailer_history.push_back(generate_initial_trailer());
+        trailer_history.push_back(initial_trailer);
 
         return document_structure{
-            std::invoke(generate_initial_xref),
-            std::move(xref_history),
-            std::invoke(generate_initial_trailer),
+            std::move(xref_manager),
+            initial_trailer,
             std::move(trailer_history)};
     }
 
