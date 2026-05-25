@@ -97,6 +97,19 @@ namespace ripper::pdf::core
         return result;
     }
 
+    std::map<std::uint32_t, cross_reference_entry *> cross_reference_manager::active_entries() noexcept
+    {
+        auto all = entries();
+        for (auto it = all.begin(); it != all.end();)
+        {
+            if (it->first != 0 && !it->second->in_use())
+                it = all.erase(it);
+            else
+                ++it;
+        }
+        return all;
+    }
+
     std::size_t cross_reference_manager::size() const noexcept
     {
         std::size_t total = 0;

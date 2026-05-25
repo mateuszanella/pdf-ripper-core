@@ -124,6 +124,16 @@ namespace ripper::pdf::core
         /// are valid as long as this manager is not modified.
         [[nodiscard]] std::map<std::uint32_t, cross_reference_entry *> entries() noexcept override;
 
+        /// Return a compiled flat non-owning pointer map of the active (live) entries.
+        ///
+        /// Builds the same newest-wins merged view as `entries()`, then filters out any entry
+        /// where `in_use()` is false, with the single exception of object 0, which is always
+        /// retained as the mandatory free-list head.
+        ///
+        /// The returned map contains raw pointers into the underlying section storage. Pointers
+        /// are valid as long as this manager is not modified.
+        [[nodiscard]] std::map<std::uint32_t, cross_reference_entry *> active_entries() noexcept;
+
         /// Returns the total number of entries across all sections.
         ///
         /// Counts every entry in every section, including entries for the same object number
