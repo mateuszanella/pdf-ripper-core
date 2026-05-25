@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "core/document/object/indirect_object.hpp"
@@ -144,5 +145,21 @@ namespace ripper::pdf::core
             sections_.emplace_back(std::vector<cross_reference_subsection>{});
 
         return sections_.back();
+    }
+
+    void cross_reference_manager::squash() noexcept
+    {
+        auto active = active_entries();
+
+        cross_reference_section consolidated{{}};
+
+        // Move canonical entries in object-number order so add_entry's consecutive-grouping
+        // logic produces a single compact subsection with no unnecessary gaps.
+        for (auto &[num, ptr] : active)
+            consolidated.add_entry(std::move(*ptr));
+
+        // The old sections now hold only moved-from shells. Discard them.
+        sections_.clear();
+        sections_.push_back(std::move(consolidated));
     }
 }

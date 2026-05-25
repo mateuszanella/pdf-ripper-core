@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "core/document/cross_reference_table/cross_reference_entry.hpp"
-#include "core/document/cross_reference_table/cross_reference_manager.hpp"
+#include "core/document/cross_reference_table/cross_reference_section.hpp"
 #include "core/util/byte.hpp"
 
 namespace ripper::pdf::core
@@ -33,30 +33,26 @@ namespace ripper::pdf::core
         void append_entry(std::vector<std::byte> &out, const cross_reference_entry &entry)
         {
             byte::append_bytes(out, format_entry(
-                entry.offset().value_or(0),
-                static_cast<std::uint32_t>(entry.reference().generation()),
-                entry.in_use()));
+                                        entry.offset().value_or(0),
+                                        static_cast<std::uint32_t>(entry.reference().generation()),
+                                        entry.in_use()));
         }
     }
 
     std::vector<std::byte> default_cross_reference_table_serializer::serialize(
-        const cross_reference_manager &xref) const
+        const cross_reference_section &section) const
     {
         std::vector<std::byte> out;
 
         byte::append_bytes(out, "xref\n");
 
-        for (const auto &section : xref.sections())
+        for (const auto &subsection : section.subsections())
         {
-            for (const auto &subsection : section.subsections())
-            {
-                byte::append_bytes(out,
-                    std::to_string(subsection.first_object_number()) + ' ' +
-                    std::to_string(subsection.count()) + '\n');
+            byte::append_bytes(out,
+                               std::to_string(subsection.first_object_number()) + ' ' + std::to_string(subsection.count()) + '\n');
 
-                for (const auto &[num, entry] : subsection.entries())
-                    append_entry(out, entry);
-            }
+            for (const auto &[num, entry] : subsection.entries())
+                append_entry(out, entry);
         }
 
         return out;

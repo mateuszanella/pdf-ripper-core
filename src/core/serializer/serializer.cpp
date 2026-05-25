@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "core/document.hpp"
-#include "core/document/cross_reference_table/cross_reference_manager.hpp"
+#include "core/document/cross_reference_table/cross_reference_section.hpp"
 #include "core/document/header.hpp"
 #include "core/document/object/indirect_object.hpp"
 #include "core/serializer/serializer_manager.hpp"
@@ -35,8 +35,8 @@ namespace ripper::pdf::core
         return manager().indirect_object_serializer().serialize(obj);
     }
 
-    std::vector<std::byte> serializer::serialize_cross_reference_table(const cross_reference_manager &xref)
+    std::vector<std::byte> serializer::serialize_cross_reference_section(const cross_reference_section &section)
     {
-        return manager().cross_reference_table_serializer().serialize(xref);
+        return manager().cross_reference_table_serializer().serialize(section);
     }
 }

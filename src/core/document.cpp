@@ -60,9 +60,11 @@ namespace ripper::pdf::core
 
         // Here, we separate the entires that matter for this specific save operation (full
         // rewrite). The `active_entries()` view includes only entries that are currently in use,
-        auto entries = cross_reference_table().active_entries();
+        cross_reference_table().squash();
 
-        for (auto [number, entry_ptr] : entries)
+        auto &xref = cross_reference_table().active_section();
+
+        for (auto [number, entry_ptr] : xref.entries())
         {
             auto &entry = *entry_ptr;
             if (!entry.in_use())
@@ -83,8 +85,7 @@ namespace ripper::pdf::core
 
             // Set the offset for this entry before writing, so that the xref
             // can be correctly generated later.
-            const auto offset = static_cast<std::uint64_t>(w.tell());
-            entry.set_offset(offset);
+            entry.set_offset(static_cast<std::uint64_t>(w.tell()));
 
             auto data = s.serialize_indirect_object(*obj);
 

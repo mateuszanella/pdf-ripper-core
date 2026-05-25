@@ -147,6 +147,11 @@ namespace ripper::pdf::core
         /// Returns 1 if no sections or entries are present.
         [[nodiscard]] std::uint32_t next_object_number() const noexcept override;
 
+        /// Returns a mutable reference to the active (last/newest) section for new object allocation.
+        ///
+        /// If no sections exist, an empty section is created and appended first.
+        [[nodiscard]] cross_reference_section &active_section() noexcept;
+
         /// Returns a read-only view of all sections in chronological order (oldest first, newest last).
         ///
         /// The returned reference is valid for the lifetime of this manager.
@@ -157,11 +162,19 @@ namespace ripper::pdf::core
         /// The returned reference is valid for the lifetime of this manager.
         [[nodiscard]] std::vector<cross_reference_section> &sections() noexcept;
 
-    private:
-        /// Returns a mutable reference to the active (last/newest) section for new object allocation.
+        /// Consolidate all sections into a single section containing only the active entries.
         ///
-        /// If no sections exist, an empty section is created and appended first.
-        [[nodiscard]] cross_reference_section &active_section() noexcept;
+        /// Computes the newest-wins active view across all sections (same logic as
+        /// `active_entries()`), moves those entries in object-number order into a fresh
+        /// `cross_reference_section`, and replaces the internal section list with that
+        /// single section. Superseded revisions and free entries (except object 0) are
+        /// discarded.
+        ///
+        /// After a squash the manager behaves as if the document were freshly created
+        /// with exactly the current live objects. Used when running a full save/rewrite.
+        void squash() noexcept;
+
+    private:
 
         std::vector<cross_reference_section> sections_;
     };
