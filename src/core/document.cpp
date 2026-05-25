@@ -44,6 +44,7 @@ namespace ripper::pdf::core
 
     bool document::save()
     {
+        // Sanity checks to ensure we have the necessary components to perform a save operation.
         if (!has_writer())
             throw logic_exception{"No writer backend available"};
 
@@ -57,27 +58,35 @@ namespace ripper::pdf::core
 
         (void)w.write(serialized_header);
 
-        // TODO: In reality, we should not actually use the whole xref, but use the
-        // history instead. We should also resolve objects through the history.
-        for (auto [number, entry_ptr] : cross_reference_table().entries())
+        // Here, we separate the entires that matter for this specific save operation (full
+        // rewrite). The `active_entries()` view includes only entries that are currently in use,
+        auto entries = cross_reference_table().active_entries();
+
+        for (auto [number, entry_ptr] : entries)
         {
             auto &entry = *entry_ptr;
             if (!entry.in_use())
                 continue;
 
-            // Unresolved entries backed by a reader will be resolved now.
-            if (!entry.is_resolved() && !entry.is_new())
-                (void)resolve_object(entry.reference());
+            // If the entry is already resolved, we can serialize it directly.
+            // Otherwise, we need to resolve it first.
+            const auto obj = (!entry.is_resolved() && !entry.is_new())
+                                 ? resolve_object(entry.reference())
+                                 : entry.indirect_object();
 
-            // Reserved but never committed: skip.
-            if (!entry.is_resolved())
+            // If the entry is new but unresolved, it means it was reserved but
+            // never committed. We should not write it out. Parsing errors may
+            // have occurred during construction, so we should not throw an
+            // exception here, but simply skip it.
+            if (!obj)
                 continue;
 
-            // Set the offset for this entry before writing, so that the xref can be correctly generated later.
+            // Set the offset for this entry before writing, so that the xref
+            // can be correctly generated later.
             const auto offset = static_cast<std::uint64_t>(w.tell());
             entry.set_offset(offset);
 
-            auto data = s.serialize_indirect_object(*entry.indirect_object());
+            auto data = s.serialize_indirect_object(*obj);
 
             (void)w.write(data);
         }
