@@ -54,6 +54,7 @@ namespace ripper::pdf::core
         byte::append_bytes(out, std::to_string(value.generation()));
         byte::append_bytes(out, ' ');
         byte::append_bytes(out, "obj");
+
         return out;
     }
 }

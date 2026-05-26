@@ -87,6 +87,7 @@ namespace ripper::pdf::core
         byte::append_bytes(out, '(');
         byte::append_bytes(out, escaped);
         byte::append_bytes(out, ')');
+
         return out;
     }
 
@@ -97,6 +98,7 @@ namespace ripper::pdf::core
         std::vector<std::byte> out;
         byte::append_bytes(out, '/');
         byte::append_bytes(out, escaped);
+
         return out;
     }
 
@@ -108,6 +110,7 @@ namespace ripper::pdf::core
         byte::append_bytes(out, std::to_string(value.generation()));
         byte::append_bytes(out, ' ');
         byte::append_bytes(out, 'R');
+
         return out;
     }
 
@@ -122,6 +125,7 @@ namespace ripper::pdf::core
             byte::append_bytes(out, serialize(value[i]));
         }
         byte::append_bytes(out, ']');
+
         return out;
     }
 
@@ -140,7 +144,7 @@ namespace ripper::pdf::core
         }
         byte::append_bytes(out, '>');
         byte::append_bytes(out, '>');
-        byte::append_bytes(out, line_break_character_);
+
         return out;
     }
 
