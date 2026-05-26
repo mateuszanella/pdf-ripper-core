@@ -61,6 +61,7 @@ namespace ripper::pdf::core
         // Here, we separate the entires that matter for this specific save operation (full
         // rewrite). The `active_entries()` view includes only entries that are currently in use,
         cross_reference_table().squash();
+        trailer().squash();
 
         auto &xref = cross_reference_table().active_section();
 
@@ -94,7 +95,7 @@ namespace ripper::pdf::core
         auto xref_start = static_cast<std::uint64_t>(w.tell());
 
         (void)w.write(s.serialize_cross_reference_section(xref));
-        (void)w.write(s.serialize_trailer(trailer().compiled(), xref_start));
+        (void)w.write(s.serialize_trailer(trailer().active_trailer(), xref_start));
 
         w.close();
 

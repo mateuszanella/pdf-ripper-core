@@ -86,6 +86,14 @@ namespace ripper::pdf::core
         /// Returns the number of trailers stored in this manager.
         [[nodiscard]] std::size_t size() const noexcept;
 
+        /// Consolidate all trailers into a single trailer.
+        ///
+        /// Computes the same newest-wins merged view as `compiled()`, strips the `/Prev`
+        /// entry (which is meaningless after consolidation), and replaces the internal
+        /// trailer list with the resulting single trailer. Used when performing a full
+        /// save/rewrite where the incremental revision history is discarded.
+        void squash() noexcept;
+
     private:
         std::vector<trailer> trailers_;
     };

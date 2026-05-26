@@ -14,6 +14,8 @@ namespace ripper::pdf::core
     ///
     /// This type orchestrates serialization by delegating to components managed by
     /// `serializer_manager`, and throws on failures.
+    ///
+    /// TODO: centralize logic to set default line breaking and object separators
     class serializer
     {
     public:

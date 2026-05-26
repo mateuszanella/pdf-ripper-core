@@ -56,4 +56,12 @@ namespace ripper::pdf::core
     {
         return trailers_.size();
     }
+
+    void trailer_manager::squash() noexcept
+    {
+        trailer merged = compiled();
+        merged.dictionary().remove("Prev");
+        trailers_.clear();
+        trailers_.push_back(std::move(merged));
+    }
 }
