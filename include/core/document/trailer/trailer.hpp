@@ -25,6 +25,9 @@ namespace ripper::pdf::core
         /// /Size — total number of objects in the cross-reference table.
         [[nodiscard]] std::uint64_t size() const;
 
+        /// Sets /Size. Should equal highest object number + 1.
+        void set_size(std::uint64_t n);
+
         /// /Root — indirect reference to the document catalog.
         [[nodiscard]] std::optional<indirect_reference> root() const;
 

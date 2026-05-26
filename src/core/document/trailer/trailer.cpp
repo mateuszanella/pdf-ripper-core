@@ -19,6 +19,11 @@ namespace ripper::pdf::core
         return static_cast<std::uint64_t>(*v);
     }
 
+    void trailer::set_size(std::uint64_t n)
+    {
+        dict_.set("Size", object{static_cast<std::int64_t>(n)});
+    }
+
     std::optional<indirect_reference> trailer::root() const
     {
         const auto *v = dict_.get("Root");

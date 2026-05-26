@@ -63,6 +63,8 @@ namespace ripper::pdf::core
         cross_reference_table().squash();
         trailer().squash();
 
+        trailer().active_trailer().set_size(cross_reference_table().next_object_number());
+
         auto &xref = cross_reference_table().active_section();
 
         // Write all active indirect objects in ascending object number order.
