@@ -149,20 +149,38 @@ namespace ripper::pdf::core
         /// Returns a pointer to the held boolean, or `nullptr` if this is not a boolean object.
         [[nodiscard]] const bool *as_bool() const noexcept;
 
+        /// Returns a mutable pointer to the held boolean, or `nullptr` if this is not a boolean object.
+        [[nodiscard]] bool *as_bool() noexcept;
+
         /// Returns a pointer to the held integer, or `nullptr` if this is not an integer object.
         [[nodiscard]] const std::int64_t *as_integer() const noexcept;
+
+        /// Returns a mutable pointer to the held integer, or `nullptr` if this is not an integer object.
+        [[nodiscard]] std::int64_t *as_integer() noexcept;
 
         /// Returns a pointer to the held real, or `nullptr` if this is not a real object.
         [[nodiscard]] const double *as_real() const noexcept;
 
+        /// Returns a mutable pointer to the held real, or `nullptr` if this is not a real object.
+        [[nodiscard]] double *as_real() noexcept;
+
         /// Returns a pointer to the held string, or `nullptr` if this is not a string object.
         [[nodiscard]] const std::string *as_string() const noexcept;
+
+        /// Returns a mutable pointer to the held string, or `nullptr` if this is not a string object.
+        [[nodiscard]] std::string *as_string() noexcept;
 
         /// Returns a pointer to the held name, or `nullptr` if this is not a name object.
         [[nodiscard]] const name *as_name() const noexcept;
 
+        /// Returns a mutable pointer to the held name, or `nullptr` if this is not a name object.
+        [[nodiscard]] name *as_name() noexcept;
+
         /// Returns a pointer to the held array, or `nullptr` if this is not an array object.
         [[nodiscard]] const array *as_array() const noexcept;
+
+        /// Returns a mutable pointer to the held array, or `nullptr` if this is not an array object.
+        [[nodiscard]] array *as_array() noexcept;
 
         /// Returns a pointer to the held dictionary, or `nullptr` if this is not a dictionary object.
         [[nodiscard]] const dictionary *as_dictionary() const noexcept;
@@ -179,11 +197,17 @@ namespace ripper::pdf::core
         /// Returns a pointer to the held indirect reference, or `nullptr` if this is not an indirect reference object.
         [[nodiscard]] const indirect_reference *as_indirect_reference() const noexcept;
 
+        /// Returns a mutable pointer to the held indirect reference, or `nullptr` if this is not an indirect reference object.
+        [[nodiscard]] indirect_reference *as_indirect_reference() noexcept;
+
         /// Returns the raw underlying variant for use with `std::visit`.
         ///
         /// Prefer the typed `as_*` accessors for single-type access.
         /// Use this when exhaustive matching over all alternatives is needed.
         [[nodiscard]] const variant_type &variant() const noexcept;
+
+        /// Returns a mutable reference to the raw underlying variant.
+        [[nodiscard]] variant_type &variant() noexcept;
 
     private:
         variant_type value_;
@@ -239,40 +263,78 @@ namespace ripper::pdf::core
         /// Returns a pointer to the object for `key`, or `nullptr` if absent.
         [[nodiscard]] const object *get(const std::string &key) const noexcept;
 
+        /// Returns a mutable pointer to the object for `key`, or `nullptr` if absent.
+        [[nodiscard]] object *get(const std::string &key) noexcept;
+
         /// Returns a pointer to the boolean object for `key`,
         /// or `nullptr` if absent or not a boolean.
         [[nodiscard]] const bool *get_bool(const std::string &key) const noexcept;
+
+        /// Returns a mutable pointer to the boolean object for `key`,
+        /// or `nullptr` if absent or not a boolean.
+        [[nodiscard]] bool *get_bool(const std::string &key) noexcept;
 
         /// Returns a pointer to the integer object for `key`,
         /// or `nullptr` if absent or not an integer.
         [[nodiscard]] const std::int64_t *get_integer(const std::string &key) const noexcept;
 
+        /// Returns a mutable pointer to the integer object for `key`,
+        /// or `nullptr` if absent or not an integer.
+        [[nodiscard]] std::int64_t *get_integer(const std::string &key) noexcept;
+
         /// Returns a pointer to the real object for `key`,
         /// or `nullptr` if absent or not a real.
         [[nodiscard]] const double *get_real(const std::string &key) const noexcept;
+
+        /// Returns a mutable pointer to the real object for `key`,
+        /// or `nullptr` if absent or not a real.
+        [[nodiscard]] double *get_real(const std::string &key) noexcept;
 
         /// Returns a pointer to the string object for `key`,
         /// or `nullptr` if absent or not a string.
         [[nodiscard]] const std::string *get_string(const std::string &key) const noexcept;
 
+        /// Returns a mutable pointer to the string object for `key`,
+        /// or `nullptr` if absent or not a string.
+        [[nodiscard]] std::string *get_string(const std::string &key) noexcept;
+
         /// Returns a pointer to the name object for `key`,
         /// or `nullptr` if absent or not a name.
         [[nodiscard]] const name *get_name(const std::string &key) const noexcept;
+
+        /// Returns a mutable pointer to the name object for `key`,
+        /// or `nullptr` if absent or not a name.
+        [[nodiscard]] name *get_name(const std::string &key) noexcept;
 
         /// Returns a pointer to the array object for `key`,
         /// or `nullptr` if absent or not an array.
         [[nodiscard]] const array *get_array(const std::string &key) const noexcept;
 
+        /// Returns a mutable pointer to the array object for `key`,
+        /// or `nullptr` if absent or not an array.
+        [[nodiscard]] array *get_array(const std::string &key) noexcept;
+
         /// Returns a pointer to the nested dictionary object for `key`,
         /// or `nullptr` if absent or not a dictionary.
         [[nodiscard]] const dictionary *get_dictionary(const std::string &key) const noexcept;
+
+        /// Returns a mutable pointer to the nested dictionary object for `key`,
+        /// or `nullptr` if absent or not a dictionary.
+        [[nodiscard]] dictionary *get_dictionary(const std::string &key) noexcept;
 
         /// Returns a pointer to the indirect reference object for `key`,
         /// or `nullptr` if absent or not an indirect reference.
         [[nodiscard]] const indirect_reference *get_indirect_reference(const std::string &key) const noexcept;
 
+        /// Returns a mutable pointer to the indirect reference object for `key`,
+        /// or `nullptr` if absent or not an indirect reference.
+        [[nodiscard]] indirect_reference *get_indirect_reference(const std::string &key) noexcept;
+
         /// Returns the raw underlying map for full traversal or serialization.
         [[nodiscard]] const dictionary_map_type &entries() const noexcept;
+
+        /// Returns a mutable reference to the raw underlying map.
+        [[nodiscard]] dictionary_map_type &entries() noexcept;
 
     private:
         dictionary_map_type entries_;

@@ -31,6 +31,10 @@ int main(int argc, char **argv)
     {
         auto document = ripper::pdf::core::document::create(path);
 
+        (void)document.catalog().pages().add_page();
+        (void)document.catalog().pages().add_page();
+        (void)document.catalog().pages().add_page();
+
         (void)document.save();
 
         std::print("Document saved successfully.\n");

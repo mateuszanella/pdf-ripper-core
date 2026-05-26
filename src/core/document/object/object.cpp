@@ -132,7 +132,17 @@ namespace ripper::pdf::core
         return std::get_if<bool>(&value_);
     }
 
+    bool *object::as_bool() noexcept
+    {
+        return std::get_if<bool>(&value_);
+    }
+
     const std::int64_t *object::as_integer() const noexcept
+    {
+        return std::get_if<std::int64_t>(&value_);
+    }
+
+    std::int64_t *object::as_integer() noexcept
     {
         return std::get_if<std::int64_t>(&value_);
     }
@@ -142,7 +152,17 @@ namespace ripper::pdf::core
         return std::get_if<double>(&value_);
     }
 
+    double *object::as_real() noexcept
+    {
+        return std::get_if<double>(&value_);
+    }
+
     const std::string *object::as_string() const noexcept
+    {
+        return std::get_if<std::string>(&value_);
+    }
+
+    std::string *object::as_string() noexcept
     {
         return std::get_if<std::string>(&value_);
     }
@@ -152,7 +172,17 @@ namespace ripper::pdf::core
         return std::get_if<name>(&value_);
     }
 
+    name *object::as_name() noexcept
+    {
+        return std::get_if<name>(&value_);
+    }
+
     const array *object::as_array() const noexcept
+    {
+        return std::get_if<array>(&value_);
+    }
+
+    array *object::as_array() noexcept
     {
         return std::get_if<array>(&value_);
     }
@@ -206,7 +236,17 @@ namespace ripper::pdf::core
         return std::get_if<indirect_reference>(&value_);
     }
 
+    indirect_reference *object::as_indirect_reference() noexcept
+    {
+        return std::get_if<indirect_reference>(&value_);
+    }
+
     const object::variant_type &object::variant() const noexcept
+    {
+        return value_;
+    }
+
+    object::variant_type &object::variant() noexcept
     {
         return value_;
     }
@@ -276,9 +316,21 @@ namespace ripper::pdf::core
         return it != entries_.end() ? &it->second : nullptr;
     }
 
+    object *dictionary::get(const std::string &key) noexcept
+    {
+        const auto it = entries_.find(key);
+        return it != entries_.end() ? &it->second : nullptr;
+    }
+
     const bool *dictionary::get_bool(const std::string &key) const noexcept
     {
         const auto *object = get(key);
+        return object ? object->as_bool() : nullptr;
+    }
+
+    bool *dictionary::get_bool(const std::string &key) noexcept
+    {
+        auto *object = get(key);
         return object ? object->as_bool() : nullptr;
     }
 
@@ -288,9 +340,21 @@ namespace ripper::pdf::core
         return object ? object->as_integer() : nullptr;
     }
 
+    std::int64_t *dictionary::get_integer(const std::string &key) noexcept
+    {
+        auto *object = get(key);
+        return object ? object->as_integer() : nullptr;
+    }
+
     const double *dictionary::get_real(const std::string &key) const noexcept
     {
         const auto *object = get(key);
+        return object ? object->as_real() : nullptr;
+    }
+
+    double *dictionary::get_real(const std::string &key) noexcept
+    {
+        auto *object = get(key);
         return object ? object->as_real() : nullptr;
     }
 
@@ -300,9 +364,21 @@ namespace ripper::pdf::core
         return object ? object->as_string() : nullptr;
     }
 
+    std::string *dictionary::get_string(const std::string &key) noexcept
+    {
+        auto *object = get(key);
+        return object ? object->as_string() : nullptr;
+    }
+
     const name *dictionary::get_name(const std::string &key) const noexcept
     {
         const auto *object = get(key);
+        return object ? object->as_name() : nullptr;
+    }
+
+    name *dictionary::get_name(const std::string &key) noexcept
+    {
+        auto *object = get(key);
         return object ? object->as_name() : nullptr;
     }
 
@@ -312,9 +388,21 @@ namespace ripper::pdf::core
         return object ? object->as_array() : nullptr;
     }
 
+    array *dictionary::get_array(const std::string &key) noexcept
+    {
+        auto *object = get(key);
+        return object ? object->as_array() : nullptr;
+    }
+
     const dictionary *dictionary::get_dictionary(const std::string &key) const noexcept
     {
         const auto *object = get(key);
+        return object ? object->as_dictionary() : nullptr;
+    }
+
+    dictionary *dictionary::get_dictionary(const std::string &key) noexcept
+    {
+        auto *object = get(key);
         return object ? object->as_dictionary() : nullptr;
     }
 
@@ -324,7 +412,18 @@ namespace ripper::pdf::core
         return object ? object->as_indirect_reference() : nullptr;
     }
 
+    indirect_reference *dictionary::get_indirect_reference(const std::string &key) noexcept
+    {
+        auto *object = get(key);
+        return object ? object->as_indirect_reference() : nullptr;
+    }
+
     const dictionary::dictionary_map_type &dictionary::entries() const noexcept
+    {
+        return entries_;
+    }
+
+    dictionary::dictionary_map_type &dictionary::entries() noexcept
     {
         return entries_;
     }

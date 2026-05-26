@@ -41,6 +41,9 @@ namespace ripper::pdf::core
         void each(const std::function<void(class page &)> &callback);
 
         /// Creates a new page and adds it to the end of the page tree.
-        [[nodiscard]] class page create_page();
+        ///
+        /// Also updates the /Kids and /Count entries on this pages node.
+        /// The new page is returned as a view.
+        [[nodiscard]] class page add_page();
     };
 }
