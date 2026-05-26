@@ -38,20 +38,39 @@ namespace ripper::pdf::core
         auto &xref = doc_.cross_reference_table();
         auto &trl = doc_.trailer().active_trailer();
 
-        auto ref = xref.reserve();
+        // Reserve both references up front so the catalog can reference pages
+        // by indirect reference from the start.
+        auto catalog_ref = xref.reserve();
+        auto pages_ref = xref.reserve();
 
-        dictionary dict;
-        dict.set("Type", object{name{"Catalog"}});
+        // Build the root /Pages node: an empty page tree with zero pages.
+        dictionary pages_dict;
+        pages_dict.set("Type", object{name{"Pages"}});
+        pages_dict.set("Kids", object{array{}});
+        pages_dict.set("Count", object{std::int64_t{0}});
 
-        auto obj = std::make_unique<indirect_object>(object_identity{&doc_, ref}, object{std::move(dict)});
+        auto pages_obj = std::make_unique<indirect_object>(
+            object_identity{&doc_, pages_ref}, object{std::move(pages_dict)});
 
-        auto *raw = xref.commit(ref, std::move(obj));
-        if (!raw)
-            throw logic_exception{"Failed to commit catalog to cross-reference table"};
+        auto *raw_pages = xref.commit(pages_ref, std::move(pages_obj));
+        if (!raw_pages)
+            throw logic_exception{"Failed to commit root Pages object to cross-reference table"};
 
-        trl.dictionary().set("Root", object{ref});
+        // Build the /Catalog pointing at the new /Pages node.
+        dictionary catalog_dict;
+        catalog_dict.set("Type", object{name{"Catalog"}});
+        catalog_dict.set("Pages", object{pages_ref});
 
-        return ripper::pdf::core::catalog{*raw};
+        auto catalog_obj = std::make_unique<indirect_object>(
+            object_identity{&doc_, catalog_ref}, object{std::move(catalog_dict)});
+
+        auto *raw_catalog = xref.commit(catalog_ref, std::move(catalog_obj));
+        if (!raw_catalog)
+            throw logic_exception{"Failed to commit Catalog (Root) object to cross-reference table"};
+
+        trl.dictionary().set("Root", object{catalog_ref});
+
+        return ripper::pdf::core::catalog{*raw_catalog};
     }
 
     document_structure object_factory::parse_structure() const

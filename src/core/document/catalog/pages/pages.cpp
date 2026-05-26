@@ -88,4 +88,9 @@ namespace ripper::pdf::core
             std::invoke(callback, *current_page);
         }
     }
+
+    class page pages::create_page()
+    {
+        throw not_implemented_exception{"pages::create_page is not yet implemented"};
+    }
 }
