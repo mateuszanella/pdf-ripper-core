@@ -64,6 +64,7 @@ namespace ripper::pdf::core
 
         auto &xref = cross_reference_table().active_section();
 
+        // Write all active indirect objects in ascending object number order.
         for (auto [number, entry_ptr] : xref.entries())
         {
             auto &entry = *entry_ptr;
@@ -87,16 +88,13 @@ namespace ripper::pdf::core
             // can be correctly generated later.
             entry.set_offset(static_cast<std::uint64_t>(w.tell()));
 
-            auto data = s.serialize_indirect_object(*obj);
-
-            (void)w.write(data);
+            (void)w.write(s.serialize_indirect_object(*obj));
         }
 
-        // TODO: write xref
-        // TODO: write trailer
+        auto xref_start = static_cast<std::uint64_t>(w.tell());
 
-        constexpr std::string_view eof_marker = "%%EOF\n";
-        (void)w.write(std::as_bytes(std::span{eof_marker.data(), eof_marker.size()}));
+        (void)w.write(s.serialize_cross_reference_section(xref));
+        (void)w.write(s.serialize_trailer(trailer().compiled(), xref_start));
 
         w.close();
 

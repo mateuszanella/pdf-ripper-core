@@ -8,6 +8,7 @@
 #include "core/serializer/header/default_header_serializer.hpp"
 #include "core/serializer/indirect_object/default_indirect_object_serializer.hpp"
 #include "core/serializer/object/default_object_serializer.hpp"
+#include "core/serializer/trailer/default_trailer_serializer.hpp"
 namespace ripper::pdf::core
 {
     serializer_manager::serializer_manager(const document &doc)
@@ -24,6 +25,7 @@ namespace ripper::pdf::core
     {
         object_serializer_ = std::move(object);
         indirect_object_serializer().set_object_serializer(object_serializer());
+        trailer_serializer().set_object_serializer(object_serializer());
     }
 
     void serializer_manager::set_indirect_object_serializer(std::unique_ptr<class indirect_object_serializer> object)
@@ -34,6 +36,11 @@ namespace ripper::pdf::core
     void serializer_manager::set_cross_reference_table_serializer(std::unique_ptr<class cross_reference_table_serializer> object)
     {
         cross_reference_table_serializer_ = std::move(object);
+    }
+
+    void serializer_manager::set_trailer_serializer(std::unique_ptr<class trailer_serializer> object)
+    {
+        trailer_serializer_ = std::move(object);
     }
 
     header_serializer &serializer_manager::header_serializer()
@@ -66,5 +73,13 @@ namespace ripper::pdf::core
             cross_reference_table_serializer_ = std::make_unique<class default_cross_reference_table_serializer>();
 
         return *cross_reference_table_serializer_;
+    }
+
+    trailer_serializer &serializer_manager::trailer_serializer()
+    {
+        if (!trailer_serializer_)
+            trailer_serializer_ = std::make_unique<class default_trailer_serializer>(object_serializer());
+
+        return *trailer_serializer_;
     }
 }

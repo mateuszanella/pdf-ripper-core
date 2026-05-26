@@ -4,6 +4,7 @@
 #include "core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "core/document/cross_reference_table/cross_reference_section.hpp"
 #include "core/document/object/indirect_object.hpp"
+#include "core/document/trailer/trailer.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/serializer/serializer_manager.hpp"
 
@@ -37,6 +38,12 @@ namespace ripper::pdf::core
         /// Emits the `xref` block for `section` only. Use this when interleaving object
         /// writes with xref writes during an incremental update:
         [[nodiscard]] std::vector<std::byte> serialize_cross_reference_section(const cross_reference_section &section);
+
+        /// Serialize a PDF trailer block to a byte buffer.
+        ///
+        /// Emits `trailer\n<<dict>>\nstartxref\n<xref_offset>\n%%EOF\n`.
+        /// Fields that are invalid in a full-save trailer (e.g. `/Prev`) are stripped.
+        [[nodiscard]] std::vector<std::byte> serialize_trailer(const trailer &t, std::uint64_t xref_offset);
 
     private:
         const document &document_;

@@ -7,6 +7,7 @@
 #include "core/serializer/header/header_serializer.hpp"
 #include "core/serializer/indirect_object/indirect_object_serializer.hpp"
 #include "core/serializer/object/object_serializer.hpp"
+#include "core/serializer/trailer/trailer_serializer.hpp"
 
 namespace ripper::pdf::core
 {
@@ -37,6 +38,9 @@ namespace ripper::pdf::core
         /// Replace the cross-reference table serializer implementation.
         void set_cross_reference_table_serializer(std::unique_ptr<class cross_reference_table_serializer> object);
 
+        /// Replace the trailer serializer implementation.
+        void set_trailer_serializer(std::unique_ptr<class trailer_serializer> object);
+
         /// Access the configured header serializer.
         [[nodiscard]] class header_serializer &header_serializer();
 
@@ -49,6 +53,9 @@ namespace ripper::pdf::core
         /// Access the configured cross-reference table serializer.
         [[nodiscard]] class cross_reference_table_serializer &cross_reference_table_serializer();
 
+        /// Access the configured trailer serializer.
+        [[nodiscard]] class trailer_serializer &trailer_serializer();
+
     private:
         const document &document_;
 
@@ -56,5 +63,6 @@ namespace ripper::pdf::core
         std::unique_ptr<class object_serializer> object_serializer_;
         std::unique_ptr<class indirect_object_serializer> indirect_object_serializer_;
         std::unique_ptr<class cross_reference_table_serializer> cross_reference_table_serializer_;
+        std::unique_ptr<class trailer_serializer> trailer_serializer_;
     };
 }

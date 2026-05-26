@@ -44,12 +44,6 @@ namespace ripper::pdf::core
         /// reversing before constructing the manager.
         explicit trailer_manager(std::vector<trailer> trailers) noexcept;
 
-        trailer_manager(const trailer_manager &) = delete;
-        trailer_manager &operator=(const trailer_manager &) = delete;
-
-        trailer_manager(trailer_manager &&) = default;
-        trailer_manager &operator=(trailer_manager &&) = default;
-
         /// Returns a mutable reference to the ordered list of all trailers (oldest first).
         ///
         /// Primarily useful for serialisation and diagnostic tooling that need to

@@ -1,5 +1,6 @@
 #include "core/serializer/serializer.hpp"
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 
@@ -7,6 +8,7 @@
 #include "core/document/cross_reference_table/cross_reference_section.hpp"
 #include "core/document/header.hpp"
 #include "core/document/object/indirect_object.hpp"
+#include "core/document/trailer/trailer.hpp"
 #include "core/serializer/serializer_manager.hpp"
 
 namespace ripper::pdf::core
@@ -38,5 +40,10 @@ namespace ripper::pdf::core
     std::vector<std::byte> serializer::serialize_cross_reference_section(const cross_reference_section &section)
     {
         return manager().cross_reference_table_serializer().serialize(section);
+    }
+
+    std::vector<std::byte> serializer::serialize_trailer(const trailer &t, std::uint64_t xref_offset)
+    {
+        return manager().trailer_serializer().serialize(t, xref_offset);
     }
 }
