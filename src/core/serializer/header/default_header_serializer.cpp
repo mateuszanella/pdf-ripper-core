@@ -16,7 +16,7 @@ namespace ripper::pdf::core
             throw logic_exception{"Header version cannot be empty"};
         }
 
-        const std::string header_line = "%PDF-" + std::string{version} + "\n";
+        const std::string header_line = "%PDF-" + std::string{version} + line_break_character_;
 
         std::vector<std::byte> buffer(header_line.size());
         for (std::size_t i = 0; i < header_line.size(); ++i)

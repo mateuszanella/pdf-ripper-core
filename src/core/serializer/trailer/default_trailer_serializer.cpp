@@ -19,11 +19,16 @@ namespace ripper::pdf::core
     {
         std::vector<std::byte> out;
 
-        byte::append_bytes(out, "trailer\n");
+        byte::append_bytes(out, "trailer");
+        byte::append_bytes(out, line_break_character_);
         byte::append_bytes(out, object_serializer_->serialize(object{t.dictionary()}));
-        byte::append_bytes(out, "startxref\n");
+        byte::append_bytes(out, line_break_character_);
+        byte::append_bytes(out, "startxref");
+        byte::append_bytes(out, line_break_character_);
         byte::append_bytes(out, std::to_string(xref_offset));
-        byte::append_bytes(out, "\n%%EOF\n");
+        byte::append_bytes(out, line_break_character_);
+        byte::append_bytes(out, "%%EOF");
+        byte::append_bytes(out, line_break_character_);
 
         return out;
     }

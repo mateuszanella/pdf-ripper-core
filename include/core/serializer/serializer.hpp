@@ -14,8 +14,6 @@ namespace ripper::pdf::core
     ///
     /// This type orchestrates serialization by delegating to components managed by
     /// `serializer_manager`, and throws on failures.
-    ///
-    /// TODO: centralize logic to set default line breaking and object separators
     class serializer
     {
     public:
@@ -28,6 +26,12 @@ namespace ripper::pdf::core
         ///
         /// Can be used to replace serializer subcomponents.
         [[nodiscard]] class serializer_manager &manager();
+
+        /// Set the character used for line breaks across all sub-serializers (default `\n`).
+        void set_line_break_character(char c);
+
+        /// Set the character used for object-level breaks across all sub-serializers (default `\n`).
+        void set_object_break_character(char c);
 
         /// Serialize a PDF header to a byte buffer.
         [[nodiscard]] std::vector<std::byte> serialize_header(const header &header);

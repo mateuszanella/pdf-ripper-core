@@ -26,5 +26,14 @@ namespace ripper::pdf::core
         ///
         /// The default implementation is a no-op; concrete subclasses should override this.
         virtual void set_object_serializer(class object_serializer &serializer) {}
+
+        /// Set the character used for line breaks in serialized output (default is `\n`).
+        virtual void set_line_break_character(char c)
+        {
+            line_break_character_ = c;
+        }
+
+    protected:
+        char line_break_character_ = '\n';
     };
 }

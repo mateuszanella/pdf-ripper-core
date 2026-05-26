@@ -27,6 +27,16 @@ namespace ripper::pdf::core
         return *manager_;
     }
 
+    void serializer::set_line_break_character(char c)
+    {
+        manager().set_line_break_character(c);
+    }
+
+    void serializer::set_object_break_character(char c)
+    {
+        manager().set_object_break_character(c);
+    }
+
     std::vector<std::byte> serializer::serialize_header(const header &object)
     {
         return manager().header_serializer().serialize(object);

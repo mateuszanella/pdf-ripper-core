@@ -43,6 +43,20 @@ namespace ripper::pdf::core
         trailer_serializer_ = std::move(object);
     }
 
+    void serializer_manager::set_line_break_character(char c)
+    {
+        header_serializer().set_line_break_character(c);
+        object_serializer().set_line_break_character(c);
+        indirect_object_serializer().set_line_break_character(c);
+        trailer_serializer().set_line_break_character(c);
+    }
+
+    void serializer_manager::set_object_break_character(char c)
+    {
+        object_serializer().set_object_break_character(c);
+        indirect_object_serializer().set_object_break_character(c);
+    }
+
     header_serializer &serializer_manager::header_serializer()
     {
         if (!header_serializer_)

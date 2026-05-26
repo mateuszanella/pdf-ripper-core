@@ -41,6 +41,12 @@ namespace ripper::pdf::core
         /// Replace the trailer serializer implementation.
         void set_trailer_serializer(std::unique_ptr<class trailer_serializer> object);
 
+        /// Propagate a line-break character to all sub-serializers.
+        void set_line_break_character(char c);
+
+        /// Propagate an object-break character to all sub-serializers that use it.
+        void set_object_break_character(char c);
+
         /// Access the configured header serializer.
         [[nodiscard]] class header_serializer &header_serializer();
 
