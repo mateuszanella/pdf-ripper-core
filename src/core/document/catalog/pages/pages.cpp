@@ -13,6 +13,117 @@
 
 namespace ripper::pdf::core
 {
+    namespace
+    {
+        /// Resolves every entry in the /Kids array of `node` and dispatches to one of two
+        /// typed callbacks based on the /Type of each resolved object:
+        ///   - on_page(indirect_object &)                      — called for /Type /Page leaves
+        ///   - on_pages(indirect_object &, const dictionary &) — called for /Type /Pages nodes
+        /// Either callback may return false to stop iteration early.
+        /// All resolution and validation errors throw; unknown /Type values also throw.
+        template <typename OnPage, typename OnPages>
+        void for_each_kid(indirect_object &node, OnPage on_page, OnPages on_pages)
+        {
+            const auto *d = node.dictionary();
+            if (!d)
+                throw logic_exception{"Pages node content is not a dictionary"};
+
+            const auto *kids = d->get_array("Kids");
+            if (!kids)
+                throw logic_exception{"Pages node is missing required /Kids entry"};
+
+            for (const auto &kid_obj : *kids)
+            {
+                const auto *ref = kid_obj.as_indirect_reference();
+                if (!ref)
+                    throw logic_exception{"Kid entry is not an indirect reference"};
+
+                auto *resolved = node.identity().owner().resolve_object(*ref);
+                if (!resolved)
+                    throw logic_exception{"Failed to resolve kid reference"};
+
+                const auto *kid_dict = resolved->dictionary();
+                if (!kid_dict)
+                    throw logic_exception{"Kid is not a dictionary"};
+
+                const auto *type_name = kid_dict->get_name("Type");
+                if (!type_name)
+                    throw logic_exception{"Kid is missing /Type entry"};
+
+                if (type_name->value == "Page")
+                {
+                    if (!on_page(*resolved))
+                        return;
+                }
+                else if (type_name->value == "Pages")
+                {
+                    if (!on_pages(*resolved, *kid_dict))
+                        return;
+                }
+                else
+                {
+                    throw logic_exception{"Kid has unexpected /Type: " + type_name->value};
+                }
+            }
+        }
+
+        /// DFS for the nth leaf /Page in the subtree rooted at `node`. `index` is decremented
+        /// for each /Page leaf visited; when it reaches 0 the matching page is returned.
+        /// The caller must ensure index < subtree count.
+        std::optional<page> find_page_by_index(indirect_object &node, std::uint64_t &index)
+        {
+            std::optional<page> result;
+
+            for_each_kid(
+                node,
+                [&](indirect_object &kid) -> bool
+                {
+                    if (index == 0)
+                    {
+                        result = page{kid};
+                        return false;
+                    }
+                    --index;
+                    return true;
+                },
+                [&](indirect_object &kid, const dictionary &kid_dict) -> bool
+                {
+                    const auto *count_ptr = kid_dict.get_integer("Count");
+                    if (!count_ptr)
+                        throw logic_exception{"Intermediate Pages node is missing /Count entry"};
+
+                    const auto subtree_count = static_cast<std::uint64_t>(*count_ptr);
+                    if (index < subtree_count)
+                    {
+                        result = find_page_by_index(kid, index);
+                        return false;
+                    }
+                    index -= subtree_count;
+                    return true;
+                });
+
+            return result;
+        }
+
+        /// DFS of the subtree rooted at `node`, invoking `cb` for every leaf /Page in document order.
+        void walk_each(indirect_object &node, const std::function<void(page &)> &cb)
+        {
+            for_each_kid(
+                node,
+                [&](indirect_object &kid) -> bool
+                {
+                    page pg{kid};
+                    cb(pg);
+                    return true;
+                },
+                [&](indirect_object &kid, const dictionary &) -> bool
+                {
+                    walk_each(kid, cb);
+                    return true;
+                });
+        }
+    }
+
     pages::pages(indirect_object &obj) noexcept
         : object_view(obj)
     {
@@ -33,28 +144,11 @@ namespace ripper::pdf::core
 
     std::optional<class page> pages::page(std::uint64_t index)
     {
-        auto *d = obj().dictionary();
-        if (!d)
-            throw logic_exception{"Pages content is not a dictionary"};
-
-        auto kids = d->get_array("Kids");
-        if (!kids)
-            throw logic_exception{"Pages object is missing required /Kids entry"};
-
-        if (index >= kids->size())
+        if (index >= count())
             return std::nullopt;
 
-        auto kid_obj = (*kids)[index];
-
-        auto *kid_indirect_ref = kid_obj.as_indirect_reference();
-        if (!kid_indirect_ref)
-            throw logic_exception{"Page index " + std::to_string(index) + " is not an indirect reference"};
-
-        auto *resolved = obj().identity().owner().resolve_object(*kid_indirect_ref);
-        if (!resolved)
-            return std::nullopt;
-
-        return ripper::pdf::core::page{*resolved};
+        std::uint64_t remaining = index;
+        return find_page_by_index(obj(), remaining);
     }
 
     std::optional<class page> pages::page(indirect_reference ref)
@@ -79,15 +173,7 @@ namespace ripper::pdf::core
         if (!callback)
             throw logic_exception{"Pages::each callback cannot be empty"};
 
-        const auto total = count();
-        for (std::uint64_t index = 0; index < total; ++index)
-        {
-            auto current_page = page(index);
-            if (!current_page)
-                throw logic_exception{"Pages::each failed to resolve page at index " + std::to_string(index)};
-
-            std::invoke(callback, *current_page);
-        }
+        walk_each(obj(), callback);
     }
 
     class page pages::add_page()

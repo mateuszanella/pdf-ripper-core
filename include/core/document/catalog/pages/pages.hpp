@@ -36,8 +36,6 @@ namespace ripper::pdf::core
         /// Executes `callback` for each page in index order.
         ///
         /// Throws if callback is empty or if an expected page cannot be resolved.
-        ///
-        /// TODO: this logic does not consider the full page tree.
         void each(const std::function<void(class page &)> &callback);
 
         /// Creates a new page and adds it to the end of the page tree.
