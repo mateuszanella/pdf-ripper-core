@@ -223,4 +223,22 @@ namespace ripper::pdf::core
 
         return ripper::pdf::core::page{*raw_page};
     }
+
+    void pages::delete_page(std::uint64_t page_index)
+    {
+        auto page = this->page(page_index);
+        if (!page)
+            return;
+
+        // Should walk up the page tree and decrement the Count of all parents.
+
+        const auto &page_ref = page->obj().identity().reference();
+
+        obj().identity().owner().cross_reference_table().find(page_ref)->mark_deleted();
+    }
+
+    void pages::prune_page(std::uint64_t page_index)
+    {
+        throw logic_exception{"Not implemented: pages::prune_page"};
+    }
 }

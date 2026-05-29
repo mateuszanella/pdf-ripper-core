@@ -68,4 +68,9 @@ namespace ripper::pdf::core
 
         return object_.get();
     }
+
+    void cross_reference_entry::mark_deleted() noexcept
+    {
+        in_use_ = false;
+    }
 }

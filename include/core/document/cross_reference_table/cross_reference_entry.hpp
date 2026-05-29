@@ -89,6 +89,14 @@ namespace ripper::pdf::core
         /// Returns a raw pointer to the cached indirect object, or `nullptr` if `obj` is null.
         [[nodiscard]] class indirect_object *resolve(std::unique_ptr<class indirect_object> obj) noexcept;
 
+        /// Marks this entry as deleted.
+        ///
+        /// This sets the in-use flag to false. The actual logic on wether the entry is removed from
+        /// the document or kept as a free entry is up to the save logic. On full rewrites the entry
+        /// will be pruned from the final object. On incremental updates the entry will be kept but
+        /// marked as free.
+        void mark_deleted() noexcept;
+
     private:
         indirect_reference reference_;
         std::optional<std::uint64_t> offset_;

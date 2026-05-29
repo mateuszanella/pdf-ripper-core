@@ -43,5 +43,15 @@ namespace ripper::pdf::core
         /// Also updates the /Kids and /Count entries on this pages node.
         /// The new page is returned as a view.
         [[nodiscard]] class page add_page();
+
+        /// Deletes the page at `index` in document order.
+        ///
+        /// If `index` is out of range, this is a no-op.
+        void delete_page(std::uint64_t index);
+
+        /// Deletes the page and all child objects at `index` in document order.
+        ///
+        /// If `index` is out of range, this is a no-op.
+        void prune_page(std::uint64_t index);
     };
 }
