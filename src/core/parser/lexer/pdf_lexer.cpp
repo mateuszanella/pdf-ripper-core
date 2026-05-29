@@ -183,7 +183,7 @@ namespace ripper::pdf::core
                 }
             }
 
-            throw parse_exception{"Unterminated literal string"};
+            throw parse_exception{"Unterminated literal string token while parsing string starting at offset " + std::to_string(start)};
         }
 
         if (is_number_start(ch))
@@ -217,7 +217,7 @@ namespace ripper::pdf::core
             const std::string_view lexeme = _content.substr(start, _position - start);
             if (!saw_digit || is_invalid_number_lexeme(lexeme))
             {
-                throw parse_exception{"Invalid numeric token"};
+                throw parse_exception{"Invalid numeric token lexeme: " + std::string(lexeme)};
             }
 
             return lexer_token{
@@ -239,7 +239,7 @@ namespace ripper::pdf::core
 
         if (_position == start)
         {
-            throw parse_exception{"Invalid token"};
+            throw parse_exception{"Unexpected character while lexing: " + std::string(1, ch)};
         }
 
         return lexer_token{lexer_token_type::keyword, _content.substr(start, _position - start)};
@@ -332,7 +332,7 @@ namespace ripper::pdf::core
         if (token.type == lexer_token_type::eof ||
             token.type == lexer_token_type::dictionary_end ||
             token.type == lexer_token_type::array_end)
-            throw parse_exception{"Expected a value but got an invalid or unexpected token"};
+            throw parse_exception{"Expected a value but got an invalid or unexpected token: " + std::string(token.lexeme)};
 
         if (token.type == lexer_token_type::dictionary_begin)
             return skip_compound(lexer_token_type::dictionary_begin, lexer_token_type::dictionary_end);
