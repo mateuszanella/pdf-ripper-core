@@ -23,5 +23,11 @@ namespace ripper::pdf::core
         /// Resolves the /Pages indirect reference through the owning document's
         /// cross-reference table, parsing and caching the indirect_object on first access.
         [[nodiscard]] class pages pages();
+
+        /// Returns the indirect reference to the root /Pages object in this catalog.
+        ///
+        /// This is the value of the /Pages entry in the catalog dictionary and
+        /// identifies the root of the document's page tree.
+        [[nodiscard]] indirect_reference root_pages_indirect_reference();
     };
 }

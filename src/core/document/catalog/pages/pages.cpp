@@ -1,129 +1,21 @@
 #include "core/document/catalog/pages/pages.hpp"
 
+#include <algorithm>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 
 #include "core/document.hpp"
 #include "core/document/catalog/pages/page/page.hpp"
+#include "core/document/catalog/pages/page_tree_node.hpp"
 #include "core/document/object/indirect_object.hpp"
 #include "core/document/object/object.hpp"
 #include "core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {
-    namespace
-    {
-        /// Resolves every entry in the /Kids array of `node` and dispatches to one of two
-        /// typed callbacks based on the /Type of each resolved object:
-        ///   - on_page(indirect_object &)                      — called for /Type /Page leaves
-        ///   - on_pages(indirect_object &, const dictionary &) — called for /Type /Pages nodes
-        /// Either callback may return false to stop iteration early.
-        /// All resolution and validation errors throw; unknown /Type values also throw.
-        template <typename OnPage, typename OnPages>
-        void for_each_kid(indirect_object &node, OnPage on_page, OnPages on_pages)
-        {
-            const auto *d = node.dictionary();
-            if (!d)
-                throw logic_exception{"Pages node content is not a dictionary"};
-
-            const auto *kids = d->get_array("Kids");
-            if (!kids)
-                throw logic_exception{"Pages node is missing required /Kids entry"};
-
-            for (const auto &kid_obj : *kids)
-            {
-                const auto *ref = kid_obj.as_indirect_reference();
-                if (!ref)
-                    throw logic_exception{"Kid entry is not an indirect reference"};
-
-                auto *resolved = node.identity().owner().resolve_object(*ref);
-                if (!resolved)
-                    throw logic_exception{"Failed to resolve kid reference"};
-
-                const auto *kid_dict = resolved->dictionary();
-                if (!kid_dict)
-                    throw logic_exception{"Kid is not a dictionary"};
-
-                const auto *type_name = kid_dict->get_name("Type");
-                if (!type_name)
-                    throw logic_exception{"Kid is missing /Type entry"};
-
-                if (type_name->value == "Page")
-                {
-                    if (!on_page(*resolved))
-                        return;
-                }
-                else if (type_name->value == "Pages")
-                {
-                    if (!on_pages(*resolved, *kid_dict))
-                        return;
-                }
-                else
-                {
-                    throw logic_exception{"Kid has unexpected /Type: " + type_name->value};
-                }
-            }
-        }
-
-        /// DFS for the nth leaf /Page in the subtree rooted at `node`. `index` is decremented
-        /// for each /Page leaf visited; when it reaches 0 the matching page is returned.
-        /// The caller must ensure index < subtree count.
-        std::optional<page> find_page_by_index(indirect_object &node, std::uint64_t &index)
-        {
-            std::optional<page> result;
-
-            for_each_kid(
-                node,
-                [&](indirect_object &kid) -> bool
-                {
-                    if (index == 0)
-                    {
-                        result = page{kid};
-                        return false;
-                    }
-                    --index;
-                    return true;
-                },
-                [&](indirect_object &kid, const dictionary &kid_dict) -> bool
-                {
-                    const auto *count_ptr = kid_dict.get_integer("Count");
-                    if (!count_ptr)
-                        throw logic_exception{"Intermediate Pages node is missing /Count entry"};
-
-                    const auto subtree_count = static_cast<std::uint64_t>(*count_ptr);
-                    if (index < subtree_count)
-                    {
-                        result = find_page_by_index(kid, index);
-                        return false;
-                    }
-                    index -= subtree_count;
-                    return true;
-                });
-
-            return result;
-        }
-
-        /// DFS of the subtree rooted at `node`, invoking `cb` for every leaf /Page in document order.
-        void walk_each(indirect_object &node, const std::function<void(page &)> &cb)
-        {
-            for_each_kid(
-                node,
-                [&](indirect_object &kid) -> bool
-                {
-                    page pg{kid};
-                    cb(pg);
-                    return true;
-                },
-                [&](indirect_object &kid, const dictionary &) -> bool
-                {
-                    walk_each(kid, cb);
-                    return true;
-                });
-        }
-    }
-
     pages::pages(indirect_object &obj) noexcept
         : object_view(obj)
     {
@@ -148,7 +40,30 @@ namespace ripper::pdf::core
             return std::nullopt;
 
         std::uint64_t remaining = index;
-        return find_page_by_index(obj(), remaining);
+
+        std::function<std::optional<class page>(page_tree_node)> find;
+        find = [&](page_tree_node node) -> std::optional<class page>
+        {
+            for (auto kid : node.children())
+            {
+                if (kid.is_leaf())
+                {
+                    if (remaining == 0)
+                        return kid.as_page();
+                    --remaining;
+                }
+                else
+                {
+                    const auto sub = kid.subtree_count();
+                    if (remaining < sub)
+                        return find(kid);
+                    remaining -= sub;
+                }
+            }
+            return std::nullopt;
+        };
+
+        return find(page_tree_node{obj()});
     }
 
     std::optional<class page> pages::page(indirect_reference ref)
@@ -173,7 +88,24 @@ namespace ripper::pdf::core
         if (!callback)
             throw logic_exception{"Pages::each callback cannot be empty"};
 
-        walk_each(obj(), callback);
+        std::function<void(page_tree_node)> walk;
+        walk = [&](page_tree_node node)
+        {
+            for (auto kid : node.children())
+            {
+                if (kid.is_leaf())
+                {
+                    auto pg = *kid.as_page();
+                    callback(pg);
+                }
+                else
+                {
+                    walk(kid);
+                }
+            }
+        };
+
+        walk(page_tree_node{obj()});
     }
 
     class page pages::add_page()
@@ -226,15 +158,48 @@ namespace ripper::pdf::core
 
     void pages::delete_page(std::uint64_t page_index)
     {
-        auto page = this->page(page_index);
-        if (!page)
+        auto pg = this->page(page_index);
+        if (!pg)
             return;
 
-        // Should walk up the page tree and decrement the Count of all parents.
+        const auto &page_ref = pg->obj().identity().reference();
+        auto node = page_tree_node{pg->obj()};
 
-        const auto &page_ref = page->obj().identity().reference();
+        // Remove from parent's /Kids
+        auto maybe_parent = node.parent();
+        if (!maybe_parent)
+            return;
 
-        obj().identity().owner().cross_reference_table().find(page_ref)->mark_deleted();
+        maybe_parent->remove_child(page_ref);
+
+        // Decrement /Count on the immediate parent and every ancestor up to the root
+        auto ancestor = *maybe_parent;
+        while (true)
+        {
+            auto *d = ancestor.obj().dictionary();
+            if (!d)
+                break;
+
+            auto *count_ptr = d->get_integer("Count");
+            if (!count_ptr || *count_ptr <= 0)
+                break;
+
+            d->set("Count", object{*count_ptr - 1});
+
+            if (ancestor.is_root())
+                break;
+
+            auto up = ancestor.parent();
+            if (!up)
+                break;
+
+            ancestor = *up;
+        }
+
+        // Mark the xref entry as deleted so it is pruned on full rewrite
+        auto &xref = pg->obj().identity().owner().cross_reference_table();
+        if (auto *entry = xref.find(page_ref))
+            entry->mark_deleted();
     }
 
     void pages::prune_page(std::uint64_t page_index)

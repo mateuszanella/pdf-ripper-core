@@ -26,4 +26,17 @@ namespace ripper::pdf::core
 
         return ripper::pdf::core::pages{*resolved};
     }
+
+    indirect_reference catalog::root_pages_indirect_reference()
+    {
+        auto *d = obj().dictionary();
+        if (!d)
+            throw parse_exception{"Catalog content is not a dictionary"};
+
+        const auto *pages_ref = d->get_indirect_reference("Pages");
+        if (!pages_ref)
+            throw parse_exception{"Catalog is missing required /Pages reference"};
+
+        return *pages_ref;
+    }
 }
