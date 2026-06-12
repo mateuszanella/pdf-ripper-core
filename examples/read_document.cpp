@@ -6,7 +6,7 @@
 
 namespace
 {
-    bool check_file_open(ripper::pdf::core::reader &reader)
+    bool check_file_open(ripper::io::core::reader &reader)
     {
         if (reader.is_open())
         {

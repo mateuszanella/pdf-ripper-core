@@ -12,15 +12,16 @@
 #include "core/document/trailer/trailer_manager.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/parser.hpp"
-#include "core/reader/file_reader.hpp"
-#include "core/reader/reader.hpp"
+#include "ripper/io/core/reader/file_reader.hpp"
+#include "ripper/io/core/reader/reader.hpp"
+#include "ripper/io/core/writer/file_writer.hpp"
+#include "ripper/io/core/writer/writer.hpp"
 #include "core/serializer/serializer.hpp"
-#include "core/writer/file_writer.hpp"
-#include "core/writer/writer.hpp"
 
 namespace ripper::pdf::core
 {
-    document::document(std::unique_ptr<class reader> reader, std::unique_ptr<class writer> writer)
+        document::document(std::unique_ptr<ripper::io::core::reader> reader,
+                                             std::unique_ptr<ripper::io::core::writer> writer)
         : reader_(std::move(reader)),
           writer_(std::move(writer)),
           factory_(*this)
@@ -34,12 +35,12 @@ namespace ripper::pdf::core
 
     document document::open(const std::filesystem::path &path)
     {
-        return document{std::make_unique<ripper::pdf::core::file_reader>(path), nullptr};
+        return document{std::make_unique<ripper::io::core::file_reader>(path), nullptr};
     }
 
     document document::create(const std::filesystem::path &path)
     {
-        return document{nullptr, std::make_unique<ripper::pdf::core::file_writer>(path)};
+        return document{nullptr, std::make_unique<ripper::io::core::file_writer>(path)};
     }
 
     bool document::save()
@@ -124,7 +125,7 @@ namespace ripper::pdf::core
         return static_cast<bool>(serializer_);
     }
 
-    reader *document::reader() const
+    ripper::io::core::reader *document::reader() const
     {
         return reader_.get();
     }
@@ -134,7 +135,7 @@ namespace ripper::pdf::core
         return parser_.get();
     }
 
-    writer *document::writer() const
+    ripper::io::core::writer *document::writer() const
     {
         return writer_.get();
     }

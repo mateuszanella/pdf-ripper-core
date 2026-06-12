@@ -54,7 +54,8 @@ namespace ripper::pdf::core
      * @todo Technically, this implementation does not really get the last startxref,
      *       since the startxref keyword could appear in the last 1024 bytes multiple times.
      */
-    std::optional<std::size_t> default_document_structure_parser::find_start_xref_offset(reader &reader)
+    std::optional<std::size_t> default_document_structure_parser::find_start_xref_offset(
+        ripper::io::core::reader &reader)
     {
         constexpr std::string_view start_xref_keyword = "startxref";
         constexpr std::size_t line_buffer_size = 256;

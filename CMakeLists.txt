@@ -20,6 +20,18 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # ------------------------------------------------------------------------------
 option(BUILD_EXAMPLES "Build example executables" ON)
 
+set(PDF_RIPPER_CORE_IO_CORE_GIT_REPOSITORY
+    "https://github.com/ripper-org/io-core.git"
+    CACHE STRING
+    "Git repository used when fetching io-core"
+)
+
+set(PDF_RIPPER_CORE_IO_CORE_GIT_TAG
+    "main"
+    CACHE STRING
+    "Git ref (tag/branch/commit) used when fetching io-core"
+)
+
 # ------------------------------------------------------------------------------
 # External dependencies
 # ------------------------------------------------------------------------------
@@ -40,6 +52,14 @@ set(ZLIB_COMPAT ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(zlib-ng)
 
+message(STATUS "Fetching io-core from git: ${PDF_RIPPER_CORE_IO_CORE_GIT_REPOSITORY} (${PDF_RIPPER_CORE_IO_CORE_GIT_TAG})")
+FetchContent_Declare(
+    io_ripper_core
+    GIT_REPOSITORY ${PDF_RIPPER_CORE_IO_CORE_GIT_REPOSITORY}
+    GIT_TAG        ${PDF_RIPPER_CORE_IO_CORE_GIT_TAG}
+)
+FetchContent_MakeAvailable(io_ripper_core)
+
 # ------------------------------------------------------------------------------
 # Library sources
 # ------------------------------------------------------------------------------
@@ -47,6 +67,8 @@ file(GLOB_RECURSE PDF_RIPPER_CORE_SOURCES
     CONFIGURE_DEPENDS
     src/core/*.cpp
 )
+
+# Reader/writer implementations are provided by io-core.
 
 # ------------------------------------------------------------------------------
 # Library target
@@ -69,7 +91,11 @@ target_include_directories(pdf_ripper_core
 # ------------------------------------------------------------------------------
 # Linking
 # ------------------------------------------------------------------------------
-target_link_libraries(pdf_ripper_core PUBLIC zlib-ng)
+target_link_libraries(pdf_ripper_core
+    PUBLIC
+        zlib-ng
+        io_ripper_core::io_ripper_core
+)
 
 # ------------------------------------------------------------------------------
 # Examples

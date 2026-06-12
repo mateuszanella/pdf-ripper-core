@@ -11,7 +11,6 @@
 #include "core/document.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/lexer/pdf_lexer.hpp"
-#include "core/reader/reader.hpp"
 #include "core/util/text.hpp"
 
 namespace ripper::pdf::core

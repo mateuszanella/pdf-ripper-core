@@ -6,7 +6,6 @@
 #include <string_view>
 
 #include "core/exceptions/exception.hpp"
-#include "core/reader/reader.hpp"
 #include "core/document.hpp"
 
 namespace ripper::pdf::core

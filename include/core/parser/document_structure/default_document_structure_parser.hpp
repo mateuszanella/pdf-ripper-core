@@ -10,6 +10,7 @@
 #include "core/parser/document_structure/document_structure_parser.hpp"
 #include "core/parser/trailer/trailer_parser.hpp"
 #include "core/document.hpp"
+#include "ripper/io/core/reader/reader.hpp"
 
 namespace ripper::pdf::core
 {
@@ -31,7 +32,8 @@ namespace ripper::pdf::core
         std::unique_ptr<class cross_reference_table_parser> _xref_parser;
         std::unique_ptr<class trailer_parser> _trailer_parser;
 
-        [[nodiscard]] std::optional<std::size_t> find_start_xref_offset(class reader &reader);
+        [[nodiscard]] std::optional<std::size_t> find_start_xref_offset(
+            ripper::io::core::reader &reader);
         [[nodiscard]] std::optional<std::size_t> extract_prev_offset(const class trailer &trailer);
     };
 }

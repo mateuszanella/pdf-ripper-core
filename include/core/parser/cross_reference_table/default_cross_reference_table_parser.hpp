@@ -5,7 +5,6 @@
 #include "core/document/cross_reference_table/cross_reference_section.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
-#include "core/reader/reader.hpp"
 
 namespace ripper::pdf::core
 {

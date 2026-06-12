@@ -14,9 +14,9 @@
 #include "core/document/trailer/trailer_manager.hpp"
 #include "core/exceptions/exception.hpp"
 #include "core/parser/parser.hpp"
-#include "core/reader/reader.hpp"
+#include "ripper/io/core/reader/reader.hpp"
+#include "ripper/io/core/writer/writer.hpp"
 #include "core/serializer/serializer.hpp"
-#include "core/writer/writer.hpp"
 
 namespace ripper::pdf::core
 {
@@ -48,7 +48,8 @@ namespace ripper::pdf::core
         /// If a document contains a `reader`, but has no `writer`, all objects are read from the
         /// input file and cannot be modified or saved. This can be used to parse and inspect
         /// existing PDF documents.
-        explicit document(std::unique_ptr<class reader> reader, std::unique_ptr<class writer> writer);
+        explicit document(std::unique_ptr<ripper::io::core::reader> reader,
+                  std::unique_ptr<ripper::io::core::writer> writer);
 
         /// Open an existing document at `path` in read mode.
         ///
@@ -84,7 +85,7 @@ namespace ripper::pdf::core
         /// Access the underlying reader backend.
         ///
         /// Returns `nullptr` when no reader is configured.
-        [[nodiscard]] class reader *reader() const;
+        [[nodiscard]] ripper::io::core::reader *reader() const;
 
         /// Access the parser facade.
         ///
@@ -94,7 +95,7 @@ namespace ripper::pdf::core
         /// Access the underlying writer backend.
         ///
         /// Returns `nullptr` when no writer is configured.
-        [[nodiscard]] class writer *writer() const;
+        [[nodiscard]] ripper::io::core::writer *writer() const;
 
         /// Access the serializer facade.
         ///
@@ -139,10 +140,10 @@ namespace ripper::pdf::core
         /// Parse and return the assembled document structure (xref + trailer + histories) (cached).
         [[nodiscard]] class document_structure &structure();
 
-        std::unique_ptr<class reader> reader_;
+        std::unique_ptr<ripper::io::core::reader> reader_;
         std::unique_ptr<class parser> parser_;
 
-        std::unique_ptr<class writer> writer_;
+        std::unique_ptr<ripper::io::core::writer> writer_;
         std::unique_ptr<class serializer> serializer_;
 
         std::optional<class header> header_;
