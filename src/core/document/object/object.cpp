@@ -1,6 +1,6 @@
-#include "core/document/object/object.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
 
-#include "core/document/object/indirect_reference.hpp"
+#include "ripper/pdf/core/document/object/indirect_reference.hpp"
 
 namespace ripper::pdf::core
 {

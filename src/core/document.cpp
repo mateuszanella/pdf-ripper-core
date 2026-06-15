@@ -1,17 +1,17 @@
-#include "core/document.hpp"
+#include "ripper/pdf/core/document.hpp"
 
-#include "core/document/catalog/catalog.hpp"
-#include "core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "core/document/document_structure.hpp"
-#include "core/document/header.hpp"
-#include "core/document/trailer/trailer_manager.hpp"
-#include "core/exceptions/exception.hpp"
-#include "core/parser/parser.hpp"
-#include "core/serializer/serializer.hpp"
 #include "ripper/io/core/reader/file_reader.hpp"
 #include "ripper/io/core/reader/reader.hpp"
 #include "ripper/io/core/writer/file_writer.hpp"
 #include "ripper/io/core/writer/writer.hpp"
+#include "ripper/pdf/core/document/catalog/catalog.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
+#include "ripper/pdf/core/document/document_structure.hpp"
+#include "ripper/pdf/core/document/header.hpp"
+#include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/parser/parser.hpp"
+#include "ripper/pdf/core/serializer/serializer.hpp"
 
 #include <memory>
 #include <span>

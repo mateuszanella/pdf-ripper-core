@@ -1,6 +1,6 @@
-#include "core/serializer/header/default_header_serializer.hpp"
+#include "ripper/pdf/core/serializer/header/default_header_serializer.hpp"
 
-#include "core/exceptions/exception.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <string_view>
 #include <vector>

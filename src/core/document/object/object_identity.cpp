@@ -1,6 +1,6 @@
-#include "core/document.hpp"
-#include "core/document/object/indirect_object.hpp"
-#include "core/document/object/indirect_reference.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/indirect_reference.hpp"
 
 #include <cassert>
 

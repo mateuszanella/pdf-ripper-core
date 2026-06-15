@@ -1,10 +1,10 @@
-#include "core/serializer/object/default_object_serializer.hpp"
+#include "ripper/pdf/core/serializer/object/default_object_serializer.hpp"
 
-#include "core/document/object/indirect_reference.hpp"
-#include "core/document/object/object.hpp"
-#include "core/exceptions/exception.hpp"
-#include "core/util/byte.hpp"
-#include "core/util/text.hpp"
+#include "ripper/pdf/core/document/object/indirect_reference.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/util/byte.hpp"
+#include "ripper/pdf/core/util/text.hpp"
 
 #include <memory>
 #include <sstream>

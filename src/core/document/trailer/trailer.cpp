@@ -1,7 +1,7 @@
-#include "core/document/trailer/trailer.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 
-#include "core/document/object/object.hpp"
-#include "core/exceptions/exception.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {

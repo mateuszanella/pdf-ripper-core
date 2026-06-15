@@ -1,7 +1,7 @@
-#include "core/parser/lexer/pdf_lexer.hpp"
+#include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
 
-#include "core/exceptions/exception.hpp"
-#include "core/util/text.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/util/text.hpp"
 
 #include <cctype>
 #include <limits>

@@ -1,7 +1,7 @@
-#include "core/parser/header/header_parser.hpp"
+#include "ripper/pdf/core/parser/header/header_parser.hpp"
 
-#include "core/document.hpp"
-#include "core/exceptions/exception.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <array>
 #include <cctype>

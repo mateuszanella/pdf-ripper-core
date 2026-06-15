@@ -1,4 +1,4 @@
-#include "core/document/object/object_view.hpp"
+#include "ripper/pdf/core/document/object/object_view.hpp"
 
 namespace ripper::pdf::core
 {

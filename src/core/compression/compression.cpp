@@ -1,6 +1,6 @@
-#include "core/compression/compression.hpp"
+#include "ripper/pdf/core/compression/compression.hpp"
 
-#include "core/exceptions/exception.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <string>
 #include <zlib.h>

@@ -1,4 +1,4 @@
-#include "core/document/cross_reference_table/cross_reference_subsection.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
 
 namespace ripper::pdf::core
 {

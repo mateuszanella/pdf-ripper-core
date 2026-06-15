@@ -1,8 +1,8 @@
 #include <filesystem>
 #include <print>
 
-#include "core/document.hpp"
-#include "core/exceptions/exception.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 
 namespace
 {

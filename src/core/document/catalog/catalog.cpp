@@ -1,9 +1,9 @@
-#include "core/document/catalog/catalog.hpp"
+#include "ripper/pdf/core/document/catalog/catalog.hpp"
 
-#include "core/document.hpp"
-#include "core/document/catalog/pages/pages.hpp"
-#include "core/document/object/object_view.hpp"
-#include "core/exceptions/exception.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document/catalog/pages/pages.hpp"
+#include "ripper/pdf/core/document/object/object_view.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core
 {

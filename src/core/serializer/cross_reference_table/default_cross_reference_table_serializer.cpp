@@ -1,8 +1,8 @@
-#include "core/serializer/cross_reference_table/default_cross_reference_table_serializer.hpp"
+#include "ripper/pdf/core/serializer/cross_reference_table/default_cross_reference_table_serializer.hpp"
 
-#include "core/document/cross_reference_table/cross_reference_entry.hpp"
-#include "core/document/cross_reference_table/cross_reference_section.hpp"
-#include "core/util/byte.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/util/byte.hpp"
 
 #include <cstdint>
 #include <iomanip>

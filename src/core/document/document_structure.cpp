@@ -1,4 +1,4 @@
-#include "core/document/document_structure.hpp"
+#include "ripper/pdf/core/document/document_structure.hpp"
 
 #include <utility>
 

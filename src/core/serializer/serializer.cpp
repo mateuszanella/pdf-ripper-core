@@ -1,11 +1,11 @@
-#include "core/serializer/serializer.hpp"
+#include "ripper/pdf/core/serializer/serializer.hpp"
 
-#include "core/document.hpp"
-#include "core/document/cross_reference_table/cross_reference_section.hpp"
-#include "core/document/header.hpp"
-#include "core/document/object/indirect_object.hpp"
-#include "core/document/trailer/trailer.hpp"
-#include "core/serializer/serializer_manager.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/header.hpp"
+#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
+#include "ripper/pdf/core/serializer/serializer_manager.hpp"
 
 #include <cstdint>
 #include <memory>

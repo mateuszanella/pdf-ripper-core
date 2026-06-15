@@ -1,11 +1,11 @@
-#include "core/parser/default_object_parser.hpp"
+#include "ripper/pdf/core/parser/default_object_parser.hpp"
 
-#include "core/document.hpp"
-#include "core/document/object/indirect_object.hpp"
-#include "core/document/object/object.hpp"
-#include "core/document/object/stream.hpp"
-#include "core/parser/lexer/pdf_lexer.hpp"
-#include "core/parser/value_parsing.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/object/stream.hpp"
+#include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
+#include "ripper/pdf/core/parser/value_parsing.hpp"
 
 #include <cstring>
 #include <string_view>

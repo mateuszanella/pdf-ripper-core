@@ -1,4 +1,4 @@
-#include "core/document/header.hpp"
+#include "ripper/pdf/core/document/header.hpp"
 
 namespace ripper::pdf::core
 {

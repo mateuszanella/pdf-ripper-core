@@ -1,6 +1,6 @@
-#include "core/document/trailer/trailer_manager.hpp"
+#include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 
-#include "core/document/object/object.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
 
 #include <utility>
 

@@ -1,12 +1,12 @@
-#include "core/parser/trailer/default_trailer_parser.hpp"
+#include "ripper/pdf/core/parser/trailer/default_trailer_parser.hpp"
 
-#include "core/document/identifier.hpp"
-#include "core/document/object/object.hpp"
-#include "core/document/trailer/trailer.hpp"
-#include "core/exceptions/exception.hpp"
-#include "core/parser/lexer/pdf_lexer.hpp"
-#include "core/parser/value_parsing.hpp"
-#include "core/util/text.hpp"
+#include "ripper/pdf/core/document/identifier.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
+#include "ripper/pdf/core/parser/value_parsing.hpp"
+#include "ripper/pdf/core/util/text.hpp"
 
 #include <limits>
 #include <string>

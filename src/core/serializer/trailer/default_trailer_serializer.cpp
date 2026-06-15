@@ -1,8 +1,8 @@
-#include "core/serializer/trailer/default_trailer_serializer.hpp"
+#include "ripper/pdf/core/serializer/trailer/default_trailer_serializer.hpp"
 
-#include "core/document/object/object.hpp"
-#include "core/document/trailer/trailer.hpp"
-#include "core/util/byte.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
+#include "ripper/pdf/core/util/byte.hpp"
 
 #include <string>
 #include <vector>

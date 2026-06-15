@@ -1,7 +1,7 @@
-#include "core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/indirect_object.hpp"
 
-#include "core/document/object/object.hpp"
-#include "core/document/object/stream.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/object/stream.hpp"
 namespace ripper::pdf::core
 {
 indirect_object::indirect_object(object_identity identity, class object content) noexcept

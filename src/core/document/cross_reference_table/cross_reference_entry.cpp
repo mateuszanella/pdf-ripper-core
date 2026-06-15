@@ -1,7 +1,7 @@
-#include "core/document/cross_reference_table/cross_reference_entry.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 
-#include "core/document/object/indirect_object.hpp"
-#include "core/document/object/object.hpp"
+#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
 
 namespace ripper::pdf::core
 {

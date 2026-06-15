@@ -1,10 +1,10 @@
-#include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
+#include "ripper/pdf/core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 
-#include "core/document/cross_reference_table/cross_reference_entry.hpp"
-#include "core/document/cross_reference_table/cross_reference_section.hpp"
-#include "core/document/object/object.hpp"
-#include "core/exceptions/exception.hpp"
-#include "core/util/text.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/util/text.hpp"
 
 #include <charconv>
 #include <string>

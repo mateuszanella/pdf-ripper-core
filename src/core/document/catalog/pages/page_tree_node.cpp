@@ -1,13 +1,13 @@
-#include "core/document/catalog/pages/page_tree_node.hpp"
+#include "ripper/pdf/core/document/catalog/pages/page_tree_node.hpp"
 
-#include "core/document.hpp"
-#include "core/document/catalog/catalog.hpp"
-#include "core/document/catalog/pages/page/page.hpp"
-#include "core/document/catalog/pages/pages.hpp"
-#include "core/document/object/indirect_object.hpp"
-#include "core/document/object/indirect_reference.hpp"
-#include "core/document/object/object.hpp"
-#include "core/exceptions/exception.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document/catalog/catalog.hpp"
+#include "ripper/pdf/core/document/catalog/pages/page/page.hpp"
+#include "ripper/pdf/core/document/catalog/pages/pages.hpp"
+#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/indirect_reference.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <algorithm>
 #include <cstdint>

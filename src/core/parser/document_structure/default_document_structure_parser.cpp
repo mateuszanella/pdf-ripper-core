@@ -1,13 +1,13 @@
-#include "core/parser/document_structure/default_document_structure_parser.hpp"
+#include "ripper/pdf/core/parser/document_structure/default_document_structure_parser.hpp"
 
-#include "core/document.hpp"
-#include "core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "core/document/cross_reference_table/cross_reference_section.hpp"
-#include "core/document/trailer/trailer_manager.hpp"
-#include "core/exceptions/exception.hpp"
-#include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
-#include "core/parser/trailer/default_trailer_parser.hpp"
-#include "core/util/text.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
+#include "ripper/pdf/core/parser/trailer/default_trailer_parser.hpp"
+#include "ripper/pdf/core/util/text.hpp"
 
 #include <algorithm>
 #include <array>

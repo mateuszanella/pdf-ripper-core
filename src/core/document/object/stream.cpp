@@ -1,4 +1,4 @@
-#include "core/document/object/stream.hpp"
+#include "ripper/pdf/core/document/object/stream.hpp"
 
 namespace ripper::pdf::core
 {

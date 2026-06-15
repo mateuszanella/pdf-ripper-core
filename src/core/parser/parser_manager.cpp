@@ -1,16 +1,16 @@
-#include "core/parser/parser_manager.hpp"
+#include "ripper/pdf/core/parser/parser_manager.hpp"
 
-#include "core/document.hpp"
-#include "core/parser/cross_reference_table/cross_reference_table_parser.hpp"
-#include "core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
-#include "core/parser/default_object_parser.hpp"
-#include "core/parser/document_structure/default_document_structure_parser.hpp"
-#include "core/parser/document_structure/document_structure_parser.hpp"
-#include "core/parser/header/header_parser.hpp"
-#include "core/parser/indirect_object_resolver.hpp"
-#include "core/parser/object_parser.hpp"
-#include "core/parser/trailer/default_trailer_parser.hpp"
-#include "core/parser/trailer/trailer_parser.hpp"
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/parser/cross_reference_table/cross_reference_table_parser.hpp"
+#include "ripper/pdf/core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
+#include "ripper/pdf/core/parser/default_object_parser.hpp"
+#include "ripper/pdf/core/parser/document_structure/default_document_structure_parser.hpp"
+#include "ripper/pdf/core/parser/document_structure/document_structure_parser.hpp"
+#include "ripper/pdf/core/parser/header/header_parser.hpp"
+#include "ripper/pdf/core/parser/indirect_object_resolver.hpp"
+#include "ripper/pdf/core/parser/object_parser.hpp"
+#include "ripper/pdf/core/parser/trailer/default_trailer_parser.hpp"
+#include "ripper/pdf/core/parser/trailer/trailer_parser.hpp"
 
 #include <memory>
 #include <utility>

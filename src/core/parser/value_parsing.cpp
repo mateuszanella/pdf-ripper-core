@@ -1,7 +1,7 @@
-#include "core/parser/value_parsing.hpp"
+#include "ripper/pdf/core/parser/value_parsing.hpp"
 
-#include "core/exceptions/exception.hpp"
-#include "core/util/text.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/util/text.hpp"
 
 #include <charconv>
 #include <limits>
