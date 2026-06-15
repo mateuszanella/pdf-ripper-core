@@ -1,0 +1,43 @@
+---
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  cert-*,
+  cppcoreguidelines-avoid-c-arrays,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-narrowing-conversions,
+  cppcoreguidelines-no-malloc,
+  cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  cppcoreguidelines-pro-bounds-constant-array-index,
+  cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  cppcoreguidelines-pro-type-const-cast,
+  cppcoreguidelines-pro-type-cstyle-cast,
+  cppcoreguidelines-pro-type-reinterpret-cast,
+  cppcoreguidelines-pro-type-vararg,
+  cppcoreguidelines-slicing,
+  cppcoreguidelines-special-member-functions,
+  cppcoreguidelines-virtual-class-destructor,
+  modernize-use-nullptr,
+  performance-no-int-to-ptr,
+  readability-container-size-empty,
+  readability-delete-null-pointer,
+  readability-implicit-bool-conversion,
+  readability-redundant-control-flow,
+  readability-simplify-boolean-expr,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-type-member-init,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-pro-type-static-cast-downcast,
+  -cppcoreguidelines-interfaces-global-init,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -readability-magic-numbers
+WarningsAsErrors: ''
+HeaderFilterRegex: '^(include|src)/'
+FormatStyle: file
+CheckOptions:
+  - key: readability-implicit-bool-conversion.AllowIntegerConditions
+    value: '1'
+...

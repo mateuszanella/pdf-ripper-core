@@ -1,0 +1,25 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: Latest
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+SpaceBeforeParens: ControlStatements
+PointerAlignment: Left
+ReferenceAlignment: Left
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+NamespaceIndentation: None
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+AccessModifierOffset: -4
+IndentCaseLabels: true
+Cpp11BracedListStyle: true
+ReflowComments: true
+...
