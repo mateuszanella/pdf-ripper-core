@@ -7,6 +7,21 @@
 
 namespace ripper::pdf::core
 {
+namespace
+{
+
+[[nodiscard]] Bytef* as_zlib_buffer(std::byte* p) noexcept
+{
+    return reinterpret_cast<Bytef*>(p); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+}
+
+[[nodiscard]] const Bytef* as_zlib_buffer(const std::byte* p) noexcept
+{
+    return reinterpret_cast<const Bytef*>(p); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+}
+
+} // namespace
+
 std::vector<std::byte> compression::compress(std::span<const std::byte> input)
 {
     if (input.empty())
@@ -18,12 +33,8 @@ std::vector<std::byte> compression::compress(std::span<const std::byte> input)
     std::vector<std::byte> output(maxSize);
 
     uLongf compressedSize = maxSize;
-    const int result =
-        ::compress(reinterpret_cast<Bytef*>(output.data()),
-                   &compressedSize, // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                   reinterpret_cast<const Bytef*>(
-                       input.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                   static_cast<uLong>(input.size()));
+    const int result = ::compress(as_zlib_buffer(output.data()), &compressedSize,
+                                  as_zlib_buffer(input.data()), static_cast<uLong>(input.size()));
 
     if (result != Z_OK)
     {
@@ -59,12 +70,8 @@ std::vector<std::byte> compression::decompress(std::span<const std::byte> input)
         uLongf decompressedSize = static_cast<uLongf>(outputSize);
 
         const int result =
-            uncompress(reinterpret_cast<Bytef*>(
-                           output.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                       &decompressedSize,
-                       reinterpret_cast<const Bytef*>(
-                           input.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                       static_cast<uLong>(input.size()));
+            uncompress(as_zlib_buffer(output.data()), &decompressedSize,
+                       as_zlib_buffer(input.data()), static_cast<uLong>(input.size()));
 
         if (result == Z_OK)
         {
@@ -103,12 +110,8 @@ std::vector<std::byte> compression::decompress(std::span<const std::byte> input,
     std::vector<std::byte> output(expectedSize);
     uLongf decompressedSize = static_cast<uLongf>(expectedSize);
 
-    const int result =
-        uncompress(reinterpret_cast<Bytef*>(output.data()),
-                   &decompressedSize, // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                   reinterpret_cast<const Bytef*>(
-                       input.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                   static_cast<uLong>(input.size()));
+    const int result = uncompress(as_zlib_buffer(output.data()), &decompressedSize,
+                                  as_zlib_buffer(input.data()), static_cast<uLong>(input.size()));
 
     if (result != Z_OK)
     {

@@ -2,7 +2,6 @@
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
-#include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
