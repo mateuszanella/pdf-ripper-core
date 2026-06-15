@@ -5,10 +5,10 @@
 
 namespace ripper::pdf::core
 {
-    class document_structure_parser
-    {
-    public:
-        virtual ~document_structure_parser() = default;
-        virtual document_structure parse() = 0;
-    };
-}
+class document_structure_parser
+{
+public:
+    virtual ~document_structure_parser() = default;
+    virtual document_structure parse() = 0;
+};
+} // namespace ripper::pdf::core

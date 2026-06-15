@@ -1,21 +1,21 @@
 #pragma once
 
-#include <string>
-#include <optional>
-#include <vector>
-
 #include "core/document.hpp"
+
+#include <optional>
+#include <string>
+#include <vector>
 
 namespace ripper::pdf::core
 {
-    class header_parser
-    {
-    public:
-        explicit header_parser(const document &document);
+class header_parser
+{
+public:
+    explicit header_parser(const document& document);
 
-        [[nodiscard]] header parse();
+    [[nodiscard]] header parse();
 
-    private:
-        const document &_document;
-    };
-}
+private:
+    const document& _document;
+};
+} // namespace ripper::pdf::core

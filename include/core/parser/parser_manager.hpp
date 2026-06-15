@@ -4,74 +4,75 @@
 
 namespace ripper::pdf::core
 {
-    class document;
-    class header_parser;
-    class cross_reference_table_parser;
-    class trailer_parser;
-    class object_parser;
-    class document_structure_parser;
-    class indirect_object_resolver;
+class document;
+class header_parser;
+class cross_reference_table_parser;
+class trailer_parser;
+class object_parser;
+class document_structure_parser;
+class indirect_object_resolver;
 
-    /// Owns and exposes the parser subcomponents used to process a `document`.
+/// Owns and exposes the parser subcomponents used to process a `document`.
+///
+/// This type centralizes parser dependencies and enables runtime injection
+/// of concrete parser implementations (useful for composition and testing).
+/// All injected components are owned via `std::unique_ptr`.
+class parser_manager
+{
+public:
+    /// Construct a manager bound to `doc`.
     ///
-    /// This type centralizes parser dependencies and enables runtime injection
-    /// of concrete parser implementations (useful for composition and testing).
-    /// All injected components are owned via `std::unique_ptr`.
-    class parser_manager
-    {
-    public:
-        /// Construct a manager bound to `doc`.
-        ///
-        /// The manager stores a reference and does not take ownership of the document.
-        explicit parser_manager(document &doc);
+    /// The manager stores a reference and does not take ownership of the document.
+    explicit parser_manager(document& doc);
 
-        /// Destroy the manager and all owned parser components.
-        ~parser_manager();
+    /// Destroy the manager and all owned parser components.
+    ~parser_manager();
 
-        /// Replace the header parser implementation.
-        void set_header_parser(std::unique_ptr<class header_parser> object);
+    /// Replace the header parser implementation.
+    void set_header_parser(std::unique_ptr<class header_parser> object);
 
-        /// Replace the cross-reference-table parser implementation.
-        void set_cross_reference_table_parser(std::unique_ptr<class cross_reference_table_parser> object);
+    /// Replace the cross-reference-table parser implementation.
+    void
+    set_cross_reference_table_parser(std::unique_ptr<class cross_reference_table_parser> object);
 
-        /// Replace the trailer parser implementation.
-        void set_trailer_parser(std::unique_ptr<class trailer_parser> object);
+    /// Replace the trailer parser implementation.
+    void set_trailer_parser(std::unique_ptr<class trailer_parser> object);
 
-        /// Replace the document-structure parser implementation.
-        void set_document_structure_parser(std::unique_ptr<class document_structure_parser> object);
+    /// Replace the document-structure parser implementation.
+    void set_document_structure_parser(std::unique_ptr<class document_structure_parser> object);
 
-        /// Replace the indirect-indirect_object resolver implementation.
-        void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> object);
+    /// Replace the indirect-indirect_object resolver implementation.
+    void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> object);
 
-        /// Replace the indirect_object parser implementation.
-        void set_object_parser(std::unique_ptr<class object_parser> object);
+    /// Replace the indirect_object parser implementation.
+    void set_object_parser(std::unique_ptr<class object_parser> object);
 
-        /// Access the configured header parser.
-        [[nodiscard]] class header_parser &header_parser();
+    /// Access the configured header parser.
+    [[nodiscard]] class header_parser& header_parser();
 
-        /// Access the configured cross-reference-table parser.
-        [[nodiscard]] class cross_reference_table_parser &cross_reference_table_parser();
+    /// Access the configured cross-reference-table parser.
+    [[nodiscard]] class cross_reference_table_parser& cross_reference_table_parser();
 
-        /// Access the configured trailer parser.
-        [[nodiscard]] class trailer_parser &trailer_parser();
+    /// Access the configured trailer parser.
+    [[nodiscard]] class trailer_parser& trailer_parser();
 
-        /// Access the configured document-structure parser.
-        [[nodiscard]] class document_structure_parser &document_structure_parser();
+    /// Access the configured document-structure parser.
+    [[nodiscard]] class document_structure_parser& document_structure_parser();
 
-        /// Access the configured indirect-indirect_object resolver.
-        [[nodiscard]] class indirect_object_resolver &object_resolver();
+    /// Access the configured indirect-indirect_object resolver.
+    [[nodiscard]] class indirect_object_resolver& object_resolver();
 
-        /// Access the configured indirect_object parser.
-        [[nodiscard]] class object_parser &object_parser();
+    /// Access the configured indirect_object parser.
+    [[nodiscard]] class object_parser& object_parser();
 
-    private:
-        document &document_;
+private:
+    document& document_;
 
-        std::unique_ptr<class header_parser> header_parser_;
-        std::unique_ptr<class cross_reference_table_parser> xref_parser_;
-        std::unique_ptr<class trailer_parser> trailer_parser_;
-        std::unique_ptr<class document_structure_parser> structure_parser_;
-        std::unique_ptr<class indirect_object_resolver> object_resolver_;
-        std::unique_ptr<class object_parser> object_parser_;
-    };
-}
+    std::unique_ptr<class header_parser> header_parser_;
+    std::unique_ptr<class cross_reference_table_parser> xref_parser_;
+    std::unique_ptr<class trailer_parser> trailer_parser_;
+    std::unique_ptr<class document_structure_parser> structure_parser_;
+    std::unique_ptr<class indirect_object_resolver> object_resolver_;
+    std::unique_ptr<class object_parser> object_parser_;
+};
+} // namespace ripper::pdf::core

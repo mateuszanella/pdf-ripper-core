@@ -1,12 +1,5 @@
 #include "core/document/catalog/pages/pages.hpp"
 
-#include <algorithm>
-#include <cstdint>
-#include <functional>
-#include <memory>
-#include <optional>
-#include <string>
-
 #include "core/document.hpp"
 #include "core/document/catalog/pages/page/page.hpp"
 #include "core/document/catalog/pages/page_tree_node.hpp"
@@ -14,196 +7,199 @@
 #include "core/document/object/object.hpp"
 #include "core/exceptions/exception.hpp"
 
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+
 namespace ripper::pdf::core
 {
-    pages::pages(indirect_object &obj) noexcept
-        : object_view(obj)
-    {
-    }
+pages::pages(indirect_object& obj) noexcept : object_view(obj) {}
 
-    std::uint64_t pages::count() const
-    {
-        auto *d = obj().dictionary();
-        if (!d)
-            throw logic_exception{"Pages content is not a dictionary"};
+std::uint64_t pages::count() const
+{
+    auto* d = obj().dictionary();
+    if (!d)
+        throw logic_exception{"Pages content is not a dictionary"};
 
-        auto count = d->get_integer("Count");
-        if (!count)
-            throw logic_exception{"Pages indirect_object is missing required /Count entry"};
+    auto count = d->get_integer("Count");
+    if (!count)
+        throw logic_exception{"Pages indirect_object is missing required /Count entry"};
 
-        return static_cast<std::uint64_t>(*count);
-    }
-
-    std::optional<class page> pages::page(std::uint64_t index)
-    {
-        if (index >= count())
-            return std::nullopt;
-
-        std::uint64_t remaining = index;
-
-        std::function<std::optional<class page>(page_tree_node)> find;
-        find = [&](page_tree_node node) -> std::optional<class page>
-        {
-            for (auto kid : node.children())
-            {
-                if (kid.is_leaf())
-                {
-                    if (remaining == 0)
-                        return kid.as_page();
-                    --remaining;
-                }
-                else
-                {
-                    const auto sub = kid.subtree_count();
-                    if (remaining < sub)
-                        return find(kid);
-                    remaining -= sub;
-                }
-            }
-            return std::nullopt;
-        };
-
-        return find(page_tree_node{obj()});
-    }
-
-    std::optional<class page> pages::page(indirect_reference ref)
-    {
-        auto *resolved = obj().identity().owner().resolve_object(ref);
-        if (!resolved)
-            return std::nullopt;
-
-        auto *d = resolved->dictionary();
-        if (!d)
-            throw logic_exception{"Page reference " + std::to_string(ref.object_number()) + " is not a dictionary"};
-
-        auto type = d->get_name("Type");
-        if (!type || type->value != "Page")
-            throw logic_exception{"Page reference " + std::to_string(ref.object_number()) + " does not have /Type /Page"};
-
-        return ripper::pdf::core::page{*resolved};
-    }
-
-    void pages::each(const std::function<void(class page &)> &callback)
-    {
-        if (!callback)
-            throw logic_exception{"Pages::each callback cannot be empty"};
-
-        std::function<void(page_tree_node)> walk;
-        walk = [&](page_tree_node node)
-        {
-            for (auto kid : node.children())
-            {
-                if (kid.is_leaf())
-                {
-                    auto pg = *kid.as_page();
-                    callback(pg);
-                }
-                else
-                {
-                    walk(kid);
-                }
-            }
-        };
-
-        walk(page_tree_node{obj()});
-    }
-
-    class page pages::add_page()
-    {
-        auto &doc = obj().identity().owner();
-        auto &xref = doc.cross_reference_table();
-
-        const auto page_ref = xref.reserve();
-
-        // This should in fact be a parameter
-        array mediabox{
-            object{std::int64_t{0}},
-            object{std::int64_t{0}},
-            object{std::int64_t{612}},
-            object{std::int64_t{792}}};
-
-        ripper::pdf::core::dictionary page_dict;
-        page_dict.set("Type", object{name{"Page"}});
-        page_dict.set("Parent", object{obj().identity().reference()});
-        page_dict.set("MediaBox", object{std::move(mediabox)});
-
-        auto page_obj = std::make_unique<indirect_object>(
-            object_identity{&doc, page_ref}, object{std::move(page_dict)});
-
-        auto *raw_page = xref.commit(page_ref, std::move(page_obj));
-        if (!raw_page)
-            throw logic_exception{"Failed to commit page to cross-reference table"};
-
-        // Update /Kids and /Count on this pages node
-        auto *d = obj().dictionary();
-        if (!d)
-            throw logic_exception{"Pages content is not a dictionary"};
-
-        if (!d->get_array("Kids"))
-            d->set("Kids", object{array{}});
-
-        auto *kids = d->get_array("Kids");
-        kids->push_back(object{page_ref});
-
-        std::uint64_t count = 0;
-
-        const auto *count_ptr = d->get_integer("Count");
-        if (count_ptr)
-            count = static_cast<std::uint64_t>(*count_ptr);
-
-        d->set("Count", object{static_cast<std::int64_t>(count + 1)});
-
-        return ripper::pdf::core::page{*raw_page};
-    }
-
-    void pages::delete_page(std::uint64_t page_index)
-    {
-        auto pg = this->page(page_index);
-        if (!pg)
-            return;
-
-        const auto &page_ref = pg->obj().identity().reference();
-        auto node = page_tree_node{pg->obj()};
-
-        // Remove from parent's /Kids
-        auto maybe_parent = node.parent();
-        if (!maybe_parent)
-            return;
-
-        maybe_parent->remove_child(page_ref);
-
-        // Decrement /Count on the immediate parent and every ancestor up to the root
-        auto ancestor = *maybe_parent;
-        while (true)
-        {
-            auto *d = ancestor.obj().dictionary();
-            if (!d)
-                break;
-
-            auto *count_ptr = d->get_integer("Count");
-            if (!count_ptr || *count_ptr <= 0)
-                break;
-
-            d->set("Count", object{*count_ptr - 1});
-
-            if (ancestor.is_root())
-                break;
-
-            auto up = ancestor.parent();
-            if (!up)
-                break;
-
-            ancestor = *up;
-        }
-
-        // Mark the xref entry as deleted so it is pruned on full rewrite
-        auto &xref = pg->obj().identity().owner().cross_reference_table();
-        if (auto *entry = xref.find(page_ref))
-            entry->mark_deleted();
-    }
-
-    void pages::prune_page(std::uint64_t page_index)
-    {
-        throw logic_exception{"Not implemented: pages::prune_page"};
-    }
+    return static_cast<std::uint64_t>(*count);
 }
+
+std::optional<class page> pages::page(std::uint64_t index)
+{
+    if (index >= count())
+        return std::nullopt;
+
+    std::uint64_t remaining = index;
+
+    std::function<std::optional<class page>(page_tree_node)> find;
+    find = [&](page_tree_node node) -> std::optional<class page>
+    {
+        for (auto kid : node.children())
+        {
+            if (kid.is_leaf())
+            {
+                if (remaining == 0)
+                    return kid.as_page();
+                --remaining;
+            }
+            else
+            {
+                const auto sub = kid.subtree_count();
+                if (remaining < sub)
+                    return find(kid);
+                remaining -= sub;
+            }
+        }
+        return std::nullopt;
+    };
+
+    return find(page_tree_node{obj()});
+}
+
+std::optional<class page> pages::page(indirect_reference ref)
+{
+    auto* resolved = obj().identity().owner().resolve_object(ref);
+    if (!resolved)
+        return std::nullopt;
+
+    auto* d = resolved->dictionary();
+    if (!d)
+        throw logic_exception{"Page reference " + std::to_string(ref.object_number()) +
+                              " is not a dictionary"};
+
+    auto type = d->get_name("Type");
+    if (!type || type->value != "Page")
+        throw logic_exception{"Page reference " + std::to_string(ref.object_number()) +
+                              " does not have /Type /Page"};
+
+    return ripper::pdf::core::page{*resolved};
+}
+
+void pages::each(const std::function<void(class page&)>& callback)
+{
+    if (!callback)
+        throw logic_exception{"Pages::each callback cannot be empty"};
+
+    std::function<void(page_tree_node)> walk;
+    walk = [&](page_tree_node node)
+    {
+        for (auto kid : node.children())
+        {
+            if (kid.is_leaf())
+            {
+                auto pg = *kid.as_page();
+                callback(pg);
+            }
+            else
+            {
+                walk(kid);
+            }
+        }
+    };
+
+    walk(page_tree_node{obj()});
+}
+
+class page pages::add_page()
+{
+    auto& doc = obj().identity().owner();
+    auto& xref = doc.cross_reference_table();
+
+    const auto page_ref = xref.reserve();
+
+    // This should in fact be a parameter
+    array mediabox{object{std::int64_t{0}}, object{std::int64_t{0}}, object{std::int64_t{612}},
+                   object{std::int64_t{792}}};
+
+    ripper::pdf::core::dictionary page_dict;
+    page_dict.set("Type", object{name{"Page"}});
+    page_dict.set("Parent", object{obj().identity().reference()});
+    page_dict.set("MediaBox", object{std::move(mediabox)});
+
+    auto page_obj = std::make_unique<indirect_object>(object_identity{&doc, page_ref},
+                                                      object{std::move(page_dict)});
+
+    auto* raw_page = xref.commit(page_ref, std::move(page_obj));
+    if (!raw_page)
+        throw logic_exception{"Failed to commit page to cross-reference table"};
+
+    // Update /Kids and /Count on this pages node
+    auto* d = obj().dictionary();
+    if (!d)
+        throw logic_exception{"Pages content is not a dictionary"};
+
+    if (!d->get_array("Kids"))
+        d->set("Kids", object{array{}});
+
+    auto* kids = d->get_array("Kids");
+    kids->push_back(object{page_ref});
+
+    std::uint64_t count = 0;
+
+    const auto* count_ptr = d->get_integer("Count");
+    if (count_ptr)
+        count = static_cast<std::uint64_t>(*count_ptr);
+
+    d->set("Count", object{static_cast<std::int64_t>(count + 1)});
+
+    return ripper::pdf::core::page{*raw_page};
+}
+
+void pages::delete_page(std::uint64_t page_index)
+{
+    auto pg = this->page(page_index);
+    if (!pg)
+        return;
+
+    const auto& page_ref = pg->obj().identity().reference();
+    auto node = page_tree_node{pg->obj()};
+
+    // Remove from parent's /Kids
+    auto maybe_parent = node.parent();
+    if (!maybe_parent)
+        return;
+
+    maybe_parent->remove_child(page_ref);
+
+    // Decrement /Count on the immediate parent and every ancestor up to the root
+    auto ancestor = *maybe_parent;
+    while (true)
+    {
+        auto* d = ancestor.obj().dictionary();
+        if (!d)
+            break;
+
+        auto* count_ptr = d->get_integer("Count");
+        if (!count_ptr || *count_ptr <= 0)
+            break;
+
+        d->set("Count", object{*count_ptr - 1});
+
+        if (ancestor.is_root())
+            break;
+
+        auto up = ancestor.parent();
+        if (!up)
+            break;
+
+        ancestor = *up;
+    }
+
+    // Mark the xref entry as deleted so it is pruned on full rewrite
+    auto& xref = pg->obj().identity().owner().cross_reference_table();
+    if (auto* entry = xref.find(page_ref))
+        entry->mark_deleted();
+}
+
+void pages::prune_page(std::uint64_t page_index)
+{
+    throw logic_exception{"Not implemented: pages::prune_page"};
+}
+} // namespace ripper::pdf::core

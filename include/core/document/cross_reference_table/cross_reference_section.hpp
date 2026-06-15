@@ -1,157 +1,161 @@
 #pragma once
 
+#include "core/document/cross_reference_table/cross_reference_subsection.hpp"
+#include "core/document/cross_reference_table/cross_reference_table.hpp"
+#include "core/document/object/indirect_reference.hpp"
+
 #include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
 #include <vector>
 
-#include "core/document/cross_reference_table/cross_reference_subsection.hpp"
-#include "core/document/cross_reference_table/cross_reference_table.hpp"
-#include "core/document/object/indirect_reference.hpp"
-
 namespace ripper::pdf::core
 {
-    class indirect_object;
-    class cross_reference_entry;
+class indirect_object;
+class cross_reference_entry;
 
-    /// A single cross-reference section in a PDF file.
+/// A single cross-reference section in a PDF file.
+///
+/// Per the PDF spec (§7.5.4), a cross-reference section begins with the `xref` keyword
+/// and contains one or more subsections. One new section is added each time the file is
+/// incrementally updated. A brand-new document contains exactly one section.
+///
+/// Entries within a section are grouped into `cross_reference_subsection` objects, each
+/// covering a contiguous run of object numbers. New entries are appended via `add_entry()`,
+/// which automatically merges consecutive object numbers into the last subsection or starts
+/// a new one when there is a gap.
+///
+/// Implements the `cross_reference_table` interface, so it can be used interchangeably
+/// with `cross_reference_manager` for lookup and modification.
+class cross_reference_section : public cross_reference_table
+{
+public:
+    /// Construct a section from a set of pre-built subsections.
     ///
-    /// Per the PDF spec (§7.5.4), a cross-reference section begins with the `xref` keyword
-    /// and contains one or more subsections. One new section is added each time the file is
-    /// incrementally updated. A brand-new document contains exactly one section.
+    /// `subsections` contains the initial subsections for this section, which may be empty
+    /// for a brand-new section to which entries will be added via `add_entry()`.
     ///
-    /// Entries within a section are grouped into `cross_reference_subsection` objects, each
-    /// covering a contiguous run of object numbers. New entries are appended via `add_entry()`,
-    /// which automatically merges consecutive object numbers into the last subsection or starts
-    /// a new one when there is a gap.
+    /// `startxref_offset`, when provided, is the byte offset in the file at which the
+    /// `xref` keyword for this section appears. Can be set or updated later via
+    /// `set_startxref_offset()`.
+    explicit cross_reference_section(
+        std::vector<cross_reference_subsection> subsections,
+        std::optional<std::uint64_t> startxref_offset = std::nullopt) noexcept;
+
+    cross_reference_section(const cross_reference_section&) = delete;
+    cross_reference_section& operator=(const cross_reference_section&) = delete;
+    cross_reference_section(cross_reference_section&&) noexcept = default;
+    cross_reference_section& operator=(cross_reference_section&&) noexcept = default;
+
+    /// Look up a mutable entry by object number within this section.
     ///
-    /// Implements the `cross_reference_table` interface, so it can be used interchangeably
-    /// with `cross_reference_manager` for lookup and modification.
-    class cross_reference_section : public cross_reference_table
-    {
-    public:
-        /// Construct a section from a set of pre-built subsections.
-        ///
-        /// `subsections` contains the initial subsections for this section, which may be empty
-        /// for a brand-new section to which entries will be added via `add_entry()`.
-        ///
-        /// `startxref_offset`, when provided, is the byte offset in the file at which the
-        /// `xref` keyword for this section appears. Can be set or updated later via
-        /// `set_startxref_offset()`.
-        explicit cross_reference_section(
-            std::vector<cross_reference_subsection> subsections,
-            std::optional<std::uint64_t> startxref_offset = std::nullopt) noexcept;
+    /// Scans all subsections and returns a raw pointer to the matching entry
+    /// (valid for the lifetime of this section), or `nullptr` if not found.
+    [[nodiscard]] cross_reference_entry* find(std::uint32_t object_number) noexcept override;
 
-        cross_reference_section(const cross_reference_section &) = delete;
-        cross_reference_section &operator=(const cross_reference_section &) = delete;
-        cross_reference_section(cross_reference_section &&) noexcept = default;
-        cross_reference_section &operator=(cross_reference_section &&) noexcept = default;
+    /// Look up a read-only entry by object number within this section.
+    ///
+    /// Scans all subsections and returns a raw pointer to the matching entry
+    /// (valid for the lifetime of this section), or `nullptr` if not found.
+    [[nodiscard]] const cross_reference_entry*
+    find(std::uint32_t object_number) const noexcept override;
 
-        /// Look up a mutable entry by object number within this section.
-        ///
-        /// Scans all subsections and returns a raw pointer to the matching entry
-        /// (valid for the lifetime of this section), or `nullptr` if not found.
-        [[nodiscard]] cross_reference_entry *find(std::uint32_t object_number) noexcept override;
+    /// Look up a mutable entry by indirect reference within this section.
+    ///
+    /// Equivalent to `find(ref.object_number())`. The generation number in `ref`
+    /// is not used for the lookup.
+    ///
+    /// Returns a raw pointer to the entry, or `nullptr` if not found.
+    [[nodiscard]] cross_reference_entry* find(const indirect_reference& ref) noexcept override;
 
-        /// Look up a read-only entry by object number within this section.
-        ///
-        /// Scans all subsections and returns a raw pointer to the matching entry
-        /// (valid for the lifetime of this section), or `nullptr` if not found.
-        [[nodiscard]] const cross_reference_entry *find(std::uint32_t object_number) const noexcept override;
+    /// Look up a read-only entry by indirect reference within this section.
+    ///
+    /// Equivalent to `find(ref.object_number())`. The generation number in `ref`
+    /// is not used for the lookup.
+    ///
+    /// Returns a raw pointer to the entry, or `nullptr` if not found.
+    [[nodiscard]] const cross_reference_entry*
+    find(const indirect_reference& ref) const noexcept override;
 
-        /// Look up a mutable entry by indirect reference within this section.
-        ///
-        /// Equivalent to `find(ref.object_number())`. The generation number in `ref`
-        /// is not used for the lookup.
-        ///
-        /// Returns a raw pointer to the entry, or `nullptr` if not found.
-        [[nodiscard]] cross_reference_entry *find(const indirect_reference &ref) noexcept override;
+    /// Reserve a slot for a new indirect object within this section.
+    ///
+    /// Assigns the next available object number within this section's scope, creates a
+    /// pending entry via `add_entry()`, and returns the assigned indirect reference.
+    /// The entry must be committed via `commit()` before it is usable.
+    ///
+    /// Use `allocate()` for the simpler single-step case.
+    [[nodiscard]] indirect_reference reserve() noexcept override;
 
-        /// Look up a read-only entry by indirect reference within this section.
-        ///
-        /// Equivalent to `find(ref.object_number())`. The generation number in `ref`
-        /// is not used for the lookup.
-        ///
-        /// Returns a raw pointer to the entry, or `nullptr` if not found.
-        [[nodiscard]] const cross_reference_entry *find(const indirect_reference &ref) const noexcept override;
+    /// Commit a constructed indirect object to a previously reserved entry in this section.
+    ///
+    /// Looks up the entry for `ref` within this section, transfers ownership of `object`
+    /// into it, and marks it as resolved. Returns a raw non-owning pointer to the committed
+    /// indirect object.
+    ///
+    /// Returns `nullptr` if `ref` is not found in this section, or if the entry was not
+    /// in a reserved (new and unresolved) state.
+    [[nodiscard]] class indirect_object*
+    commit(const indirect_reference& ref,
+           std::unique_ptr<class indirect_object> object) noexcept override;
 
-        /// Reserve a slot for a new indirect object within this section.
-        ///
-        /// Assigns the next available object number within this section's scope, creates a
-        /// pending entry via `add_entry()`, and returns the assigned indirect reference.
-        /// The entry must be committed via `commit()` before it is usable.
-        ///
-        /// Use `allocate()` for the simpler single-step case.
-        [[nodiscard]] indirect_reference reserve() noexcept override;
+    /// Allocate and immediately commit a new in-memory indirect object within this section.
+    ///
+    /// Combines `reserve()` and `commit()` into a single step. Assigns the next available
+    /// object number within this section's scope, creates and resolves the entry in one
+    /// operation, and returns the assigned indirect reference.
+    [[nodiscard]] indirect_reference
+    allocate(std::unique_ptr<class indirect_object> object) noexcept override;
 
-        /// Commit a constructed indirect object to a previously reserved entry in this section.
-        ///
-        /// Looks up the entry for `ref` within this section, transfers ownership of `object`
-        /// into it, and marks it as resolved. Returns a raw non-owning pointer to the committed
-        /// indirect object.
-        ///
-        /// Returns `nullptr` if `ref` is not found in this section, or if the entry was not
-        /// in a reserved (new and unresolved) state.
-        [[nodiscard]] class indirect_object *commit(const indirect_reference &ref,
-                                                    std::unique_ptr<class indirect_object> object) noexcept override;
+    /// Return a flat non-owning pointer map of all entries across all subsections.
+    ///
+    /// The returned map is keyed by object number and contains raw pointers into the
+    /// subsection storage. Pointers are valid as long as this section is not modified.
+    [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> entries() noexcept override;
 
-        /// Allocate and immediately commit a new in-memory indirect object within this section.
-        ///
-        /// Combines `reserve()` and `commit()` into a single step. Assigns the next available
-        /// object number within this section's scope, creates and resolves the entry in one
-        /// operation, and returns the assigned indirect reference.
-        [[nodiscard]] indirect_reference allocate(std::unique_ptr<class indirect_object> object) noexcept override;
+    /// Returns the total number of entries across all subsections in this section.
+    [[nodiscard]] std::size_t size() const noexcept override;
 
-        /// Return a flat non-owning pointer map of all entries across all subsections.
-        ///
-        /// The returned map is keyed by object number and contains raw pointers into the
-        /// subsection storage. Pointers are valid as long as this section is not modified.
-        [[nodiscard]] std::map<std::uint32_t, cross_reference_entry *> entries() noexcept override;
+    /// Returns the next available object number for allocation within this section.
+    ///
+    /// This is one greater than the highest object number present across all subsections.
+    /// Returns 1 if this section contains no entries.
+    [[nodiscard]] std::uint32_t next_object_number() const noexcept override;
 
-        /// Returns the total number of entries across all subsections in this section.
-        [[nodiscard]] std::size_t size() const noexcept override;
+    /// Returns a read-only view of the subsections in this section.
+    ///
+    /// Subsections are stored in the order they were added, each covering a contiguous
+    /// range of object numbers. The returned reference is valid for the lifetime of
+    /// this section.
+    [[nodiscard]] const std::vector<cross_reference_subsection>& subsections() const noexcept;
 
-        /// Returns the next available object number for allocation within this section.
-        ///
-        /// This is one greater than the highest object number present across all subsections.
-        /// Returns 1 if this section contains no entries.
-        [[nodiscard]] std::uint32_t next_object_number() const noexcept override;
+    /// Returns a mutable view of the subsections in this section.
+    ///
+    /// The returned reference is valid for the lifetime of this section.
+    [[nodiscard]] std::vector<cross_reference_subsection>& subsections() noexcept;
 
-        /// Returns a read-only view of the subsections in this section.
-        ///
-        /// Subsections are stored in the order they were added, each covering a contiguous
-        /// range of object numbers. The returned reference is valid for the lifetime of
-        /// this section.
-        [[nodiscard]] const std::vector<cross_reference_subsection> &subsections() const noexcept;
+    /// Returns the byte offset in the file at which the `xref` keyword for this section resides.
+    ///
+    /// Returns `std::nullopt` for sections that have not yet been written to disk,
+    /// or for in-memory sections created during document construction.
+    [[nodiscard]] std::optional<std::uint64_t> startxref_offset() const noexcept;
 
-        /// Returns a mutable view of the subsections in this section.
-        ///
-        /// The returned reference is valid for the lifetime of this section.
-        [[nodiscard]] std::vector<cross_reference_subsection> &subsections() noexcept;
+    /// Set the byte offset at which the `xref` keyword for this section resides in the file.
+    ///
+    /// Called by the parser after locating this section's position in the file, or by the
+    /// serializer after writing the section to record its final offset.
+    void set_startxref_offset(std::uint64_t offset) noexcept;
 
-        /// Returns the byte offset in the file at which the `xref` keyword for this section resides.
-        ///
-        /// Returns `std::nullopt` for sections that have not yet been written to disk,
-        /// or for in-memory sections created during document construction.
-        [[nodiscard]] std::optional<std::uint64_t> startxref_offset() const noexcept;
+    /// Append a new entry to this section, grouping it into a subsection automatically.
+    ///
+    /// If the entry's object number is exactly one greater than the last object number in
+    /// the current (last) subsection, the entry is appended to that subsection, extending
+    /// its contiguous run. If there is a gap, or if this section has no subsections yet,
+    /// a new subsection is created starting at the entry's object number.
+    void add_entry(cross_reference_entry entry) noexcept;
 
-        /// Set the byte offset at which the `xref` keyword for this section resides in the file.
-        ///
-        /// Called by the parser after locating this section's position in the file, or by the
-        /// serializer after writing the section to record its final offset.
-        void set_startxref_offset(std::uint64_t offset) noexcept;
-
-        /// Append a new entry to this section, grouping it into a subsection automatically.
-        ///
-        /// If the entry's object number is exactly one greater than the last object number in
-        /// the current (last) subsection, the entry is appended to that subsection, extending
-        /// its contiguous run. If there is a gap, or if this section has no subsections yet,
-        /// a new subsection is created starting at the entry's object number.
-        void add_entry(cross_reference_entry entry) noexcept;
-
-    private:
-        std::vector<cross_reference_subsection> subsections_;
-        std::optional<std::uint64_t> startxref_offset_;
-    };
-}
+private:
+    std::vector<cross_reference_subsection> subsections_;
+    std::optional<std::uint64_t> startxref_offset_;
+};
+} // namespace ripper::pdf::core

@@ -1,105 +1,105 @@
 #pragma once
 
+#include "core/exceptions/exception.hpp"
+
 #include <cstdint>
 #include <deque>
 #include <limits>
 #include <string_view>
 #include <utility>
 
-#include "core/exceptions/exception.hpp"
-
 namespace ripper::pdf::core
 {
-    enum class lexer_token_type
-    {
-        eof,                // %%EOF
-        dictionary_begin,   // <<
-        dictionary_end,     // >>
-        array_begin,        // [
-        array_end,          // ]
-        name,               // /Name
-        integer,            // 123
-        real,               // 123.45
-        keyword,            // true, false, null
-        literal_string,     // (String)
-        hex_string          // <48656C6C6F>
-    };
+enum class lexer_token_type
+{
+    eof,              // %%EOF
+    dictionary_begin, // <<
+    dictionary_end,   // >>
+    array_begin,      // [
+    array_end,        // ]
+    name,             // /Name
+    integer,          // 123
+    real,             // 123.45
+    keyword,          // true, false, null
+    literal_string,   // (String)
+    hex_string        // <48656C6C6F>
+};
 
-    struct lexer_token
-    {
-        lexer_token_type type;
-        std::string_view lexeme;
-    };
+struct lexer_token
+{
+    lexer_token_type type;
+    std::string_view lexeme;
+};
 
-    /// Low-level PDF lexer that tokenizes a raw content buffer.
+/// Low-level PDF lexer that tokenizes a raw content buffer.
+///
+/// This type operates on a `string_view` of PDF content and produces
+/// `lexer_token` values one at a time. It supports lookahead, consumption
+/// by type/lexeme, and compound structure skipping.
+///
+/// Tokens are produced lazily and cached for lookahead via an internal deque.
+class pdf_lexer
+{
+public:
+    /// Construct a lexer over the given content buffer.
     ///
-    /// This type operates on a `string_view` of PDF content and produces
-    /// `lexer_token` values one at a time. It supports lookahead, consumption
-    /// by type/lexeme, and compound structure skipping.
+    /// The lexer stores a view and does not take ownership of the content.
+    /// The content must outlive the lexer.
+    explicit pdf_lexer(std::string_view content);
+
+    /// Consume and return the next token from the stream.
     ///
-    /// Tokens are produced lazily and cached for lookahead via an internal deque.
-    class pdf_lexer
-    {
-    public:
-        /// Construct a lexer over the given content buffer.
-        ///
-        /// The lexer stores a view and does not take ownership of the content.
-        /// The content must outlive the lexer.
-        explicit pdf_lexer(std::string_view content);
+    /// Returns a cached lookahead token if available, otherwise reads a new one.
+    /// Returns `lexer_token_type::eof` when the end of the content is reached.
+    [[nodiscard]] lexer_token next();
 
-        /// Consume and return the next token from the stream.
-        ///
-        /// Returns a cached lookahead token if available, otherwise reads a new one.
-        /// Returns `lexer_token_type::eof` when the end of the content is reached.
-        [[nodiscard]] lexer_token next();
+    /// Peek at a token at the given lookahead offset without consuming it.
+    ///
+    /// A `lookahead` of `0` returns the next token without advancing.
+    /// Tokens are buffered internally as needed.
+    [[nodiscard]] lexer_token peek(std::size_t lookahead = 0);
 
-        /// Peek at a token at the given lookahead offset without consuming it.
-        ///
-        /// A `lookahead` of `0` returns the next token without advancing.
-        /// Tokens are buffered internally as needed.
-        [[nodiscard]] lexer_token peek(std::size_t lookahead = 0);
+    /// Conditionally consume the next token if it matches `type` and optionally `lexeme`.
+    ///
+    /// If `lexeme` is empty, only the token type is checked.
+    /// Returns `true` if the token was consumed, `false` otherwise.
+    bool consume(lexer_token_type type, std::string_view lexeme = {});
 
-        /// Conditionally consume the next token if it matches `type` and optionally `lexeme`.
-        ///
-        /// If `lexeme` is empty, only the token type is checked.
-        /// Returns `true` if the token was consumed, `false` otherwise.
-        bool consume(lexer_token_type type, std::string_view lexeme = {});
+    /// Skip a single PDF value, including compound structures (arrays, dictionaries).
+    ///
+    /// If the next token is a dictionary or array begin, the entire nested
+    /// structure is skipped recursively. Indirect references (`obj gen R`) are
+    /// also handled.
+    ///
+    /// Returns `unexpected(err)` if the value cannot be skipped.
+    void skip_value();
 
-        /// Skip a single PDF value, including compound structures (arrays, dictionaries).
-        ///
-        /// If the next token is a dictionary or array begin, the entire nested
-        /// structure is skipped recursively. Indirect references (`obj gen R`) are
-        /// also handled.
-        ///
-        /// Returns `unexpected(err)` if the value cannot be skipped.
-        void skip_value();
+private:
+    /// Read and return the next token from the raw content buffer.
+    ///
+    /// Does not interact with the lookahead cache.
+    [[nodiscard]] lexer_token read_token();
 
-    private:
-        /// Read and return the next token from the raw content buffer.
-        ///
-        /// Does not interact with the lookahead cache.
-        [[nodiscard]] lexer_token read_token();
+    /// Advance the position past all whitespace characters and `%`-style comments.
+    void skip_whitespace_and_comments();
 
-        /// Advance the position past all whitespace characters and `%`-style comments.
-        void skip_whitespace_and_comments();
+    /// Skip a compound structure (array or dictionary) given its begin/end token types.
+    ///
+    /// Assumes the opening token has already been consumed.
+    /// Returns `unexpected(err)` if the stream ends before the structure is closed.
+    void skip_compound(lexer_token_type begin_token, lexer_token_type end_token);
 
-        /// Skip a compound structure (array or dictionary) given its begin/end token types.
-        ///
-        /// Assumes the opening token has already been consumed.
-        /// Returns `unexpected(err)` if the stream ends before the structure is closed.
-        void skip_compound(lexer_token_type begin_token, lexer_token_type end_token);
+    /// Returns `true` if `ch` is a PDF whitespace character or null byte.
+    [[nodiscard]] static bool is_whitespace(char ch);
 
-        /// Returns `true` if `ch` is a PDF whitespace character or null byte.
-        [[nodiscard]] static bool is_whitespace(char ch);
+    /// Returns `true` if `ch` is a PDF delimiter character.
+    [[nodiscard]] static bool is_delimiter(char ch);
 
-        /// Returns `true` if `ch` is a PDF delimiter character.
-        [[nodiscard]] static bool is_delimiter(char ch);
+    /// Returns `true` if `ch` can begin a numeric token (`+`, `-`, `.`, or digit).
+    [[nodiscard]] static bool is_number_start(char ch);
 
-        /// Returns `true` if `ch` can begin a numeric token (`+`, `-`, `.`, or digit).
-        [[nodiscard]] static bool is_number_start(char ch);
-
-        std::string_view _content;
-        std::size_t _position{0};
-        std::deque<lexer_token> _lookahead_tokens;
-    };
-}
+    std::string_view _content;
+    std::size_t _position{0};
+    std::deque<lexer_token> _lookahead_tokens;
+};
+} // namespace ripper::pdf::core

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <algorithm>
-#include <charconv>
 #include <cctype>
+#include <charconv>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -12,111 +12,111 @@
 
 namespace ripper::pdf::core::text
 {
-    [[nodiscard]] constexpr std::string_view strip_line_endings(std::string_view s) noexcept
+[[nodiscard]] constexpr std::string_view strip_line_endings(std::string_view s) noexcept
+{
+    while (!s.empty() && (s.back() == '\n' || s.back() == '\r'))
     {
-        while (!s.empty() && (s.back() == '\n' || s.back() == '\r'))
-        {
-            s.remove_suffix(1);
-        }
-
-        return s;
+        s.remove_suffix(1);
     }
 
-    [[nodiscard]] inline std::string_view trim_ascii(std::string_view s) noexcept
+    return s;
+}
+
+[[nodiscard]] inline std::string_view trim_ascii(std::string_view s) noexcept
+{
+    while (!s.empty())
     {
-        while (!s.empty())
+        const unsigned char c = static_cast<unsigned char>(s.front());
+        if (!std::isspace(c))
         {
-            const unsigned char c = static_cast<unsigned char>(s.front());
-            if (!std::isspace(c))
-            {
-                break;
-            }
-
-            s.remove_prefix(1);
+            break;
         }
 
-        while (!s.empty())
-        {
-            const unsigned char c = static_cast<unsigned char>(s.back());
-            if (!std::isspace(c))
-            {
-                break;
-            }
-
-            s.remove_suffix(1);
-        }
-
-        return s;
+        s.remove_prefix(1);
     }
 
-    [[nodiscard]] inline bool starts_with_token(std::string_view line, std::string_view token) noexcept
+    while (!s.empty())
     {
-        line = trim_ascii(strip_line_endings(line));
-
-        if (line.size() < token.size())
+        const unsigned char c = static_cast<unsigned char>(s.back());
+        if (!std::isspace(c))
         {
-            return false;
+            break;
         }
 
-        return line.starts_with(token);
+        s.remove_suffix(1);
     }
 
-    [[nodiscard]] inline std::optional<std::size_t> parse_size_t(std::string_view s) noexcept
+    return s;
+}
+
+[[nodiscard]] inline bool starts_with_token(std::string_view line, std::string_view token) noexcept
+{
+    line = trim_ascii(strip_line_endings(line));
+
+    if (line.size() < token.size())
     {
-        s = trim_ascii(strip_line_endings(s));
-        if (s.empty())
-        {
-            return std::nullopt;
-        }
-
-        std::size_t object = 0;
-        const char *begin = s.data();
-        const char *end = s.data() + s.size();
-
-        auto [ptr, ec] = std::from_chars(begin, end, object);
-        if (ec != std::errc{})
-        {
-            return std::nullopt;
-        }
-
-        return object;
+        return false;
     }
 
-    [[nodiscard]] inline std::optional<std::uint32_t> parse_u32(std::string_view text) noexcept
+    return line.starts_with(token);
+}
+
+[[nodiscard]] inline std::optional<std::size_t> parse_size_t(std::string_view s) noexcept
+{
+    s = trim_ascii(strip_line_endings(s));
+    if (s.empty())
     {
-        std::uint32_t object{};
-        const char *first = text.data();
-        const char *last = text.data() + text.size();
-        auto [ptr, ec] = std::from_chars(first, last, object);
-
-        if (ec != std::errc{} || ptr != last)
-        {
-            return std::nullopt;
-        }
-
-        return object;
+        return std::nullopt;
     }
 
-    [[nodiscard]] inline std::optional<std::uint16_t> parse_u16(std::string_view text) noexcept
-    {
-        const auto v32 = parse_u32(text);
-        if (!v32.has_value() || *v32 > 0xFFFFu)
-        {
-            return std::nullopt;
-        }
+    std::size_t object = 0;
+    const char* begin = s.data();
+    const char* end = s.data() + s.size();
 
-        return static_cast<std::uint16_t>(*v32);
+    auto [ptr, ec] = std::from_chars(begin, end, object);
+    if (ec != std::errc{})
+    {
+        return std::nullopt;
     }
 
-    [[nodiscard]] inline std::string escape_literal_string(std::string_view value)
-    {
-        std::string escaped;
-        escaped.reserve(value.size() + 8);
+    return object;
+}
 
-        for (const char ch : value)
+[[nodiscard]] inline std::optional<std::uint32_t> parse_u32(std::string_view text) noexcept
+{
+    std::uint32_t object{};
+    const char* first = text.data();
+    const char* last = text.data() + text.size();
+    auto [ptr, ec] = std::from_chars(first, last, object);
+
+    if (ec != std::errc{} || ptr != last)
+    {
+        return std::nullopt;
+    }
+
+    return object;
+}
+
+[[nodiscard]] inline std::optional<std::uint16_t> parse_u16(std::string_view text) noexcept
+{
+    const auto v32 = parse_u32(text);
+    if (!v32.has_value() || *v32 > 0xFFFFu)
+    {
+        return std::nullopt;
+    }
+
+    return static_cast<std::uint16_t>(*v32);
+}
+
+[[nodiscard]] inline std::string escape_literal_string(std::string_view value)
+{
+    std::string escaped;
+    escaped.reserve(value.size() + 8);
+
+    for (const char ch : value)
+    {
+        switch (ch)
         {
-            switch (ch)
-            {
             case '\\':
                 escaped += "\\\\";
                 break;
@@ -144,9 +144,9 @@ namespace ripper::pdf::core::text
             default:
                 escaped += ch;
                 break;
-            }
         }
-
-        return escaped;
     }
+
+    return escaped;
 }
+} // namespace ripper::pdf::core::text

@@ -2,27 +2,25 @@
 
 namespace ripper::pdf::core
 {
-    object_view::object_view(indirect_object &obj) noexcept : obj_{obj}
-    {
-    }
+object_view::object_view(indirect_object& obj) noexcept : obj_{obj} {}
 
-    indirect_object &object_view::obj() noexcept
-    {
-        return obj_.get();
-    }
-
-    const indirect_object &object_view::obj() const noexcept
-    {
-        return obj_.get();
-    }
-
-    class dictionary *object_view::dictionary() noexcept
-    {
-        return obj().dictionary();
-    }
-
-    const class dictionary *object_view::dictionary() const noexcept
-    {
-        return obj().dictionary();
-    }
+indirect_object& object_view::obj() noexcept
+{
+    return obj_.get();
 }
+
+const indirect_object& object_view::obj() const noexcept
+{
+    return obj_.get();
+}
+
+class dictionary* object_view::dictionary() noexcept
+{
+    return obj().dictionary();
+}
+
+const class dictionary* object_view::dictionary() const noexcept
+{
+    return obj().dictionary();
+}
+} // namespace ripper::pdf::core
