@@ -33,24 +33,9 @@ set(PDF_RIPPER_CORE_IO_CORE_GIT_TAG
 )
 
 # ------------------------------------------------------------------------------
-# External dependencies
+# First-party dependencies (internal sibling projects)
 # ------------------------------------------------------------------------------
 include(FetchContent)
-
-FetchContent_Declare(
-    zlib-ng
-    GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng.git
-    GIT_TAG        2.3.2
-)
-
-# ------------------------------------------------------------------------------
-# External dependency configuration
-# ------------------------------------------------------------------------------
-set(ZLIB_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-set(ZLIBNG_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-set(ZLIB_COMPAT ON CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(zlib-ng)
 
 message(STATUS "Fetching io-core from git: ${PDF_RIPPER_CORE_IO_CORE_GIT_REPOSITORY} (${PDF_RIPPER_CORE_IO_CORE_GIT_TAG})")
 FetchContent_Declare(
@@ -59,6 +44,21 @@ FetchContent_Declare(
     GIT_TAG        ${PDF_RIPPER_CORE_IO_CORE_GIT_TAG}
 )
 FetchContent_MakeAvailable(io_ripper_core)
+
+# ------------------------------------------------------------------------------
+# Third-party dependencies
+# ------------------------------------------------------------------------------
+FetchContent_Declare(
+    zlib-ng
+    GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng.git
+    GIT_TAG        2.3.2
+)
+
+set(ZLIB_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+set(ZLIBNG_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+set(ZLIB_COMPAT ON CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(zlib-ng)
 
 # ------------------------------------------------------------------------------
 # Library sources
