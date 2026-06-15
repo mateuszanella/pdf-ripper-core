@@ -12,11 +12,11 @@ catalog::catalog(indirect_object& obj) noexcept : object_view(obj) {}
 class pages catalog::pages()
 {
     auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         throw parse_exception{"Catalog content is not a dictionary"};
 
     auto pages_ref = d->get_indirect_reference("Pages");
-    if (!pages_ref)
+    if (pages_ref == nullptr)
         throw parse_exception{"Catalog is missing required /Pages reference"};
 
     auto* resolved = obj().identity().owner().resolve_object(*pages_ref);
@@ -27,11 +27,11 @@ class pages catalog::pages()
 indirect_reference catalog::root_pages_indirect_reference()
 {
     auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         throw parse_exception{"Catalog content is not a dictionary"};
 
     const auto* pages_ref = d->get_indirect_reference("Pages");
-    if (!pages_ref)
+    if (pages_ref == nullptr)
         throw parse_exception{"Catalog is missing required /Pages reference"};
 
     return *pages_ref;

@@ -57,6 +57,8 @@ void default_cross_reference_table_parser::parse_subsection(cross_reference_sect
         }
 
         std::uint64_t offset = 0;
+        // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage,
+        // cppcoreguidelines-pro-bounds-pointer-arithmetic)
         auto [ptr1, ec1] = std::from_chars(entryLine.data(), entryLine.data() + 10, offset);
 
         if (ec1 != std::errc{})
@@ -66,7 +68,8 @@ void default_cross_reference_table_parser::parse_subsection(cross_reference_sect
 
         std::uint16_t generation = 0;
         auto [ptr2, ec2] =
-            std::from_chars(entryLine.data() + 11, entryLine.data() + 16, generation);
+            std::from_chars(entryLine.data() + 11, entryLine.data() + 16,
+                            generation); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
         if (ec2 != std::errc{})
         {

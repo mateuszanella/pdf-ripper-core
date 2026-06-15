@@ -50,7 +50,7 @@ cross_reference_manager::find(const indirect_reference& ref) const noexcept
     return find(ref.object_number());
 }
 
-indirect_reference cross_reference_manager::reserve() noexcept
+indirect_reference cross_reference_manager::reserve()
 {
     const std::uint32_t number = next_object_number();
 
@@ -66,7 +66,7 @@ cross_reference_manager::commit(const indirect_reference& ref,
                                 std::unique_ptr<class indirect_object> object) noexcept
 {
     auto* entry = find(ref);
-    if (!entry)
+    if (entry == nullptr)
         return nullptr;
 
     if (!entry->is_new() || entry->is_resolved())
@@ -75,8 +75,7 @@ cross_reference_manager::commit(const indirect_reference& ref,
     return entry->resolve(std::move(object));
 }
 
-indirect_reference
-cross_reference_manager::allocate(std::unique_ptr<class indirect_object> object) noexcept
+indirect_reference cross_reference_manager::allocate(std::unique_ptr<class indirect_object> object)
 {
     const std::uint32_t number = next_object_number();
 
@@ -87,7 +86,7 @@ cross_reference_manager::allocate(std::unique_ptr<class indirect_object> object)
     return ref;
 }
 
-std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::entries() noexcept
+std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::entries()
 {
     std::map<std::uint32_t, cross_reference_entry*> result;
     // Iterate oldest-to-newest so that newer entries overwrite older ones.
@@ -100,7 +99,7 @@ std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::entries
     return result;
 }
 
-std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::active_entries() noexcept
+std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::active_entries()
 {
     auto all = entries();
     for (auto it = all.begin(); it != all.end();)
@@ -141,7 +140,7 @@ std::vector<cross_reference_section>& cross_reference_manager::sections() noexce
     return sections_;
 }
 
-cross_reference_section& cross_reference_manager::active_section() noexcept
+cross_reference_section& cross_reference_manager::active_section()
 {
     if (sections_.empty())
         sections_.emplace_back(std::vector<cross_reference_subsection>{});
@@ -149,7 +148,7 @@ cross_reference_section& cross_reference_manager::active_section() noexcept
     return sections_.back();
 }
 
-void cross_reference_manager::squash() noexcept
+void cross_reference_manager::squash()
 {
     auto active = active_entries();
 

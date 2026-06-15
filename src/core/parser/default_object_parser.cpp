@@ -41,14 +41,16 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
 
             // Stream content begins after the `stream` keyword and its mandatory
             // line ending (either \r\n or \n per the PDF spec, section 7.3.8.1).
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             const char* kw_end = stream_tok.lexeme.data() + stream_tok.lexeme.size();
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             const char* content_end = content_sv.data() + content_sv.size();
 
             const char* stream_start = kw_end;
             if (stream_start < content_end && *stream_start == '\r')
-                ++stream_start;
+                ++stream_start; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             if (stream_start < content_end && *stream_start == '\n')
-                ++stream_start;
+                ++stream_start; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
             // Locate `endstream` to bound the raw stream bytes.
             const std::string_view remainder{stream_start,
@@ -77,12 +79,12 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
             }
 
             dictionary stream_dict{};
-            if (dict_ptr)
+            if (dict_ptr != nullptr)
                 stream_dict = *dict_ptr;
 
             const auto* length = stream_dict.get_integer("Length");
             const std::size_t expected_size =
-                length ? static_cast<std::size_t>(*length) : payload_size;
+                length != nullptr ? static_cast<std::size_t>(*length) : payload_size;
 
             stream parsed_stream =
                 preload_stream ? stream{std::move(bytes)} : stream::deferred(expected_size);

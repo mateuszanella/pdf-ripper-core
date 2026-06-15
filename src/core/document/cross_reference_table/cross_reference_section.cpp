@@ -48,7 +48,7 @@ cross_reference_section::find(const indirect_reference& ref) const noexcept
     return find(ref.object_number());
 }
 
-void cross_reference_section::add_entry(cross_reference_entry entry) noexcept
+void cross_reference_section::add_entry(cross_reference_entry entry)
 {
     const std::uint32_t num = entry.reference().object_number();
 
@@ -68,7 +68,7 @@ void cross_reference_section::add_entry(cross_reference_entry entry) noexcept
     subsections_.emplace_back(num, std::move(new_entries));
 }
 
-indirect_reference cross_reference_section::reserve() noexcept
+indirect_reference cross_reference_section::reserve()
 {
     const std::uint32_t number = next_object_number();
 
@@ -84,7 +84,7 @@ cross_reference_section::commit(const indirect_reference& ref,
                                 std::unique_ptr<class indirect_object> object) noexcept
 {
     auto* entry = find(ref);
-    if (!entry)
+    if (entry == nullptr)
         return nullptr;
 
     if (!entry->is_new() || entry->is_resolved())
@@ -93,8 +93,7 @@ cross_reference_section::commit(const indirect_reference& ref,
     return entry->resolve(std::move(object));
 }
 
-indirect_reference
-cross_reference_section::allocate(std::unique_ptr<class indirect_object> object) noexcept
+indirect_reference cross_reference_section::allocate(std::unique_ptr<class indirect_object> object)
 {
     const std::uint32_t number = next_object_number();
 
@@ -105,7 +104,7 @@ cross_reference_section::allocate(std::unique_ptr<class indirect_object> object)
     return ref;
 }
 
-std::map<std::uint32_t, cross_reference_entry*> cross_reference_section::entries() noexcept
+std::map<std::uint32_t, cross_reference_entry*> cross_reference_section::entries()
 {
     std::map<std::uint32_t, cross_reference_entry*> result;
     for (auto& sub : subsections_)

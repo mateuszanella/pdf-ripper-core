@@ -20,7 +20,7 @@ serializer::serializer(const document& doc)
 
 serializer_manager& serializer::manager()
 {
-    if (!manager_)
+    if (manager_ == nullptr)
         manager_ = std::make_unique<class serializer_manager>(document_);
 
     return *manager_;

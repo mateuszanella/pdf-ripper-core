@@ -81,7 +81,7 @@ public:
     ///
     /// Use this two-step pair when the indirect object requires its own reference during
     /// construction. Use `allocate()` for the simpler single-step case.
-    [[nodiscard]] virtual indirect_reference reserve() noexcept = 0;
+    [[nodiscard]] virtual indirect_reference reserve() = 0;
 
     /// Commit a constructed indirect object to a previously reserved reference.
     ///
@@ -104,7 +104,7 @@ public:
     /// Use this when the indirect object does not need to know its own reference during
     /// construction. Use `reserve()` / `commit()` for the two-step case.
     [[nodiscard]] virtual indirect_reference
-    allocate(std::unique_ptr<class indirect_object> object) noexcept = 0;
+    allocate(std::unique_ptr<class indirect_object> object) = 0;
 
     /// Return a flat non-owning pointer map of all entries.
     ///
@@ -115,7 +115,7 @@ public:
     ///
     /// The returned map contains raw pointers into the underlying storage. Pointers are
     /// valid as long as this table is not modified.
-    [[nodiscard]] virtual std::map<std::uint32_t, cross_reference_entry*> entries() noexcept = 0;
+    [[nodiscard]] virtual std::map<std::uint32_t, cross_reference_entry*> entries() = 0;
 
     /// Returns the total number of entries across this table.
     ///

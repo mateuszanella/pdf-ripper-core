@@ -21,7 +21,7 @@ const std::vector<trailer>& trailer_manager::trailers() const noexcept
     return trailers_;
 }
 
-trailer& trailer_manager::active_trailer() noexcept
+trailer& trailer_manager::active_trailer()
 {
     if (trailers_.empty())
         trailers_.emplace_back(dictionary{});
@@ -34,7 +34,7 @@ const trailer& trailer_manager::active_trailer() const noexcept
     return trailers_.back();
 }
 
-void trailer_manager::push(trailer t) noexcept
+void trailer_manager::push(trailer t)
 {
     trailers_.push_back(std::move(t));
 }
@@ -57,7 +57,7 @@ std::size_t trailer_manager::size() const noexcept
     return trailers_.size();
 }
 
-void trailer_manager::squash() noexcept
+void trailer_manager::squash()
 {
     trailer merged = compiled();
     merged.dictionary().remove("Prev");

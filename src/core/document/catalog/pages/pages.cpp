@@ -21,11 +21,11 @@ pages::pages(indirect_object& obj) noexcept : object_view(obj) {}
 std::uint64_t pages::count() const
 {
     auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         throw logic_exception{"Pages content is not a dictionary"};
 
     auto count = d->get_integer("Count");
-    if (!count)
+    if (count == nullptr)
         throw logic_exception{"Pages indirect_object is missing required /Count entry"};
 
     return static_cast<std::uint64_t>(*count);
@@ -66,16 +66,16 @@ std::optional<class page> pages::page(std::uint64_t index)
 std::optional<class page> pages::page(indirect_reference ref)
 {
     auto* resolved = obj().identity().owner().resolve_object(ref);
-    if (!resolved)
+    if (resolved == nullptr)
         return std::nullopt;
 
     auto* d = resolved->dictionary();
-    if (!d)
+    if (d == nullptr)
         throw logic_exception{"Page reference " + std::to_string(ref.object_number()) +
                               " is not a dictionary"};
 
     auto type = d->get_name("Type");
-    if (!type || type->value != "Page")
+    if (type == nullptr || type->value != "Page")
         throw logic_exception{"Page reference " + std::to_string(ref.object_number()) +
                               " does not have /Type /Page"};
 
@@ -127,15 +127,15 @@ class page pages::add_page()
                                                       object{std::move(page_dict)});
 
     auto* raw_page = xref.commit(page_ref, std::move(page_obj));
-    if (!raw_page)
+    if (raw_page == nullptr)
         throw logic_exception{"Failed to commit page to cross-reference table"};
 
     // Update /Kids and /Count on this pages node
     auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         throw logic_exception{"Pages content is not a dictionary"};
 
-    if (!d->get_array("Kids"))
+    if (d->get_array("Kids") == nullptr)
         d->set("Kids", object{array{}});
 
     auto* kids = d->get_array("Kids");
@@ -144,7 +144,7 @@ class page pages::add_page()
     std::uint64_t count = 0;
 
     const auto* count_ptr = d->get_integer("Count");
-    if (count_ptr)
+    if (count_ptr != nullptr)
         count = static_cast<std::uint64_t>(*count_ptr);
 
     d->set("Count", object{static_cast<std::int64_t>(count + 1)});
@@ -173,11 +173,11 @@ void pages::delete_page(std::uint64_t page_index)
     while (true)
     {
         auto* d = ancestor.obj().dictionary();
-        if (!d)
+        if (d == nullptr)
             break;
 
         auto* count_ptr = d->get_integer("Count");
-        if (!count_ptr || *count_ptr <= 0)
+        if (count_ptr == nullptr || *count_ptr <= 0)
             break;
 
         d->set("Count", object{*count_ptr - 1});

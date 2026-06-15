@@ -50,7 +50,7 @@ catalog object_factory::create_catalog()
                                                        object{std::move(pages_dict)});
 
     auto* raw_pages = xref.commit(pages_ref, std::move(pages_obj));
-    if (!raw_pages)
+    if (raw_pages == nullptr)
         throw logic_exception{"Failed to commit root Pages object to cross-reference table"};
 
     // Build the /Catalog pointing at the new /Pages node.
@@ -62,7 +62,7 @@ catalog object_factory::create_catalog()
                                                          object{std::move(catalog_dict)});
 
     auto* raw_catalog = xref.commit(catalog_ref, std::move(catalog_obj));
-    if (!raw_catalog)
+    if (raw_catalog == nullptr)
         throw logic_exception{"Failed to commit Catalog (Root) object to cross-reference table"};
 
     trl.dictionary().set("Root", object{catalog_ref});

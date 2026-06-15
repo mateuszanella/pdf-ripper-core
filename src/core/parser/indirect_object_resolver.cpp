@@ -31,6 +31,7 @@ std::size_t token_offset_in(std::string_view source, const lexer_token& token)
     }
 
     const char* begin = source.data();
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     const char* end = source.data() + source.size();
     const char* ptr = token.lexeme.data();
 
@@ -48,7 +49,7 @@ indirect_object_resolver::indirect_object_resolver(document& document) : documen
 std::string indirect_object_resolver::resolve(indirect_reference ref) const
 {
     auto* reader_ptr = document_.reader();
-    if (!reader_ptr)
+    if (reader_ptr == nullptr)
         throw io_exception{"No reader backend available"};
 
     auto& r = *reader_ptr;
@@ -59,7 +60,7 @@ std::string indirect_object_resolver::resolve(indirect_reference ref) const
 
     auto& xref = document_.cross_reference_table();
     const auto entry = xref.find(ref);
-    if (!entry)
+    if (entry == nullptr)
         throw parse_exception{"XRef entry not found for indirect object"};
 
     if (!entry->in_use())
@@ -106,6 +107,7 @@ std::string indirect_object_resolver::resolve(indirect_reference ref) const
     {
         if (window_size < window.size())
         {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
             window[window_size++] = t;
             return;
         }

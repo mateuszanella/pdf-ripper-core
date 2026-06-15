@@ -19,11 +19,11 @@ page_tree_node::page_tree_node(indirect_object& obj) noexcept : object_view(obj)
 bool page_tree_node::is_leaf() const
 {
     const auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         return false;
 
     const auto* type = d->get_name("Type");
-    return type && type->value == "Page";
+    return type != nullptr && type->value == "Page";
 }
 
 bool page_tree_node::is_root() const
@@ -35,15 +35,15 @@ bool page_tree_node::is_root() const
 std::optional<page_tree_node> page_tree_node::parent()
 {
     const auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         return std::nullopt;
 
     const auto* parent_ref = d->get_indirect_reference("Parent");
-    if (!parent_ref)
+    if (parent_ref == nullptr)
         return std::nullopt;
 
     auto* resolved = obj().identity().owner().resolve_object(*parent_ref);
-    if (!resolved)
+    if (resolved == nullptr)
         return std::nullopt;
 
     return page_tree_node{*resolved};
@@ -52,11 +52,11 @@ std::optional<page_tree_node> page_tree_node::parent()
 std::vector<page_tree_node> page_tree_node::children()
 {
     const auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         return {};
 
     const auto* kids = d->get_array("Kids");
-    if (!kids)
+    if (kids == nullptr)
         return {};
 
     std::vector<page_tree_node> result;
@@ -65,11 +65,11 @@ std::vector<page_tree_node> page_tree_node::children()
     for (const auto& kid_obj : *kids)
     {
         const auto* ref = kid_obj.as_indirect_reference();
-        if (!ref)
+        if (ref == nullptr)
             throw logic_exception{"Kid entry is not an indirect reference"};
 
         auto* resolved = obj().identity().owner().resolve_object(*ref);
-        if (!resolved)
+        if (resolved == nullptr)
             throw logic_exception{"Failed to resolve kid reference"};
 
         result.emplace_back(*resolved);
@@ -81,18 +81,18 @@ std::vector<page_tree_node> page_tree_node::children()
 void page_tree_node::remove_child(const indirect_reference& ref)
 {
     auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         throw logic_exception{"Page tree node content is not a dictionary"};
 
     auto* kids = d->get_array("Kids");
-    if (!kids)
+    if (kids == nullptr)
         throw logic_exception{"Pages node is missing required /Kids entry"};
 
     auto it = std::find_if(kids->begin(), kids->end(),
                            [&](const object& o)
                            {
                                const auto* r = o.as_indirect_reference();
-                               return r && *r == ref;
+                               return r != nullptr && *r == ref;
                            });
 
     if (it != kids->end())
@@ -102,11 +102,11 @@ void page_tree_node::remove_child(const indirect_reference& ref)
 std::optional<class pages> page_tree_node::as_pages()
 {
     const auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         return std::nullopt;
 
     const auto* type = d->get_name("Type");
-    if (!type || type->value != "Pages")
+    if (type == nullptr || type->value != "Pages")
         return std::nullopt;
 
     return pages{obj()};
@@ -115,11 +115,11 @@ std::optional<class pages> page_tree_node::as_pages()
 std::optional<class page> page_tree_node::as_page()
 {
     const auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         return std::nullopt;
 
     const auto* type = d->get_name("Type");
-    if (!type || type->value != "Page")
+    if (type == nullptr || type->value != "Page")
         return std::nullopt;
 
     return page{obj()};
@@ -128,15 +128,15 @@ std::optional<class page> page_tree_node::as_page()
 std::uint64_t page_tree_node::subtree_count() const
 {
     const auto* d = obj().dictionary();
-    if (!d)
+    if (d == nullptr)
         throw logic_exception{"Page tree node content is not a dictionary"};
 
     const auto* type = d->get_name("Type");
-    if (type && type->value == "Page")
+    if (type != nullptr && type->value == "Page")
         return 1;
 
     const auto* count = d->get_integer("Count");
-    if (!count)
+    if (count == nullptr)
         throw logic_exception{"Pages node is missing required /Count entry"};
 
     return static_cast<std::uint64_t>(*count);

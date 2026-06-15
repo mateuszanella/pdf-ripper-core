@@ -83,7 +83,7 @@ bool document::save()
         // never committed. We should not write it out. Parsing errors may
         // have occurred during construction, so we should not throw an
         // exception here, but simply skip it.
-        if (!obj)
+        if (obj == nullptr)
             continue;
 
         // Set the offset for this entry before writing, so that the xref
@@ -171,7 +171,7 @@ catalog document::catalog()
         return factory_.create_catalog();
 
     auto* entry = cross_reference_table().find(*root_ref);
-    if (!entry)
+    if (entry == nullptr)
         throw parse_exception{"Root indirect_object not found in cross-reference table"};
 
     if (entry->is_resolved())
@@ -183,7 +183,7 @@ catalog document::catalog()
 indirect_object* document::resolve_object(indirect_reference ref)
 {
     auto* entry = cross_reference_table().find(ref);
-    if (!entry)
+    if (entry == nullptr)
         throw parse_exception{"Object not found in cross-reference table"};
 
     if (entry->is_resolved())

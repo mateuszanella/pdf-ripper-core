@@ -1,5 +1,4 @@
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "test_fixture.hpp"
 
 #include <catch2/catch_test_macros.hpp>

@@ -4,6 +4,7 @@ namespace ripper::pdf::core
 {
 indirect_reference::indirect_reference() noexcept : object_number_{0}, generation_{0} {}
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 indirect_reference::indirect_reference(std::uint32_t object_number,
                                        std::uint16_t generation) noexcept
     : object_number_{object_number}, generation_{generation}

@@ -75,7 +75,9 @@ default_document_structure_parser::find_start_xref_offset(ripper::io::core::read
             break;
         }
 
-        const std::string_view line{reinterpret_cast<const char*>(buffer.data()), bytes_read};
+        const std::string_view line{
+            reinterpret_cast<const char*>(buffer.data()),
+            bytes_read}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 
         if (text::starts_with_token(line, start_xref_keyword))
         {
@@ -95,7 +97,9 @@ default_document_structure_parser::find_start_xref_offset(ripper::io::core::read
         throw parse_exception{"Missing startxref offset line"};
     }
 
-    const std::string_view offset_line{reinterpret_cast<const char*>(buffer.data()), bytes_read};
+    const std::string_view offset_line{
+        reinterpret_cast<const char*>(buffer.data()),
+        bytes_read}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 
     const auto offset = text::parse_size_t(offset_line);
     if (!offset)
@@ -103,13 +107,13 @@ default_document_structure_parser::find_start_xref_offset(ripper::io::core::read
         throw parse_exception{"Invalid startxref offset"};
     }
 
-    return offset.value();
+    return offset;
 }
 
 document_structure default_document_structure_parser::parse()
 {
     auto* reader_ptr = _document.reader();
-    if (!reader_ptr)
+    if (reader_ptr == nullptr)
         throw io_exception{"No reader backend available"};
 
     auto& reader = *reader_ptr;
@@ -153,7 +157,9 @@ document_structure default_document_structure_parser::parse()
                 break;
             }
 
-            std::string_view chunk{reinterpret_cast<const char*>(buffer.data()), bytes_read};
+            std::string_view chunk{
+                reinterpret_cast<const char*>(buffer.data()),
+                bytes_read}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
             collected_content += chunk;
 
             // Check if we've collected the complete trailer

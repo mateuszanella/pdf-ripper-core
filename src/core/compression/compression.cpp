@@ -19,8 +19,11 @@ std::vector<std::byte> compression::compress(std::span<const std::byte> input)
 
     uLongf compressedSize = maxSize;
     const int result =
-        ::compress(reinterpret_cast<Bytef*>(output.data()), &compressedSize,
-                   reinterpret_cast<const Bytef*>(input.data()), static_cast<uLong>(input.size()));
+        ::compress(reinterpret_cast<Bytef*>(output.data()),
+                   &compressedSize, // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+                   reinterpret_cast<const Bytef*>(
+                       input.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+                   static_cast<uLong>(input.size()));
 
     if (result != Z_OK)
     {
@@ -55,9 +58,13 @@ std::vector<std::byte> compression::decompress(std::span<const std::byte> input)
         std::vector<std::byte> output(outputSize);
         uLongf decompressedSize = static_cast<uLongf>(outputSize);
 
-        const int result = uncompress(reinterpret_cast<Bytef*>(output.data()), &decompressedSize,
-                                      reinterpret_cast<const Bytef*>(input.data()),
-                                      static_cast<uLong>(input.size()));
+        const int result =
+            uncompress(reinterpret_cast<Bytef*>(
+                           output.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+                       &decompressedSize,
+                       reinterpret_cast<const Bytef*>(
+                           input.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+                       static_cast<uLong>(input.size()));
 
         if (result == Z_OK)
         {
@@ -97,8 +104,11 @@ std::vector<std::byte> compression::decompress(std::span<const std::byte> input,
     uLongf decompressedSize = static_cast<uLongf>(expectedSize);
 
     const int result =
-        uncompress(reinterpret_cast<Bytef*>(output.data()), &decompressedSize,
-                   reinterpret_cast<const Bytef*>(input.data()), static_cast<uLong>(input.size()));
+        uncompress(reinterpret_cast<Bytef*>(output.data()),
+                   &decompressedSize, // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+                   reinterpret_cast<const Bytef*>(
+                       input.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+                   static_cast<uLong>(input.size()));
 
     if (result != Z_OK)
     {

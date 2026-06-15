@@ -15,7 +15,7 @@ header_parser::header_parser(const document& document) : _document{document} {}
 header header_parser::parse()
 {
     auto* _reader_ptr = _document.reader();
-    if (!_reader_ptr)
+    if (_reader_ptr == nullptr)
         throw io_exception{"No reader backend available"};
 
     auto& _reader = *_reader_ptr;
@@ -33,7 +33,8 @@ header header_parser::parse()
         throw parse_exception{"File is empty while reading PDF header"};
     }
 
-    const std::string_view line{reinterpret_cast<const char*>(buffer.data()), read};
+    const std::string_view line{reinterpret_cast<const char*>(buffer.data()),
+                                read}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 
     const std::size_t pos = line.find(kMagic);
     if (pos == std::string_view::npos)
@@ -47,7 +48,7 @@ header header_parser::parse()
     while (len < rest.size())
     {
         const unsigned char ch = static_cast<unsigned char>(rest[len]);
-        if (!(std::isdigit(ch) || ch == '.'))
+        if (!std::isdigit(ch) && ch != '.')
             break;
         ++len;
     }

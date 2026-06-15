@@ -59,7 +59,7 @@ public:
     /// revision. It is always the last element of the internal vector. If no
     /// trailers exist yet, an empty trailer backed by an empty dictionary is
     /// created and pushed before returning.
-    [[nodiscard]] trailer& active_trailer() noexcept;
+    [[nodiscard]] trailer& active_trailer();
 
     /// Returns a const reference to the active (newest) trailer.
     ///
@@ -72,7 +72,7 @@ public:
     ///
     /// The pushed trailer becomes the new active trailer and will be included in
     /// subsequent `compiled()` results.
-    void push(trailer t) noexcept;
+    void push(trailer t);
 
     /// Returns the compiled (merged) trailer dictionary.
     ///
@@ -92,7 +92,7 @@ public:
     /// entry (which is meaningless after consolidation), and replaces the internal
     /// trailer list with the resulting single trailer. Used when performing a full
     /// save/rewrite where the incremental revision history is discarded.
-    void squash() noexcept;
+    void squash();
 
 private:
     std::vector<trailer> trailers_;

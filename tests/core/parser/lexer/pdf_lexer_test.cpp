@@ -149,15 +149,15 @@ TEST_CASE("pdf_lexer throws on unexpected characters", "[parser][lexer][corrupte
     SECTION("opening brace")
     {
         pdf_lexer lexer{"{"};
-        REQUIRE_THROWS_WITH((void)lexer.next(),
-                            Catch::Matchers::ContainsSubstring("Unexpected character while lexing"));
+        REQUIRE_THROWS_WITH((void)lexer.next(), Catch::Matchers::ContainsSubstring(
+                                                    "Unexpected character while lexing"));
     }
 
     SECTION("closing brace")
     {
         pdf_lexer lexer{"}"};
-        REQUIRE_THROWS_WITH((void)lexer.next(),
-                            Catch::Matchers::ContainsSubstring("Unexpected character while lexing"));
+        REQUIRE_THROWS_WITH((void)lexer.next(), Catch::Matchers::ContainsSubstring(
+                                                    "Unexpected character while lexing"));
     }
 
     SECTION("at sign")

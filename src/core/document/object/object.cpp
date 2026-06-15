@@ -169,40 +169,40 @@ const dictionary* object::as_dictionary() const noexcept
 {
     const auto* ptr = std::get_if<std::unique_ptr<dictionary>>(&value_);
 
-    if (ptr)
+    if (ptr != nullptr)
         return ptr->get();
 
     const auto* stream_ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
-    if (!stream_ptr)
+    if (stream_ptr == nullptr)
         return nullptr;
 
-    return stream_ptr->get() ? &stream_ptr->get()->dictionary() : nullptr;
+    return stream_ptr->get() != nullptr ? &stream_ptr->get()->dictionary() : nullptr;
 }
 
 dictionary* object::as_dictionary() noexcept
 {
     auto* ptr = std::get_if<std::unique_ptr<dictionary>>(&value_);
 
-    if (ptr)
+    if (ptr != nullptr)
         return ptr->get();
 
     auto* stream_ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
-    if (!stream_ptr)
+    if (stream_ptr == nullptr)
         return nullptr;
 
-    return stream_ptr->get() ? &stream_ptr->get()->dictionary() : nullptr;
+    return stream_ptr->get() != nullptr ? &stream_ptr->get()->dictionary() : nullptr;
 }
 
 const object_stream* object::as_stream() const noexcept
 {
     const auto* ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
-    return ptr ? ptr->get() : nullptr;
+    return ptr != nullptr ? ptr->get() : nullptr;
 }
 
 object_stream* object::as_stream() noexcept
 {
     auto* ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
-    return ptr ? ptr->get() : nullptr;
+    return ptr != nullptr ? ptr->get() : nullptr;
 }
 
 const indirect_reference* object::as_indirect_reference() const noexcept
@@ -296,97 +296,97 @@ object* dictionary::get(const std::string& key) noexcept
 const bool* dictionary::get_bool(const std::string& key) const noexcept
 {
     const auto* object = get(key);
-    return object ? object->as_bool() : nullptr;
+    return object != nullptr ? object->as_bool() : nullptr;
 }
 
 bool* dictionary::get_bool(const std::string& key) noexcept
 {
     auto* object = get(key);
-    return object ? object->as_bool() : nullptr;
+    return object != nullptr ? object->as_bool() : nullptr;
 }
 
 const std::int64_t* dictionary::get_integer(const std::string& key) const noexcept
 {
     const auto* object = get(key);
-    return object ? object->as_integer() : nullptr;
+    return object != nullptr ? object->as_integer() : nullptr;
 }
 
 std::int64_t* dictionary::get_integer(const std::string& key) noexcept
 {
     auto* object = get(key);
-    return object ? object->as_integer() : nullptr;
+    return object != nullptr ? object->as_integer() : nullptr;
 }
 
 const double* dictionary::get_real(const std::string& key) const noexcept
 {
     const auto* object = get(key);
-    return object ? object->as_real() : nullptr;
+    return object != nullptr ? object->as_real() : nullptr;
 }
 
 double* dictionary::get_real(const std::string& key) noexcept
 {
     auto* object = get(key);
-    return object ? object->as_real() : nullptr;
+    return object != nullptr ? object->as_real() : nullptr;
 }
 
 const std::string* dictionary::get_string(const std::string& key) const noexcept
 {
     const auto* object = get(key);
-    return object ? object->as_string() : nullptr;
+    return object != nullptr ? object->as_string() : nullptr;
 }
 
 std::string* dictionary::get_string(const std::string& key) noexcept
 {
     auto* object = get(key);
-    return object ? object->as_string() : nullptr;
+    return object != nullptr ? object->as_string() : nullptr;
 }
 
 const name* dictionary::get_name(const std::string& key) const noexcept
 {
     const auto* object = get(key);
-    return object ? object->as_name() : nullptr;
+    return object != nullptr ? object->as_name() : nullptr;
 }
 
 name* dictionary::get_name(const std::string& key) noexcept
 {
     auto* object = get(key);
-    return object ? object->as_name() : nullptr;
+    return object != nullptr ? object->as_name() : nullptr;
 }
 
 const array* dictionary::get_array(const std::string& key) const noexcept
 {
     const auto* object = get(key);
-    return object ? object->as_array() : nullptr;
+    return object != nullptr ? object->as_array() : nullptr;
 }
 
 array* dictionary::get_array(const std::string& key) noexcept
 {
     auto* object = get(key);
-    return object ? object->as_array() : nullptr;
+    return object != nullptr ? object->as_array() : nullptr;
 }
 
 const dictionary* dictionary::get_dictionary(const std::string& key) const noexcept
 {
     const auto* object = get(key);
-    return object ? object->as_dictionary() : nullptr;
+    return object != nullptr ? object->as_dictionary() : nullptr;
 }
 
 dictionary* dictionary::get_dictionary(const std::string& key) noexcept
 {
     auto* object = get(key);
-    return object ? object->as_dictionary() : nullptr;
+    return object != nullptr ? object->as_dictionary() : nullptr;
 }
 
 const indirect_reference* dictionary::get_indirect_reference(const std::string& key) const noexcept
 {
     const auto* object = get(key);
-    return object ? object->as_indirect_reference() : nullptr;
+    return object != nullptr ? object->as_indirect_reference() : nullptr;
 }
 
 indirect_reference* dictionary::get_indirect_reference(const std::string& key) noexcept
 {
     auto* object = get(key);
-    return object ? object->as_indirect_reference() : nullptr;
+    return object != nullptr ? object->as_indirect_reference() : nullptr;
 }
 
 const dictionary::dictionary_map_type& dictionary::entries() const noexcept

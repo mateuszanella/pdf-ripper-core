@@ -306,6 +306,7 @@ bool pdf_lexer::is_number_start(char ch)
     return std::isdigit(static_cast<unsigned char>(ch)) != 0 || ch == '+' || ch == '-' || ch == '.';
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void pdf_lexer::skip_compound(lexer_token_type begin_token, lexer_token_type end_token)
 {
     std::size_t depth = 1;

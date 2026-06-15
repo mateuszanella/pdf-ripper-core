@@ -85,7 +85,7 @@ public:
     /// The entry must be committed via `commit()` before it is usable.
     ///
     /// Use `allocate()` for the simpler single-step case.
-    [[nodiscard]] indirect_reference reserve() noexcept override;
+    [[nodiscard]] indirect_reference reserve() override;
 
     /// Commit a constructed indirect object to a previously reserved entry in this section.
     ///
@@ -105,13 +105,13 @@ public:
     /// object number within this section's scope, creates and resolves the entry in one
     /// operation, and returns the assigned indirect reference.
     [[nodiscard]] indirect_reference
-    allocate(std::unique_ptr<class indirect_object> object) noexcept override;
+    allocate(std::unique_ptr<class indirect_object> object) override;
 
     /// Return a flat non-owning pointer map of all entries across all subsections.
     ///
     /// The returned map is keyed by object number and contains raw pointers into the
     /// subsection storage. Pointers are valid as long as this section is not modified.
-    [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> entries() noexcept override;
+    [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> entries() override;
 
     /// Returns the total number of entries across all subsections in this section.
     [[nodiscard]] std::size_t size() const noexcept override;
@@ -152,7 +152,7 @@ public:
     /// the current (last) subsection, the entry is appended to that subsection, extending
     /// its contiguous run. If there is a gap, or if this section has no subsections yet,
     /// a new subsection is created starting at the entry's object number.
-    void add_entry(cross_reference_entry entry) noexcept;
+    void add_entry(cross_reference_entry entry);
 
 private:
     std::vector<cross_reference_subsection> subsections_;

@@ -97,7 +97,7 @@ public:
     /// The entry must be committed via `commit()` before it is usable.
     ///
     /// Use `allocate()` for the simpler single-step case.
-    [[nodiscard]] indirect_reference reserve() noexcept override;
+    [[nodiscard]] indirect_reference reserve() override;
 
     /// Commit a constructed indirect object to a previously reserved reference.
     ///
@@ -117,7 +117,7 @@ public:
     /// available object number, adds the resolved entry to the active (newest) section,
     /// and returns the assigned indirect reference.
     [[nodiscard]] indirect_reference
-    allocate(std::unique_ptr<class indirect_object> object) noexcept override;
+    allocate(std::unique_ptr<class indirect_object> object) override;
 
     /// Return a compiled flat non-owning pointer map of all entries across all sections.
     ///
@@ -127,7 +127,7 @@ public:
     ///
     /// The returned map contains raw pointers into the underlying section storage. Pointers
     /// are valid as long as this manager is not modified.
-    [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> entries() noexcept override;
+    [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> entries() override;
 
     /// Return a compiled flat non-owning pointer map of the active (live) entries.
     ///
@@ -137,7 +137,7 @@ public:
     ///
     /// The returned map contains raw pointers into the underlying section storage. Pointers
     /// are valid as long as this manager is not modified.
-    [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> active_entries() noexcept;
+    [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> active_entries();
 
     /// Returns the total number of entries across all sections.
     ///
@@ -155,7 +155,7 @@ public:
     /// Returns a mutable reference to the active (last/newest) section for new object allocation.
     ///
     /// If no sections exist, an empty section is created and appended first.
-    [[nodiscard]] cross_reference_section& active_section() noexcept;
+    [[nodiscard]] cross_reference_section& active_section();
 
     /// Returns a read-only view of all sections in chronological order (oldest first, newest last).
     ///
@@ -177,7 +177,7 @@ public:
     ///
     /// After a squash the manager behaves as if the document were freshly created
     /// with exactly the current live objects. Used when running a full save/rewrite.
-    void squash() noexcept;
+    void squash();
 
 private:
     std::vector<cross_reference_section> sections_;

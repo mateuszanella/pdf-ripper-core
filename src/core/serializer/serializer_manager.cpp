@@ -58,7 +58,7 @@ void serializer_manager::set_object_break_character(char c)
 
 header_serializer& serializer_manager::header_serializer()
 {
-    if (!header_serializer_)
+    if (header_serializer_ == nullptr)
         header_serializer_ = std::make_unique<class default_header_serializer>();
 
     return *header_serializer_;
@@ -66,7 +66,7 @@ header_serializer& serializer_manager::header_serializer()
 
 object_serializer& serializer_manager::object_serializer()
 {
-    if (!object_serializer_)
+    if (object_serializer_ == nullptr)
         object_serializer_ = std::make_unique<class default_object_serializer>();
 
     return *object_serializer_;
@@ -74,7 +74,7 @@ object_serializer& serializer_manager::object_serializer()
 
 indirect_object_serializer& serializer_manager::indirect_object_serializer()
 {
-    if (!indirect_object_serializer_)
+    if (indirect_object_serializer_ == nullptr)
         indirect_object_serializer_ =
             std::make_unique<class default_indirect_object_serializer>(object_serializer());
 
@@ -83,7 +83,7 @@ indirect_object_serializer& serializer_manager::indirect_object_serializer()
 
 cross_reference_table_serializer& serializer_manager::cross_reference_table_serializer()
 {
-    if (!cross_reference_table_serializer_)
+    if (cross_reference_table_serializer_ == nullptr)
         cross_reference_table_serializer_ =
             std::make_unique<class default_cross_reference_table_serializer>();
 
@@ -92,7 +92,7 @@ cross_reference_table_serializer& serializer_manager::cross_reference_table_seri
 
 trailer_serializer& serializer_manager::trailer_serializer()
 {
-    if (!trailer_serializer_)
+    if (trailer_serializer_ == nullptr)
         trailer_serializer_ =
             std::make_unique<class default_trailer_serializer>(object_serializer());
 
