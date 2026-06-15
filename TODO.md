@@ -1,5 +1,7 @@
 # TODO
 
+## Run `make tidy` and fix all warnings
+
 ## Writing and Saving (major milestone)
 
 - [x] Implement output pipeline (`writer` + serializer layer)
