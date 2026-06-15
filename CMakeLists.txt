@@ -19,7 +19,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ------------------------------------------------------------------------------
 # Build parameters
 # ------------------------------------------------------------------------------
-option(BUILD_EXAMPLES "Build example executables" ON)
 option(PDF_RIPPER_CORE_TIDY_INCLUDE_TESTS "Include tests in clang-tidy analysis" OFF)
 
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
@@ -176,21 +175,6 @@ target_link_libraries(pdf_ripper_core
         zlib-ng
         io_ripper_core::io_ripper_core
 )
-
-# ------------------------------------------------------------------------------
-# Examples
-# ------------------------------------------------------------------------------
-if(BUILD_EXAMPLES)
-    add_executable(pdf_ripper_core_example_read_document
-        examples/read_document.cpp
-    )
-    target_link_libraries(pdf_ripper_core_example_read_document PRIVATE pdf_ripper_core)
-
-    add_executable(pdf_ripper_core_example_write_document
-        examples/write_document.cpp
-    )
-    target_link_libraries(pdf_ripper_core_example_write_document PRIVATE pdf_ripper_core)
-endif()
 
 if(PDF_RIPPER_CORE_ENABLE_TESTS)
     FetchContent_Declare(
