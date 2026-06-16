@@ -8,15 +8,12 @@
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object_factory.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/parser.hpp"
 #include "ripper/pdf/core/serializer/serializer.hpp"
 
 #include <filesystem>
-#include <functional>
 #include <memory>
 #include <optional>
-#include <utility>
 
 namespace ripper::pdf::core
 {

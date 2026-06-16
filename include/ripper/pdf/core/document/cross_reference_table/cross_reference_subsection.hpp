@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
-#include "ripper/pdf/core/document/object/indirect_reference.hpp"
 
 #include <cstdint>
 #include <map>

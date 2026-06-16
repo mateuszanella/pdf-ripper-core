@@ -2,10 +2,7 @@
 
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
-
-#include <optional>
 
 namespace ripper::pdf::core
 {

@@ -2,10 +2,6 @@
 
 #include "ripper/pdf/core/document.hpp"
 
-#include <optional>
-#include <string>
-#include <vector>
-
 namespace ripper::pdf::core
 {
 class header_parser

@@ -3,11 +3,8 @@
 #include "ripper/pdf/core/document/document_structure.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
-#include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <memory>
-#include <vector>
 
 namespace ripper::pdf::core
 {

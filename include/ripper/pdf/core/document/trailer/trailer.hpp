@@ -3,7 +3,6 @@
 #include "ripper/pdf/core/document/identifier.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <cstdint>
 #include <optional>

@@ -1,3 +1,4 @@
+#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/value_parsing.hpp"
 
 #include <catch2/catch_test_macros.hpp>

@@ -13,8 +13,6 @@ class object_view
 public:
     explicit object_view(indirect_object& obj) noexcept;
 
-    virtual ~object_view() = default;
-
     /// Returns a reference to the underlying indirect_object.
     [[nodiscard]] indirect_object& obj() noexcept;
 

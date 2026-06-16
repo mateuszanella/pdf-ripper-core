@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 
 #include <string_view>

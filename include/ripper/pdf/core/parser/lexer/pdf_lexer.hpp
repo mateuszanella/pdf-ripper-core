@@ -1,12 +1,7 @@
 #pragma once
 
-#include "ripper/pdf/core/exceptions/exception.hpp"
-
-#include <cstdint>
 #include <deque>
-#include <limits>
 #include <string_view>
-#include <utility>
 
 namespace ripper::pdf::core
 {

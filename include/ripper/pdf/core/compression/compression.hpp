@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ripper/pdf/core/exceptions/exception.hpp"
-
 #include <cstddef>
 #include <span>
 #include <vector>

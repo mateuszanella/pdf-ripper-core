@@ -2,8 +2,6 @@
 
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 
-#include <cstdint>
-
 namespace ripper::pdf::core
 {
 class document;

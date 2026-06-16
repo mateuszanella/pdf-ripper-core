@@ -1,9 +1,7 @@
 #pragma once
 
 #include "ripper/pdf/core/document/catalog/pages/page/page.hpp"
-#include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/object/object_view.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <cstdint>
 #include <functional>

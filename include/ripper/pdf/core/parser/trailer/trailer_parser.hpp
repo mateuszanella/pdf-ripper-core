@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <string_view>
 

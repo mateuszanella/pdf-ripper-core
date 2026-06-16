@@ -2,7 +2,6 @@
 
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <string_view>
 

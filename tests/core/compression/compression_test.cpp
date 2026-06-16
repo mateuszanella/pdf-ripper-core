@@ -1,4 +1,5 @@
 #include "ripper/pdf/core/compression/compression.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstddef>
