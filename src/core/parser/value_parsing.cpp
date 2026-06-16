@@ -100,9 +100,10 @@ object parse_value(pdf_lexer& lexer)
 
         const auto tok = lexer.next();
         std::int64_t i = 0;
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         auto [ptr, ec] =
-            std::from_chars(tok.lexeme.data(), tok.lexeme.data() + tok.lexeme.size(),
-                            i); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            std::from_chars(tok.lexeme.data(), tok.lexeme.data() + tok.lexeme.size(), i);
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         if (ec == std::errc{})
             return object{i};
         return object{std::string{tok.lexeme}};
@@ -112,9 +113,10 @@ object parse_value(pdf_lexer& lexer)
     {
         const auto tok = lexer.next();
         double d = 0.0;
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         auto [ptr, ec] =
-            std::from_chars(tok.lexeme.data(), tok.lexeme.data() + tok.lexeme.size(),
-                            d); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            std::from_chars(tok.lexeme.data(), tok.lexeme.data() + tok.lexeme.size(), d);
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         if (ec == std::errc{})
             return object{d};
         return object{std::string{tok.lexeme}};

@@ -2,6 +2,7 @@
 
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/util/byte.hpp"
 
 #include <array>
 #include <cctype>
@@ -33,8 +34,7 @@ header header_parser::parse()
         throw parse_exception{"File is empty while reading PDF header"};
     }
 
-    const std::string_view line{reinterpret_cast<const char*>(buffer.data()),
-                                read}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    const std::string_view line{byte::as_chars(buffer.data()), read};
 
     const std::size_t pos = line.find(kMagic);
     if (pos == std::string_view::npos)

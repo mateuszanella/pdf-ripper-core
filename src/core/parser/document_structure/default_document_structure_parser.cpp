@@ -7,6 +7,7 @@
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "ripper/pdf/core/parser/trailer/default_trailer_parser.hpp"
+#include "ripper/pdf/core/util/byte.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
 #include <algorithm>
@@ -75,9 +76,7 @@ default_document_structure_parser::find_start_xref_offset(ripper::io::core::read
             break;
         }
 
-        const std::string_view line{
-            reinterpret_cast<const char*>(buffer.data()),
-            bytes_read}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        const std::string_view line{byte::as_chars(buffer.data()), bytes_read};
 
         if (text::starts_with_token(line, start_xref_keyword))
         {
@@ -97,9 +96,7 @@ default_document_structure_parser::find_start_xref_offset(ripper::io::core::read
         throw parse_exception{"Missing startxref offset line"};
     }
 
-    const std::string_view offset_line{
-        reinterpret_cast<const char*>(buffer.data()),
-        bytes_read}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    const std::string_view offset_line{byte::as_chars(buffer.data()), bytes_read};
 
     const auto offset = text::parse_size_t(offset_line);
     if (!offset)
@@ -157,9 +154,7 @@ document_structure default_document_structure_parser::parse()
                 break;
             }
 
-            std::string_view chunk{
-                reinterpret_cast<const char*>(buffer.data()),
-                bytes_read}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+            std::string_view chunk{byte::as_chars(buffer.data()), bytes_read};
             collected_content += chunk;
 
             // Check if we've collected the complete trailer

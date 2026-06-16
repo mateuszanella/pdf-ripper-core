@@ -50,15 +50,27 @@ void default_cross_reference_table_parser::parse_subsection(cross_reference_sect
         entryLine = text::trim_ascii(text::strip_line_endings(entryLine));
         content = content.substr(entryNewline + 1);
 
-        if (entryLine.size() < 18)
+        // Xref entry layout: 10-digit offset, space, 5-digit generation, space, 1-char flag
+        constexpr std::size_t k_offset_field_size = 10;
+        constexpr std::size_t k_generation_field_size = 5;
+        constexpr std::size_t k_generation_field_begin = k_offset_field_size + 1;
+        constexpr std::size_t k_generation_field_end =
+            k_generation_field_begin + k_generation_field_size;
+        constexpr std::size_t k_flag_position = k_generation_field_end + 1;
+        constexpr std::size_t k_min_entry_size = k_flag_position + 1;
+
+        if (entryLine.size() < k_min_entry_size)
         {
             throw parse_exception{"Malformed xref entry"};
         }
 
         std::uint64_t offset = 0;
-        // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage,
-        // cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        auto [ptr1, ec1] = std::from_chars(entryLine.data(), entryLine.data() + 10, offset);
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        // NOLINTBEGIN(bugprone-suspicious-stringview-data-usage)
+        auto [ptr1, ec1] =
+            std::from_chars(entryLine.data(), entryLine.data() + k_offset_field_size, offset);
+        // NOLINTEND(bugprone-suspicious-stringview-data-usage)
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
         if (ec1 != std::errc{})
         {
@@ -66,16 +78,18 @@ void default_cross_reference_table_parser::parse_subsection(cross_reference_sect
         }
 
         std::uint16_t generation = 0;
-        auto [ptr2, ec2] =
-            std::from_chars(entryLine.data() + 11, entryLine.data() + 16,
-                            generation); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        auto [ptr2, ec2] = std::from_chars(entryLine.data() + k_generation_field_begin,
+                                           entryLine.data() + k_generation_field_end, generation);
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
         if (ec2 != std::errc{})
         {
             throw parse_exception{"Invalid xref entry generation"};
         }
 
-        const char flag = entryLine[17];
+        const char flag = entryLine[k_flag_position];
         if (flag != 'n' && flag != 'f')
         {
             throw parse_exception{"Invalid xref in-use flag"};

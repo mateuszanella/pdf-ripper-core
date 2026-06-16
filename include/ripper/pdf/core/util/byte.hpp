@@ -40,4 +40,14 @@ inline void append_bytes(std::vector<std::byte>& out, const std::vector<std::byt
 {
     out.insert(out.end(), in.begin(), in.end());
 }
+
+/// Reinterpret a std::byte pointer as a const char pointer.
+/// The returned pointer is NOT null-terminated; the caller must provide an explicit size
+/// when constructing a string_view from it (i.e. `std::string_view{as_chars(p), n}`).
+/// This is safe because bytes read from a file are interpreted as chars.
+[[nodiscard]] inline const char* as_chars(const std::byte* data) noexcept
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return reinterpret_cast<const char*>(data);
+}
 } // namespace ripper::pdf::core::byte
