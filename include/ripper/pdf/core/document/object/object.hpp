@@ -370,6 +370,12 @@ public:
     /// Returns a mutable reference to the byte stream payload of this stream.
     [[nodiscard]] class stream& stream() noexcept;
 
+    /// Sets the length of the stream in the content dictionary to the given value.
+    void set_length(std::size_t length);
+
+    /// Synchronizes the length of the stream in the content dictionary with the actual stream size.
+    void sync_length();
+
 private:
     class dictionary dict_;
     class stream stream_;

@@ -2,7 +2,6 @@
 
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/util/byte.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
@@ -150,8 +149,24 @@ default_object_serializer::serialize_dictionary(const dictionary& value) const
 }
 
 std::vector<std::byte>
-default_object_serializer::serialize_stream_object(const object_stream&) const
+default_object_serializer::serialize_stream_object(const object_stream& stream_obj) const
 {
-    throw not_implemented_exception{"Stream object serialization not yet implemented"};
+    std::vector<std::byte> out;
+
+    const auto dict = stream_obj.dictionary();
+    const auto stream = stream_obj.stream();
+
+    byte::append_bytes(out, serialize_dictionary(dict));
+
+    byte::append_bytes(out, line_break_character_);
+    byte::append_bytes(out, "stream");
+    byte::append_bytes(out, line_break_character_);
+
+    byte::append_bytes(out, stream.data());
+
+    byte::append_bytes(out, line_break_character_);
+    byte::append_bytes(out, "endstream");
+
+    return out;
 }
 } // namespace ripper::pdf::core

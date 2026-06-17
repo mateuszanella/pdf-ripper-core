@@ -252,6 +252,17 @@ stream& object_stream::stream() noexcept
     return stream_;
 }
 
+void object_stream::set_length(std::size_t length)
+{
+    dict_.set("Length", object(static_cast<std::int64_t>(length)));
+}
+
+void object_stream::sync_length()
+{
+    const std::size_t length = stream_.size();
+    dict_.set("Length", object(static_cast<std::int64_t>(length)));
+}
+
 /// Dictionary implementation
 
 dictionary::dictionary(dictionary_map_type entries) noexcept : entries_(std::move(entries)) {}
