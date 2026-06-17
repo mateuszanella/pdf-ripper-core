@@ -14,7 +14,7 @@
 namespace ripper::pdf::core
 {
 indirect_object default_object_parser::parse(document& doc, indirect_reference ref,
-                                             std::string_view content_sv, bool preload_stream) const
+                                             std::string_view content_sv) const
 {
     pdf_lexer lexer{content_sv};
 
@@ -24,16 +24,17 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
         (void)lexer.next();
     }
 
-    // Parse the content as any PDF direct value (primitive, array, dictionary, etc.).
+    // Parse the content stream as a PDF direct value (primitive value, listed on object.hpp).
     auto content = parse_value(lexer);
 
-    // A content stream is only possible when the content is a dictionary.
+    // After parsing the actual content and obtaining the proper object type, we must
+    // now check if the content contains a `stream` keyword. By default, we only allow
+    // dictionaries to contain stream content, as other types do not support it.
     if (content.is_dictionary())
     {
-        const auto* dict_ptr = content.as_dictionary();
-        auto peek_result = lexer.peek();
+        const auto* dict = content.as_dictionary();
 
-        /// TODO: implement streams correctly and also add a way to create a proper deferred stream.
+        auto peek_result = lexer.peek();
 
         if (peek_result.type == lexer_token_type::keyword && peek_result.lexeme == "stream")
         {
@@ -41,57 +42,76 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
 
             // Stream content begins after the `stream` keyword and its mandatory
             // line ending (either \r\n or \n per the PDF spec, section 7.3.8.1).
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            const char* kw_end = stream_tok.lexeme.data() + stream_tok.lexeme.size();
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            const char* content_end = content_sv.data() + content_sv.size();
 
-            const char* stream_start = kw_end;
-            if (stream_start < content_end && *stream_start == '\r')
-                ++stream_start; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            if (stream_start < content_end && *stream_start == '\n')
-                ++stream_start; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            auto* pos = stream_tok.lexeme.data() + stream_tok.lexeme.size();
 
-            // Locate `endstream` to bound the raw stream bytes.
-            const std::string_view remainder{stream_start,
-                                             static_cast<std::size_t>(content_end - stream_start)};
+            const auto* data_end = content_sv.data() + content_sv.size();
 
-            const auto endstream_pos = remainder.find("endstream");
+            if (pos < data_end && *pos == '\r')
+                ++pos;
+            if (pos < data_end && *pos == '\n')
+                ++pos;
+            // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
-            std::vector<std::byte> bytes;
-            std::size_t payload_size = 0;
-            if (endstream_pos != std::string_view::npos)
+            const auto stream_bytes_start_offset =
+                static_cast<std::size_t>(pos - content_sv.data());
+
+            // Determine the stream content boundary.
+            //
+            // Per PDF spec §7.3.8, /Length is the authoritative source. We cross-
+            // validate it against the actual "endstream" position and fall back
+            // to searching for "endstream" when they disagree (malformed /Length).
+            std::size_t end_of_stream = std::string_view::npos;
+
+            const std::int64_t* length_ptr = dict->get_integer("Length");
+            if (length_ptr != nullptr && *length_ptr >= 0)
             {
-                // Trim the mandatory line ending before `endstream`.
-                std::size_t len = endstream_pos;
-                if (len > 0 && remainder[len - 1] == '\n')
-                    --len;
-                if (len > 0 && remainder[len - 1] == '\r')
-                    --len;
+                const auto length = static_cast<std::size_t>(*length_ptr);
+                const auto length_end = stream_bytes_start_offset + length;
 
-                payload_size = len;
-
-                if (preload_stream)
+                std::size_t check = length_end;
+                while (check < content_sv.size() &&
+                       (content_sv[check] == '\r' || content_sv[check] == '\n' ||
+                        content_sv[check] == ' '))
                 {
-                    bytes.resize(len);
-                    std::memcpy(bytes.data(), stream_start, len);
+                    ++check;
+                }
+
+                if (check + 9 <= content_sv.size() && content_sv.substr(check, 9) == "endstream")
+                {
+                    end_of_stream = length_end;
                 }
             }
 
-            dictionary stream_dict{};
-            if (dict_ptr != nullptr)
-                stream_dict = *dict_ptr;
+            if (end_of_stream == std::string_view::npos)
+            {
+                end_of_stream = content_sv.rfind("endstream");
+                if (end_of_stream != std::string_view::npos)
+                {
+                    while (end_of_stream > stream_bytes_start_offset &&
+                           (content_sv[end_of_stream - 1] == '\r' ||
+                            content_sv[end_of_stream - 1] == '\n'))
+                    {
+                        --end_of_stream;
+                    }
+                }
+                else
+                {
+                    end_of_stream = content_sv.size();
+                }
+            }
 
-            const auto* length = stream_dict.get_integer("Length");
-            const std::size_t expected_size =
-                length != nullptr ? static_cast<std::size_t>(*length) : payload_size;
+            std::vector<std::byte> bytes(end_of_stream - stream_bytes_start_offset);
 
-            stream parsed_stream =
-                preload_stream ? stream{std::move(bytes)} : stream::deferred(expected_size);
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            std::memcpy(bytes.data(), content_sv.data() + stream_bytes_start_offset, bytes.size());
+
+            stream parsed_stream = stream{std::move(bytes)};
 
             return indirect_object{
                 object_identity{&doc, ref},
-                object{object_stream{std::move(stream_dict), std::move(parsed_stream)}}};
+                object{object_stream{std::move(*dict), std::move(parsed_stream)}}};
         }
     }
 

@@ -15,7 +15,6 @@
 
 #include <memory>
 #include <span>
-#include <string_view>
 #include <utility>
 
 namespace ripper::pdf::core

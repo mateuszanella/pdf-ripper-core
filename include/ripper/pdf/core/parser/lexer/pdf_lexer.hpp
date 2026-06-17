@@ -15,7 +15,7 @@ enum class lexer_token_type
     name,             // /Name
     integer,          // 123
     real,             // 123.45
-    keyword,          // true, false, null
+    keyword,          // true, false, null, stream, endstream
     literal_string,   // (String)
     hex_string        // <48656C6C6F>
 };

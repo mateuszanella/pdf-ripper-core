@@ -168,22 +168,20 @@ TEST_CASE("default_object_parser parses nested dictionary", "[parser][object]")
     REQUIRE(*inner == 42);
 }
 
-TEST_CASE("default_object_parser parses deferred stream", "[parser][object]")
+TEST_CASE("default_object_parser skips embedded endstream text", "[parser][object]")
 {
     auto doc = make_document();
     default_object_parser parser;
 
     const auto result = parser.parse(
-        doc, ref(10), "10 0 obj\n<< /Length 5 >>\nstream\nhello\nendstream\nendobj\n", false);
+        doc, ref(10), "10 0 obj\n<< /Length 15 >>\nstream\nhello endstream\nendstream\nendobj\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
     REQUIRE(obj_stream != nullptr);
 
     const auto& strm = obj_stream->stream();
-    REQUIRE(strm.is_deferred());
-    REQUIRE(strm.expected_size() == 5);
-    REQUIRE_FALSE(strm.has_data());
+    REQUIRE(strm.size() == 15);
 }
 
 TEST_CASE("default_object_parser parses stream with CRLF line ending", "[parser][object]")

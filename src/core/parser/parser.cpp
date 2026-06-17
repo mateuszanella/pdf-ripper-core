@@ -45,6 +45,7 @@ document_structure parser::structure()
 indirect_object parser::parse_object(indirect_reference ref, bool preload_stream)
 {
     auto content = manager().object_resolver().resolve(ref);
-    return manager().object_parser().parse(document_, ref, content, preload_stream);
+    (void)preload_stream;
+    return manager().object_parser().parse(document_, ref, content);
 }
 } // namespace ripper::pdf::core

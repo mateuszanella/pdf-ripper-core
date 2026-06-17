@@ -61,6 +61,10 @@ using array = std::vector<object>;
 /// ergonomic use in parsing and traversal code. When performance or exhaustive
 /// matching is needed, `variant()` exposes the raw `std::variant` for use with
 /// `std::visit`.
+///
+/// @TODO: the string object may have to become a class, to be able to diferentiate
+/// between the actual string encoding type (e.g. UTF-8, Latin-1) and the PDF string
+/// object representation (which may include escape sequences).
 class object
 {
 public:
