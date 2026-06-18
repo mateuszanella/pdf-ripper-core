@@ -79,16 +79,15 @@ public:
     /// Ownership remains with this entry.
     [[nodiscard]] class indirect_object* indirect_object() const noexcept;
 
-    /// Caches a resolved indirect object into this entry.
+    /// Resolves this entry by caching an indirect object into it.
     ///
     /// Intended for lazy-loading: called by the resolver after parsing the indirect object
-    /// from disk.
+    /// from disk. Also used when committing newly created objects via `commit()`.
     ///
-    /// This operation is write-once for pointer stability: if an indirect object has already
-    /// been cached for this entry, the call is ignored and the existing indirect object pointer
-    /// is returned unchanged.
+    /// If this entry was already resolved, the previous indirect object is replaced.
+    /// Any existing raw pointer to the old object is invalidated.
     ///
-    /// Returns a raw pointer to the cached indirect object, or `nullptr` if `obj` is null.
+    /// Returns a raw pointer to the newly cached indirect object, or `nullptr` if `obj` is null.
     [[nodiscard]] class indirect_object*
     resolve(std::unique_ptr<class indirect_object> obj) noexcept;
 

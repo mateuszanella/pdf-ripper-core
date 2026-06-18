@@ -15,8 +15,8 @@ namespace ripper::pdf::core
 /// Produces:
 ///   trailer\n<<dict>>\nstartxref\n<offset>\n%%EOF\n
 ///
-/// Fields that must not appear in a full-save trailer (e.g. `/Prev`) are
-/// stripped from the dictionary copy before serialization.
+/// The trailer dictionary is serialized as-is. No keys are stripped —
+/// the caller is responsible for the correctness of the dictionary contents.
 class default_trailer_serializer : public trailer_serializer
 {
 public:

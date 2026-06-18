@@ -49,7 +49,7 @@ public:
     /// Serialize a PDF trailer block to a byte buffer.
     ///
     /// Emits `trailer\n<<dict>>\nstartxref\n<xref_offset>\n%%EOF\n`.
-    /// Fields that are invalid in a full-save trailer (e.g. `/Prev`) are stripped.
+    /// The trailer dictionary is serialized as-is — no keys are stripped.
     [[nodiscard]] std::vector<std::byte> serialize_trailer(const trailer& t,
                                                            std::uint64_t xref_offset);
 

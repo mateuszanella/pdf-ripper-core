@@ -62,9 +62,6 @@ indirect_object* cross_reference_entry::resolve(std::unique_ptr<class indirect_o
     if (!obj)
         return nullptr;
 
-    if (object_)
-        return object_.get();
-
     object_ = std::move(obj);
     in_use_ = true;
 
