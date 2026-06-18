@@ -4,8 +4,8 @@
 #include "test_fixture.hpp"
 
 #include <catch2/catch_test_macros.hpp>
-#include <string>
 #include <memory>
+#include <string>
 
 namespace ripper::pdf::core
 {

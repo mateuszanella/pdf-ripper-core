@@ -49,15 +49,7 @@ void document::save()
     if (!has_serializer())
         throw logic_exception{"No serializer available"};
 
-    auto& w = *writer();
-    auto& s = *serializer();
-
-    auto serialized_header = s.serialize_header(this->header());
-
-    (void)w.write(serialized_header);
-
-    // Here, we separate the entires that matter for this specific save operation (full
-    // rewrite). The `active_entries()` view includes only entries that are currently in use,
+    // Flatten incremental update history into a single section for a full rewrite.
     cross_reference_table().squash();
     trailer().squash();
 
@@ -65,35 +57,59 @@ void document::save()
 
     auto& xref = cross_reference_table().active_section();
 
-    // Write all active indirect objects in ascending object number order.
+    // On the full rewrite save mode, we must do this in two passes: first,
+    // resolve every object that still lives in the file (after the xref squash),
+    // then serialize every active object to the output writer.
+    //
+    // Entry offsets still refer to positions in the input file at this point
+    // (no `set_offset` has been called yet), so the resolver can safely use
+    // them to determine exact byte ranges.  Objects that are already in
+    // memory (resolved or newly created) are left untouched.
     for (auto [number, entry_ptr] : xref.entries())
     {
         auto& entry = *entry_ptr;
+
         if (!entry.in_use())
             continue;
 
-        // If the entry is already resolved, we can serialize it directly.
-        // Otherwise, we need to resolve it first.
-        const auto obj = (!entry.is_resolved() && !entry.is_new())
-                             ? resolve_object(entry.reference())
-                             : entry.indirect_object();
+        if (!entry.is_resolved() && !entry.is_new())
+            // We can ignore the return value here; the resolver will throw if it fails.
+            static_cast<void>(resolve_object(entry.reference()));
+    }
 
-        // If the entry is new but unresolved, it means it was reserved but
-        // never committed. We should not write it out. Parsing errors may
-        // have occurred during construction, so we should not throw an
-        // exception here, but simply skip it.
+    // By this point every in-use entry either carries a previously-resolved
+    // indirect object or has been loaded by pass 1.  Offsets are now set to
+    // positions in the output file; the resolver is never invoked here, so
+    // the input/output offset confusion cannot occur.
+    auto& w = *writer();
+    auto& s = *serializer();
+
+    auto serialized_header = s.serialize_header(this->header());
+    (void)w.write(serialized_header);
+
+    for (auto [number, entry_ptr] : xref.entries())
+    {
+        auto& entry = *entry_ptr;
+
+        // Some sanity checks to ensure the entry is in use and has an actual object set.
+        if (!entry.in_use())
+            continue;
+
+        auto* obj = entry.indirect_object();
         if (obj == nullptr)
             continue;
 
-        // Set the offset for this entry before writing, so that the xref
-        // can be correctly generated later.
+        // Save the current output position as the offset for this entry to ensure
+        // the cross-reference table entry points to the correct location in the output.
         entry.set_offset(static_cast<std::uint64_t>(w.tell()));
 
+        // Serialize the indirect object to the output stream.
         (void)w.write(s.serialize_indirect_object(*obj));
     }
 
     auto xref_start = static_cast<std::uint64_t>(w.tell());
 
+    // Flush the cross-reference section and trailer to the output stream.
     (void)w.write(s.serialize_cross_reference_section(xref));
     (void)w.write(s.serialize_trailer(trailer().active_trailer(), xref_start));
 

@@ -125,7 +125,7 @@ public:
     ///
     /// Returns a raw non-owning pointer into the xref entry. The pointer remains valid
     /// as long as the document (and its xref) is alive.
-    [[nodiscard]] class indirect_object* resolve_object(indirect_reference ref);
+    class indirect_object* resolve_object(indirect_reference ref);
 
     /// Access the object factory for parsing and creating PDF objects.
     ///

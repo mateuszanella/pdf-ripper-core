@@ -1,6 +1,8 @@
+#include "ripper/io/core/reader/file_reader.hpp"
 #include "ripper/io/core/reader/memory_reader.hpp"
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/parser/indirect_object_resolver.hpp"
+#include "test_fixture.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -132,5 +134,50 @@ TEST_CASE("indirect_object_resolver throws on generation mismatch", "[parser][re
     // find() now does exact (obj_num, gen) matching, so this is "not found".
     REQUIRE_THROWS_WITH(resolver.resolve(indirect_reference{1, 5}),
                         Catch::Matchers::ContainsSubstring("not found"));
+}
+
+TEST_CASE("indirect_object_resolver resolves stream object", "[parser][resolver][stream]")
+{
+    auto doc = document::open(test_fixture::fixture_pdf_path());
+    indirect_object_resolver resolver{doc};
+
+    // Object 3 is a FlateDecode stream whose compressed payload contains
+    // bytes like '{' that would choke a lexer-based scanner.
+    const auto raw = resolver.resolve(indirect_reference{3, 0});
+
+    REQUIRE(raw.find("3 0 obj") != std::string::npos);
+    REQUIRE(raw.find("stream") != std::string::npos);
+    REQUIRE(raw.find("endstream") != std::string::npos);
+    REQUIRE(raw.find("endobj") != std::string::npos);
+}
+
+TEST_CASE("indirect_object_resolver bounds read to next object offset",
+          "[parser][resolver][bounds]")
+{
+    auto doc = document::open(test_fixture::fixture_pdf_path());
+    indirect_object_resolver resolver{doc};
+
+    // Object 3 (offset 22) is immediately followed by object 1 (offset 209)
+    // in the fixture. The resolved content must not leak bytes from object 1.
+    const auto raw = resolver.resolve(indirect_reference{3, 0});
+
+    REQUIRE(raw.find("1 0 obj") == std::string::npos);
+}
+
+TEST_CASE("indirect_object_resolver uses xref table offset as bound for last object",
+          "[parser][resolver][bounds]")
+{
+    auto doc = document::open(test_fixture::fixture_pdf_path());
+    indirect_object_resolver resolver{doc};
+
+    // Object 28 is the last object before the xref table in the fixture.
+    // The resolver must use the xref table offset (not file size) as the
+    // upper bound so that xref and trailer bytes do not leak in.
+    const auto raw = resolver.resolve(indirect_reference{28, 0});
+
+    REQUIRE(raw.find("28 0 obj") != std::string::npos);
+    REQUIRE(raw.find("endobj") != std::string::npos);
+    REQUIRE(raw.find("xref") == std::string::npos);
+    REQUIRE(raw.find("trailer") == std::string::npos);
 }
 } // namespace ripper::pdf::core

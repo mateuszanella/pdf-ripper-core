@@ -1,11 +1,13 @@
 #include "ripper/pdf/core/parser/indirect_object_resolver.hpp"
 
 #include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
-#include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
-#include <array>
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -15,35 +17,6 @@
 
 namespace ripper::pdf::core
 {
-namespace
-{
-struct observed_token
-{
-    lexer_token token{};
-    std::size_t offset{std::string::npos};
-};
-
-std::size_t token_offset_in(std::string_view source, const lexer_token& token)
-{
-    if (token.lexeme.empty())
-    {
-        return std::string::npos;
-    }
-
-    const char* begin = source.data();
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    const char* end = source.data() + source.size();
-    const char* ptr = token.lexeme.data();
-
-    if (ptr < begin || ptr >= end)
-    {
-        return std::string::npos;
-    }
-
-    return static_cast<std::size_t>(ptr - begin);
-}
-} // namespace
-
 indirect_object_resolver::indirect_object_resolver(document& document) : document_{document} {}
 
 std::string indirect_object_resolver::resolve(indirect_reference ref) const
@@ -66,107 +39,115 @@ std::string indirect_object_resolver::resolve(indirect_reference ref) const
     if (!entry->in_use())
         throw parse_exception{"XRef entry is not in use"};
 
-    const std::uint64_t file_size_u64 = r.size();
-    if (file_size_u64 == 0)
-        throw io_exception{"Read size zero while trying to resolve an indirect object"};
-
-    const auto offset_u64 = entry->offset();
-    if (!offset_u64.has_value())
+    const auto target_offset = entry->offset();
+    if (!target_offset.has_value())
         throw parse_exception{"XRef entry is missing file offset"};
 
-    if (offset_u64.value() >= file_size_u64)
+    const std::uint64_t file_size = r.size();
+    if (file_size == 0)
+        throw io_exception{"Read size zero while trying to resolve an indirect object"};
+
+    if (*target_offset >= file_size)
         throw parse_exception{"Object offset is out of bounds"};
 
-    if (offset_u64.value() > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
-        throw parse_exception{"Object offset is too large to handle"};
+    // Determine the byte range occupied by this object on disk by examining
+    // the xref: the object spans from its own file offset to the next larger
+    // offset among all in-use entries and xref table start positions.
+    std::optional<std::uint64_t> next_offset;
 
-    const std::size_t offset = static_cast<std::size_t>(offset_u64.value());
-    const std::size_t to_read = static_cast<std::size_t>(file_size_u64 - offset_u64.value());
+    for (auto& section : xref.sections())
+    {
+        for (const auto& entry_pair : section.entries())
+        {
+            const auto& off = entry_pair.second->offset();
+            if (entry_pair.second->in_use() && off.has_value())
+            {
+                const auto off_val = *off;
+                if (off_val > *target_offset)
+                {
+                    if (!next_offset.has_value() || off_val < *next_offset)
+                        next_offset = off_val;
+                }
+            }
+        }
 
-    std::vector<std::byte> bytes(to_read);
-    const std::size_t read = r.read_at(std::span<std::byte>{bytes.data(), bytes.size()}, offset);
-    if (read == 0)
+        const auto sxref_off = section.startxref_offset();
+        if (sxref_off.has_value())
+        {
+            const auto sx_val = *sxref_off;
+            if (sx_val > *target_offset)
+            {
+                if (!next_offset.has_value() || sx_val < *next_offset)
+                    next_offset = sx_val;
+            }
+        }
+    }
+
+    const std::uint64_t read_end = next_offset.value_or(file_size);
+    const std::uint64_t read_size_u64 = read_end - *target_offset;
+
+    if (read_size_u64 > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+        throw parse_exception{"Object is too large to handle"};
+
+    const std::size_t read_size = static_cast<std::size_t>(read_size_u64);
+    const std::size_t offset = static_cast<std::size_t>(*target_offset);
+
+    std::vector<std::byte> bytes(read_size);
+    const std::size_t bytes_read =
+        r.read_at(std::span<std::byte>{bytes.data(), bytes.size()}, offset);
+    if (bytes_read == 0)
         throw io_exception{
             "Received zero bytes from reader while attempting to read indirect object content"};
 
-    std::string source(read, '\0');
-    for (std::size_t i = 0; i < read; ++i)
-    {
+    std::string source(bytes_read, '\0');
+    for (std::size_t i = 0; i < bytes_read; ++i)
         source[i] = static_cast<char>(bytes[i]);
-    }
 
-    pdf_lexer lexer{source};
+    // Locate the object header. The xref offset points to the object number,
+    // so " obj" should appear very early in the bounded source.
+    const auto obj_kw = source.find(" obj");
+    if (obj_kw == std::string::npos)
+        throw parse_exception{"Missing obj marker for indirect object"};
 
-    std::array<observed_token, 3> window{};
-    std::size_t window_size = 0;
+    // Walk backwards from the " obj" marker to find the start of the object number.
+    std::size_t header_start = obj_kw;
+    while (header_start > 0 && source[header_start - 1] != '\n' && source[header_start - 1] != '\r')
+        --header_start;
 
-    auto push_token = [&](const observed_token& t)
-    {
-        if (window_size < window.size())
-        {
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
-            window[window_size++] = t;
-            return;
-        }
+    std::size_t num_end = header_start;
+    while (num_end < source.size() && std::isdigit(static_cast<unsigned char>(source[num_end])))
+        ++num_end;
 
-        window[0] = window[1];
-        window[1] = window[2];
-        window[2] = t;
-    };
+    const auto parsed_obj = text::parse_u32(source.substr(header_start, num_end - header_start));
 
-    while (true)
-    {
-        const auto token = lexer.next();
-        if (token.type == lexer_token_type::eof)
-        {
-            break;
-        }
+    std::size_t gen_start = num_end;
+    while (gen_start < source.size() && source[gen_start] == ' ')
+        ++gen_start;
 
-        observed_token current{
-            .token = token,
-            .offset = token_offset_in(source, token),
-        };
-        push_token(current);
+    std::size_t gen_end = gen_start;
+    while (gen_end < source.size() && std::isdigit(static_cast<unsigned char>(source[gen_end])))
+        ++gen_end;
 
-        if (window_size < 3)
-        {
-            continue;
-        }
+    const auto parsed_gen = text::parse_u16(source.substr(gen_start, gen_end - gen_start));
 
-        const auto& a = window[0];
-        const auto& b = window[1];
-        const auto& c = window[2];
+    if (!parsed_obj || *parsed_obj != ref.object_number())
+        throw parse_exception{"Object number mismatch in indirect object header"};
 
-        if (a.token.type != lexer_token_type::integer ||
-            b.token.type != lexer_token_type::integer ||
-            c.token.type != lexer_token_type::keyword || c.token.lexeme != "obj" ||
-            a.offset == std::string::npos)
-        {
-            continue;
-        }
+    if (!parsed_gen.has_value() && ref.generation() != 0)
+        throw parse_exception{"Generation number mismatch in indirect object header"};
 
-        const auto object_number = text::parse_u32(a.token.lexeme);
-        const auto generation = text::parse_u16(b.token.lexeme);
+    if (parsed_gen.has_value() && *parsed_gen != ref.generation())
+        throw parse_exception{"Generation number mismatch in indirect object header"};
 
-        if (!object_number || !generation)
-        {
-            continue;
-        }
+    // Within the bounded range the object must end with "endobj".
+    // rfind handles stream content that may contain arbitrary bytes.
+    const auto endobj_pos = source.rfind("endobj");
+    if (endobj_pos == std::string::npos)
+        throw parse_exception{"Missing endobj marker for indirect object " +
+                              std::to_string(ref.object_number()) + " (offset " +
+                              std::to_string(*target_offset) + ", bound " +
+                              std::to_string(read_end) + ")"};
 
-        if (*object_number != ref.object_number() || *generation != ref.generation())
-        {
-            continue;
-        }
-
-        const std::size_t object_start = a.offset;
-
-        const auto endobj_offset = source.find("endobj", object_start);
-        if (endobj_offset == std::string::npos)
-            throw parse_exception{"Missing endobj marker for indirect object"};
-
-        return source.substr(object_start, endobj_offset - object_start + 6);
-    }
-
-    throw parse_exception{"Indirect object not found"};
+    return source.substr(header_start, endobj_pos - header_start + 6);
 }
 } // namespace ripper::pdf::core
