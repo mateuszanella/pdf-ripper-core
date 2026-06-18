@@ -252,6 +252,12 @@ stream& object_stream::stream() noexcept
     return stream_;
 }
 
+void object_stream::write(std::span<std::byte> in)
+{
+    stream_.write(in);
+    sync_length();
+}
+
 void object_stream::set_length(std::size_t length)
 {
     dict_.set("Length", object(static_cast<std::int64_t>(length)));

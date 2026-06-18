@@ -370,10 +370,18 @@ public:
     /// Returns a mutable reference to the byte stream payload of this stream.
     [[nodiscard]] class stream& stream() noexcept;
 
-    /// Sets the length of the stream in the content dictionary to the given value.
+    /// Write bytes to the end of the stream.
+    ///
+    /// Proxy method to `stream::write`. Automatically syncs the length of the stream
+    /// in the content dictionary with the actual stream size after writing.
+    void write(std::span<std::byte> in);
+
+    /// Sets the `Length` value of the object dictionary in the content dictionary to the given
+    /// value.
     void set_length(std::size_t length);
 
-    /// Synchronizes the length of the stream in the content dictionary with the actual stream size.
+    /// Synchronizes the `Length` value of the object dictionary in the content dictionary with the
+    /// actual stream size.
     void sync_length();
 
 private:
