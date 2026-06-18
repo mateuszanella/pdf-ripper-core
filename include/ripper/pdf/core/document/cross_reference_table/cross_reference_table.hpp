@@ -42,6 +42,8 @@ public:
     /// Look up a mutable cross-reference entry by object number.
     ///
     /// Scans the table for an entry whose object number matches `object_number`.
+    /// When multiple entries share the same object number (across revisions),
+    /// the most recent entry wins.
     ///
     /// Returns a raw pointer into the table (valid for the lifetime of this table),
     /// or `nullptr` if no entry exists for the given object number.
@@ -50,28 +52,68 @@ public:
     /// Look up a read-only cross-reference entry by object number.
     ///
     /// Scans the table for an entry whose object number matches `object_number`.
+    /// When multiple entries share the same object number (across revisions),
+    /// the most recent entry wins.
     ///
     /// Returns a raw pointer into the table (valid for the lifetime of this table),
     /// or `nullptr` if no entry exists for the given object number.
     [[nodiscard]] virtual const cross_reference_entry*
     find(std::uint32_t object_number) const noexcept = 0;
 
-    /// Look up a mutable cross-reference entry by indirect reference.
+    /// Look up a mutable cross-reference entry by exact indirect reference.
     ///
-    /// Equivalent to `find(ref.object_number())`. The generation number in `ref` is
-    /// not checked; only the object number is used for the lookup.
+    /// Both `ref.object_number()` and `ref.generation()` must match.
+    /// This is the primary lookup — prefer it over `find(object_number)` when
+    /// you hold a specific indirect reference.
     ///
     /// Returns a raw pointer into the table, or `nullptr` if not found.
     [[nodiscard]] virtual cross_reference_entry* find(const indirect_reference& ref) noexcept = 0;
 
-    /// Look up a read-only cross-reference entry by indirect reference.
+    /// Look up a read-only cross-reference entry by exact indirect reference.
     ///
-    /// Equivalent to `find(ref.object_number())`. The generation number in `ref` is
-    /// not checked; only the object number is used for the lookup.
+    /// Both `ref.object_number()` and `ref.generation()` must match.
+    /// This is the primary lookup — prefer it over `find(object_number)` when
+    /// you hold a specific indirect reference.
     ///
     /// Returns a raw pointer into the table, or `nullptr` if not found.
     [[nodiscard]] virtual const cross_reference_entry*
     find(const indirect_reference& ref) const noexcept = 0;
+
+    /// Look up the most recent mutable entry whose object number matches `ref.object_number()`.
+    ///
+    /// The generation number in `ref` is ignored — only the object number is used.
+    /// When multiple entries share the same object number, the newest revision wins.
+    [[nodiscard]] cross_reference_entry* find_most_recent(const indirect_reference& ref) noexcept
+    {
+        return find(ref.object_number());
+    }
+
+    /// Look up the most recent read-only entry whose object number matches `ref.object_number()`.
+    ///
+    /// The generation number in `ref` is ignored — only the object number is used.
+    /// When multiple entries share the same object number, the newest revision wins.
+    [[nodiscard]] const cross_reference_entry*
+    find_most_recent(const indirect_reference& ref) const noexcept
+    {
+        return find(ref.object_number());
+    }
+
+    /// Look up the most recent mutable entry by object number.
+    ///
+    /// Equivalent to `find(object_number)` with an explicit name.
+    [[nodiscard]] cross_reference_entry* find_most_recent(std::uint32_t object_number) noexcept
+    {
+        return find(object_number);
+    }
+
+    /// Look up the most recent read-only entry by object number.
+    ///
+    /// Equivalent to `find(object_number)` with an explicit name.
+    [[nodiscard]] const cross_reference_entry*
+    find_most_recent(std::uint32_t object_number) const noexcept
+    {
+        return find(object_number);
+    }
 
     /// Reserve a slot for a new indirect object and return its assigned indirect reference.
     ///

@@ -39,13 +39,21 @@ cross_reference_section::find(std::uint32_t object_number) const noexcept
 
 cross_reference_entry* cross_reference_section::find(const indirect_reference& ref) noexcept
 {
-    return find(ref.object_number());
+    auto* entry = find(ref.object_number());
+    if (entry != nullptr && entry->reference().generation() == ref.generation())
+        return entry;
+
+    return nullptr;
 }
 
 const cross_reference_entry*
 cross_reference_section::find(const indirect_reference& ref) const noexcept
 {
-    return find(ref.object_number());
+    const auto* entry = find(ref.object_number());
+    if (entry != nullptr && entry->reference().generation() == ref.generation())
+        return entry;
+
+    return nullptr;
 }
 
 void cross_reference_section::add_entry(cross_reference_entry entry)

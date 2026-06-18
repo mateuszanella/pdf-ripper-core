@@ -53,6 +53,7 @@ public:
     cross_reference_manager& operator=(const cross_reference_manager&) = delete;
     cross_reference_manager(cross_reference_manager&&) noexcept = default;
     cross_reference_manager& operator=(cross_reference_manager&&) noexcept = default;
+    ~cross_reference_manager() = default;
 
     /// Look up a mutable entry by object number across all sections.
     ///
@@ -73,18 +74,20 @@ public:
     [[nodiscard]] const cross_reference_entry*
     find(std::uint32_t object_number) const noexcept override;
 
-    /// Look up a mutable entry by indirect reference across all sections.
+    /// Look up a mutable entry by exact indirect reference across all sections.
     ///
-    /// Equivalent to `find(ref.object_number())`. The generation number in `ref`
-    /// is not used for the lookup.
+    /// Scans sections from newest to oldest and returns the first entry whose
+    /// object number and generation both match. Unlike `find(object_number)`,
+    /// this does NOT fall back to a newer revision with a different generation.
     ///
     /// Returns a raw pointer to the entry, or `nullptr` if not found.
     [[nodiscard]] cross_reference_entry* find(const indirect_reference& ref) noexcept override;
 
-    /// Look up a read-only entry by indirect reference across all sections.
+    /// Look up a read-only entry by exact indirect reference across all sections.
     ///
-    /// Equivalent to `find(ref.object_number())`. The generation number in `ref`
-    /// is not used for the lookup.
+    /// Scans sections from newest to oldest and returns the first entry whose
+    /// object number and generation both match. Unlike `find(object_number)`,
+    /// this does NOT fall back to a newer revision with a different generation.
     ///
     /// Returns a raw pointer to the entry, or `nullptr` if not found.
     [[nodiscard]] const cross_reference_entry*

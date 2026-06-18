@@ -66,9 +66,6 @@ std::string indirect_object_resolver::resolve(indirect_reference ref) const
     if (!entry->in_use())
         throw parse_exception{"XRef entry is not in use"};
 
-    if (entry->reference().generation() != ref.generation())
-        throw parse_exception{"Generation mismatch for indirect object"};
-
     const std::uint64_t file_size_u64 = r.size();
     if (file_size_u64 == 0)
         throw io_exception{"Read size zero while trying to resolve an indirect object"};

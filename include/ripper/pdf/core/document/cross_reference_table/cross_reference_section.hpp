@@ -61,19 +61,15 @@ public:
     [[nodiscard]] const cross_reference_entry*
     find(std::uint32_t object_number) const noexcept override;
 
-    /// Look up a mutable entry by indirect reference within this section.
+    /// Look up a mutable entry by exact indirect reference within this section.
     ///
-    /// Equivalent to `find(ref.object_number())`. The generation number in `ref`
-    /// is not used for the lookup.
-    ///
+    /// Both `ref.object_number()` and `ref.generation()` must match.
     /// Returns a raw pointer to the entry, or `nullptr` if not found.
     [[nodiscard]] cross_reference_entry* find(const indirect_reference& ref) noexcept override;
 
-    /// Look up a read-only entry by indirect reference within this section.
+    /// Look up a read-only entry by exact indirect reference within this section.
     ///
-    /// Equivalent to `find(ref.object_number())`. The generation number in `ref`
-    /// is not used for the lookup.
-    ///
+    /// Both `ref.object_number()` and `ref.generation()` must match.
     /// Returns a raw pointer to the entry, or `nullptr` if not found.
     [[nodiscard]] const cross_reference_entry*
     find(const indirect_reference& ref) const noexcept override;

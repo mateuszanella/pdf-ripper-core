@@ -41,13 +41,25 @@ cross_reference_manager::find(std::uint32_t object_number) const noexcept
 
 cross_reference_entry* cross_reference_manager::find(const indirect_reference& ref) noexcept
 {
-    return find(ref.object_number());
+    for (auto it = sections_.rbegin(); it != sections_.rend(); ++it)
+    {
+        if (auto* e = it->find(ref))
+            return e;
+    }
+
+    return nullptr;
 }
 
 const cross_reference_entry*
 cross_reference_manager::find(const indirect_reference& ref) const noexcept
 {
-    return find(ref.object_number());
+    for (auto it = sections_.rbegin(); it != sections_.rend(); ++it)
+    {
+        if (const auto* e = it->find(ref))
+            return e;
+    }
+
+    return nullptr;
 }
 
 indirect_reference cross_reference_manager::reserve()

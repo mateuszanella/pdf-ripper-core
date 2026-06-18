@@ -128,7 +128,9 @@ TEST_CASE("indirect_object_resolver throws on generation mismatch", "[parser][re
     document doc{std::make_unique<ripper::io::core::memory_reader>(data), nullptr};
     indirect_object_resolver resolver{doc};
 
+    // Object 1 exists as (1, 0) but not as (1, 5).
+    // find() now does exact (obj_num, gen) matching, so this is "not found".
     REQUIRE_THROWS_WITH(resolver.resolve(indirect_reference{1, 5}),
-                        Catch::Matchers::ContainsSubstring("Generation mismatch"));
+                        Catch::Matchers::ContainsSubstring("not found"));
 }
 } // namespace ripper::pdf::core
