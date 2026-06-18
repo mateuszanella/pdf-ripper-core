@@ -18,6 +18,11 @@ inline fs::path fixture_pdf_path()
     return project_root() / "tests" / "fixtures" / "pdfs" / "test.pdf";
 }
 
+inline fs::path temp_pdf_path(std::string filename)
+{
+    return fs::temp_directory_path() / std::move(filename);
+}
+
 class scoped_temp_file
 {
 public:

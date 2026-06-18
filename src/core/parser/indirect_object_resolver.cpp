@@ -160,22 +160,11 @@ std::string indirect_object_resolver::resolve(indirect_reference ref) const
 
         const std::size_t object_start = a.offset;
 
-        while (true)
-        {
-            const auto end_token = lexer.next();
-            if (end_token.type == lexer_token_type::eof)
-                throw parse_exception{"Unexpected end of file while scanning to endobj"};
+        const auto endobj_offset = source.find("endobj", object_start);
+        if (endobj_offset == std::string::npos)
+            throw parse_exception{"Missing endobj marker for indirect object"};
 
-            if (end_token.type == lexer_token_type::keyword && end_token.lexeme == "endobj")
-            {
-                const std::size_t end_offset = token_offset_in(source, end_token);
-                if (end_offset == std::string::npos || end_offset < object_start)
-                    throw parse_exception{"Invalid indirect object end offset"};
-
-                const std::size_t object_end = end_offset + end_token.lexeme.size();
-                return source.substr(object_start, object_end - object_start);
-            }
-        }
+        return source.substr(object_start, endobj_offset - object_start + 6);
     }
 
     throw parse_exception{"Indirect object not found"};
