@@ -64,8 +64,8 @@ public:
 
     /// Save the document to the configured writer backend.
     ///
-    /// Returns `true` on success, or an `false` on failure.
-    [[nodiscard]] bool save();
+    /// @throws logic_exception if no writer or serializer is available.
+    void save();
 
     /// Returns whether a reader backend is available.
     [[nodiscard]] bool has_reader() const;

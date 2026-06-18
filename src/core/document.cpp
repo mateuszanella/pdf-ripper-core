@@ -40,7 +40,7 @@ document document::create(const std::filesystem::path& path)
     return document{nullptr, std::make_unique<ripper::io::core::file_writer>(path)};
 }
 
-bool document::save()
+void document::save()
 {
     // Sanity checks to ensure we have the necessary components to perform a save operation.
     if (!has_writer())
@@ -98,8 +98,6 @@ bool document::save()
     (void)w.write(s.serialize_trailer(trailer().active_trailer(), xref_start));
 
     w.close();
-
-    return true;
 }
 
 bool document::has_reader() const

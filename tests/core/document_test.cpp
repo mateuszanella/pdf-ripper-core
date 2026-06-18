@@ -56,7 +56,7 @@ TEST_CASE("document writes and re-opens a created PDF", "[document][e2e][write]"
     (void)pages.add_page();
     (void)pages.add_page();
 
-    REQUIRE(writer_doc.save());
+    REQUIRE_NOTHROW(writer_doc.save());
     REQUIRE(std::filesystem::exists(output.path()));
 
     auto read_back_doc = document::open(output.path());
