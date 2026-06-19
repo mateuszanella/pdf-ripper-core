@@ -103,10 +103,10 @@ public:
     explicit object(array value) noexcept;
 
     /// Construct a dictionary PDF object.
-    explicit object(dictionary value) noexcept;
+    explicit object(dictionary value);
 
     /// Construct a stream PDF object.
-    explicit object(object_stream value) noexcept;
+    explicit object(object_stream value);
 
     /// Construct an indirect reference PDF object.
     explicit object(indirect_reference value) noexcept;

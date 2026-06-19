@@ -20,14 +20,9 @@ object::object(name value) noexcept : value_(std::move(value)) {}
 
 object::object(array value) noexcept : value_(std::move(value)) {}
 
-object::object(dictionary value) noexcept : value_(std::make_unique<dictionary>(std::move(value)))
-{
-}
+object::object(dictionary value) : value_(std::make_unique<dictionary>(std::move(value))) {}
 
-object::object(object_stream value) noexcept
-    : value_(std::make_unique<object_stream>(std::move(value)))
-{
-}
+object::object(object_stream value) : value_(std::make_unique<object_stream>(std::move(value))) {}
 
 object::object(indirect_reference value) noexcept : value_(std::move(value)) {}
 
