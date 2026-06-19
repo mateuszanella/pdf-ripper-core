@@ -5,6 +5,7 @@ CTEST ?= ctest
 BUILD_DIR ?= build
 BUILD_TYPE ?= Debug
 GENERATOR ?=
+DEPS_DIR ?= .deps
 FORMAT_TARGET ?= pdf_ripper_core_format
 FORMAT_CHECK_TARGET ?= pdf_ripper_core_format_check
 TIDY_TARGET ?= pdf_ripper_core_tidy
@@ -14,7 +15,7 @@ ifneq ($(strip $(GENERATOR)),)
 CMAKE_CONFIGURE_ARGS += -G "$(GENERATOR)"
 endif
 
-.PHONY: help configure build test format format-check tidy clean rebuild install
+.PHONY: help configure build test format format-check tidy clean rebuild install depclean
 
 help:
 	@echo "Available targets:"
@@ -25,9 +26,10 @@ help:
 	@echo "  make format-check - Verify clang-format compliance"
 	@echo "  make tidy         - Run clang-tidy static analysis"
 	@echo "  make install      - Install from $(BUILD_DIR)"
-	@echo "  make clean        - Remove $(BUILD_DIR)"
+	@echo "  make clean        - Remove $(BUILD_DIR) and $(DEPS_DIR)"
 	@echo "  make rebuild      - Clean then build"
-	@echo "Variables: BUILD_DIR, BUILD_TYPE, GENERATOR, FORMAT_TARGET, FORMAT_CHECK_TARGET, TIDY_TARGET"
+	@echo "  make depclean     - Remove $(DEPS_DIR) only"
+	@echo "Variables: BUILD_DIR, BUILD_TYPE, GENERATOR, DEPS_DIR, FORMAT_TARGET, FORMAT_CHECK_TARGET, TIDY_TARGET"
 
 configure:
 	@mkdir -p $(BUILD_DIR)
@@ -55,6 +57,10 @@ install: build
 	$(CMAKE) --install $(BUILD_DIR)
 
 clean:
-	$(CMAKE) -E rm -rf $(BUILD_DIR)
+	$(CMAKE) -E rm -rf $(BUILD_DIR) $(DEPS_DIR)
+
+depclean:
+	@echo "Removing $(DEPS_DIR)..."
+	$(CMAKE) -E rm -rf $(DEPS_DIR)
 
 rebuild: clean build

@@ -1,0 +1,9 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(io_ripper_core)
+find_dependency(zlib-ng)
+
+include("${CMAKE_CURRENT_LIST_DIR}/pdf_ripper_coreTargets.cmake")
+
+check_required_components(pdf_ripper_core)

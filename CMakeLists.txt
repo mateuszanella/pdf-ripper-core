@@ -44,32 +44,45 @@ set(PDF_RIPPER_CORE_IO_CORE_GIT_TAG
 )
 
 # ------------------------------------------------------------------------------
-# First-party dependencies (internal sibling projects)
+# Dependencies
 # ------------------------------------------------------------------------------
+set(FETCHCONTENT_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/.deps CACHE PATH
+    "Persistent directory for FetchContent downloads (survives make clean of build/)")
+
 include(FetchContent)
 
-message(STATUS "Fetching io-core from git: ${PDF_RIPPER_CORE_IO_CORE_GIT_REPOSITORY} (${PDF_RIPPER_CORE_IO_CORE_GIT_TAG})")
-FetchContent_Declare(
-    io_ripper_core
-    GIT_REPOSITORY ${PDF_RIPPER_CORE_IO_CORE_GIT_REPOSITORY}
-    GIT_TAG        ${PDF_RIPPER_CORE_IO_CORE_GIT_TAG}
-)
-FetchContent_MakeAvailable(io_ripper_core)
+# io-core (first-party)
+if(NOT TARGET io_ripper_core::io_ripper_core)
+    if(NOT PDF_RIPPER_CORE_DEPS_INITIALIZED)
+        message(STATUS "Fetching io-core from git: ${PDF_RIPPER_CORE_IO_CORE_GIT_REPOSITORY} (${PDF_RIPPER_CORE_IO_CORE_GIT_TAG})")
+    endif()
+    FetchContent_Declare(
+        io_ripper_core
+        GIT_REPOSITORY ${PDF_RIPPER_CORE_IO_CORE_GIT_REPOSITORY}
+        GIT_TAG        ${PDF_RIPPER_CORE_IO_CORE_GIT_TAG}
+    )
+    FetchContent_MakeAvailable(io_ripper_core)
+endif()
 
-# ------------------------------------------------------------------------------
-# Third-party dependencies
-# ------------------------------------------------------------------------------
-FetchContent_Declare(
-    zlib-ng
-    GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng.git
-    GIT_TAG        2.3.2
-)
+# zlib-ng
+if(NOT TARGET zlib-ng)
+    if(NOT PDF_RIPPER_CORE_DEPS_INITIALIZED)
+        message(STATUS "Fetching zlib-ng from git: https://github.com/zlib-ng/zlib-ng.git (2.3.2)")
+    endif()
+    FetchContent_Declare(
+        zlib-ng
+        GIT_REPOSITORY https://github.com/zlib-ng/zlib-ng.git
+        GIT_TAG        2.3.2
+    )
 
-set(ZLIB_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-set(ZLIBNG_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-set(ZLIB_COMPAT ON CACHE BOOL "" FORCE)
+    set(ZLIB_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    set(ZLIBNG_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    set(ZLIB_COMPAT ON CACHE BOOL "" FORCE)
 
-FetchContent_MakeAvailable(zlib-ng)
+    FetchContent_MakeAvailable(zlib-ng)
+
+    set(PDF_RIPPER_CORE_DEPS_INITIALIZED ON CACHE INTERNAL "")
+endif()
 
 # ------------------------------------------------------------------------------
 # Library sources
@@ -156,13 +169,34 @@ add_library(pdf_ripper_core
     ${PDF_RIPPER_CORE_SOURCES}
 )
 
+add_library(pdf_ripper_core::pdf_ripper_core ALIAS pdf_ripper_core)
+
 target_compile_features(pdf_ripper_core PUBLIC cxx_std_23)
+
+set_target_properties(pdf_ripper_core PROPERTIES
+    OUTPUT_NAME pdf_ripper_core
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN YES
+)
+
+# ------------------------------------------------------------------------------
+# Export header (for future shared library support)
+# ------------------------------------------------------------------------------
+include(GenerateExportHeader)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/ripper/pdf/core)
+generate_export_header(pdf_ripper_core
+    EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/include/ripper/pdf/core/pdf_ripper_core_export.h
+    EXPORT_MACRO_NAME PDF_RIPPER_CORE_API
+)
 
 # ------------------------------------------------------------------------------
 # Include directories
 # ------------------------------------------------------------------------------
 target_include_directories(pdf_ripper_core
     PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
@@ -178,14 +212,64 @@ target_link_libraries(pdf_ripper_core
         io_ripper_core::io_ripper_core
 )
 
-if(PDF_RIPPER_CORE_ENABLE_TESTS)
-    FetchContent_Declare(
-        Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG v3.7.1
-    )
+# ------------------------------------------------------------------------------
+# Install rules
+# ------------------------------------------------------------------------------
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
-    FetchContent_MakeAvailable(Catch2)
+install(TARGETS pdf_ripper_core
+    EXPORT pdf_ripper_coreTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/include/ripper/pdf/core/pdf_ripper_core_export.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ripper/pdf/core
+)
+
+install(EXPORT pdf_ripper_coreTargets
+    FILE pdf_ripper_coreTargets.cmake
+    NAMESPACE pdf_ripper_core::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/pdf_ripper_core
+)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/pdf_ripper_coreConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/pdf_ripper_coreConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/pdf_ripper_coreConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/pdf_ripper_core
+)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/pdf_ripper_coreConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/pdf_ripper_coreConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/pdf_ripper_core
+)
+
+if(PDF_RIPPER_CORE_ENABLE_TESTS)
+    if(NOT TARGET Catch2::Catch2)
+        if(NOT Catch2_POPULATED)
+            FetchContent_Declare(
+                Catch2
+                GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+                GIT_TAG v3.7.1
+            )
+        endif()
+        FetchContent_MakeAvailable(Catch2)
+    endif()
 
     set(BUILD_TESTING ON CACHE BOOL "Enable testing" FORCE)
     add_subdirectory(tests)
