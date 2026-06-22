@@ -7,7 +7,6 @@
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 
-#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <memory>
