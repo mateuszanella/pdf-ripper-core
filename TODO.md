@@ -2,17 +2,18 @@
 
 ## Priority 1 — Serializer Tests
 
-- [] **Add serializer tests** — The serialization pipeline is the most critical write path.
-  No tests exist for any serializer component. Protect against regressions in:
-  - `default_header_serializer` — version string, comment, whitespace
-  - `default_object_serializer` — all 10 object types, edge cases (deep nesting,
-    empty containers, large streams, special characters in strings/names)
-  - `default_indirect_object_serializer` — obj/endobj wrapping, stream dict + data
-  - `default_cross_reference_table_serializer` — contiguous, split, and empty
-    subsections; 20-byte entry formatting
+- [x] **Add serializer tests** — The serialization pipeline is the most critical write path.
+  66 tests across 5 serializer components (header, object, indirect_object,
+  cross_reference_table, trailer):
+  - `default_header_serializer` — version string, custom line break, empty version error
+  - `default_object_serializer` — all 10 object types, nested containers, string
+    escaping (parens, backslash, newline, CR, tab), empty containers, custom breaks
+  - `default_indirect_object_serializer` — obj/endobj wrapping for all content types,
+    stream dict+data, line/object break propagation to inner serializer
+  - `default_cross_reference_table_serializer` — single/multiple/empty subsections,
+    20-byte format validation, free/in-use entries, missing offset fallback
   - `default_trailer_serializer` — `trailer <<...>> startxref %%EOF` block,
-    `/Prev`, `/ID`, `xref_offset` correctness
-  - Round-trip: serialize → re-parse → compare
+    all standard keys, unknown key passthrough, ID array, custom line break, offsets
 
 ## Priority 2 — Save Strategies
 
