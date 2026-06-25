@@ -8,6 +8,8 @@
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object_factory.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
+#include "ripper/pdf/core/document_save_strategy/document_save_strategy.hpp"
+#include "ripper/pdf/core/document_save_strategy/save_strategy_type.hpp"
 #include "ripper/pdf/core/parser/parser.hpp"
 #include "ripper/pdf/core/serializer/serializer.hpp"
 
@@ -64,8 +66,27 @@ public:
 
     /// Save the document to the configured writer backend.
     ///
+    /// Uses the currently injected save strategy (see `set_save_strategy()`),
+    /// which defaults to `linearize_document_save_strategy` (full rewrite).
+    ///
     /// @throws logic_exception if no writer or serializer is available.
     void save();
+
+    /// Save the document using a specific built-in strategy identified by `type`.
+    ///
+    /// The injected strategy (if any) is ignored for this single call; the
+    /// built-in implementation corresponding to `type` is used instead.
+    ///
+    /// @throws logic_exception if no writer or serializer is available.
+    void save(save_strategy_type type);
+
+    /// Inject a custom save strategy.
+    ///
+    /// The document takes ownership of `strategy`.  All subsequent calls to the
+    /// parameterless `save()` will delegate to this implementation.
+    ///
+    /// Pass `nullptr` to reset to the built-in default (`full_rewrite`).
+    void set_save_strategy(std::unique_ptr<class document_save_strategy> strategy);
 
     /// Returns whether a reader backend is available.
     [[nodiscard]] bool has_reader() const;
@@ -142,6 +163,8 @@ private:
 
     std::unique_ptr<ripper::io::core::writer> writer_;
     std::unique_ptr<class serializer> serializer_;
+
+    std::unique_ptr<class document_save_strategy> save_strategy_;
 
     std::optional<class header> header_;
 
