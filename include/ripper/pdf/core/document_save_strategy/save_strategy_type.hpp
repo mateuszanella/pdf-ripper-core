@@ -13,9 +13,14 @@ enum class save_strategy_type
     /// Linearize strategy (full rewrite).
     ///
     /// Squashes incremental update history, resolves all in-use entries from
-    /// the file, then serialises every active object, cross-reference table,
+    /// the document, then serialises every active object, cross-reference table,
     /// and trailer in a single pass.  Produces a clean, linearised PDF.
-    lienarize
+    linearize,
+
+    /// Raw resolve-and-dump strategy.
+    ///
+    /// Resolves all entries and writes the document to the writer backend.
+    raw
 };
 
 } // namespace ripper::pdf::core

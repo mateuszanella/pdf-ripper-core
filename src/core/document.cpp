@@ -10,6 +10,7 @@
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/document_save_strategy/linearize_document_save_strategy.hpp"
+#include "ripper/pdf/core/document_save_strategy/raw_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/save_strategy_type.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/parser.hpp"
@@ -53,10 +54,16 @@ void document::save(save_strategy_type type)
 {
     switch (type)
     {
-        case save_strategy_type::lienarize:
+        case save_strategy_type::linearize:
         {
-            auto save_strategy_ = std::make_unique<linearize_document_save_strategy>();
-            save_strategy_->save(*this);
+            linearize_document_save_strategy strategy;
+            strategy.save(*this);
+            return;
+        }
+        case save_strategy_type::raw:
+        {
+            raw_document_save_strategy strategy;
+            strategy.save(*this);
             return;
         }
     }
