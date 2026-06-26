@@ -27,7 +27,7 @@ class indirect_object;
 ///   - **Reserved, pending**: slot reserved via `cross_reference_table::reserve()`,
 ///     awaiting `commit()`. `is_new() == true`, `is_resolved() == false`
 ///
-/// Entries are non-copyable due to unique ownership of the resolved indirect object.
+/// Entries are copyable; copying a resolved entry deep-clones the indirect object.
 class cross_reference_entry
 {
 public:
@@ -51,6 +51,12 @@ public:
     /// until the document is saved.
     explicit cross_reference_entry(indirect_reference ref,
                                    std::unique_ptr<indirect_object> indirect_object) noexcept;
+
+    /// Copy constructor. Deep-clones the indirect object if resolved.
+    cross_reference_entry(const cross_reference_entry& other);
+
+    /// Copy assignment. Deep-clones the indirect object if resolved.
+    cross_reference_entry& operator=(const cross_reference_entry& other);
 
     /// Returns the indirect reference (object number + generation) for this entry.
     [[nodiscard]] const indirect_reference& reference() const noexcept;

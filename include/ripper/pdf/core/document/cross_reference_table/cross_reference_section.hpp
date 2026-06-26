@@ -43,8 +43,8 @@ public:
         std::vector<cross_reference_subsection> subsections,
         std::optional<std::uint64_t> startxref_offset = std::nullopt) noexcept;
 
-    cross_reference_section(const cross_reference_section&) = delete;
-    cross_reference_section& operator=(const cross_reference_section&) = delete;
+    cross_reference_section(const cross_reference_section&) = default;
+    cross_reference_section& operator=(const cross_reference_section&) = default;
     cross_reference_section(cross_reference_section&&) noexcept = default;
     cross_reference_section& operator=(cross_reference_section&&) noexcept = default;
 

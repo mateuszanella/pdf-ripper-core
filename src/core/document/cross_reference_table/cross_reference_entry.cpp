@@ -21,6 +21,26 @@ cross_reference_entry::cross_reference_entry(indirect_reference ref,
 {
 }
 
+cross_reference_entry::cross_reference_entry(const cross_reference_entry& other)
+    : reference_{other.reference_}, offset_{other.offset_}, in_use_{other.in_use_},
+      object_{other.object_ ? std::make_unique<class indirect_object>(other.object_->clone())
+                            : nullptr}
+{
+}
+
+cross_reference_entry& cross_reference_entry::operator=(const cross_reference_entry& other)
+{
+    if (this != &other)
+    {
+        reference_ = other.reference_;
+        offset_ = other.offset_;
+        in_use_ = other.in_use_;
+        object_ = other.object_ ? std::make_unique<class indirect_object>(other.object_->clone())
+                                : nullptr;
+    }
+    return *this;
+}
+
 const indirect_reference& cross_reference_entry::reference() const noexcept
 {
     return reference_;

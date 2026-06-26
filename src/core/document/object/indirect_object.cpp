@@ -38,4 +38,9 @@ dictionary* indirect_object::dictionary() noexcept
 {
     return content_.as_dictionary();
 }
+
+indirect_object indirect_object::clone() const
+{
+    return indirect_object{identity_, content_};
+}
 } // namespace ripper::pdf::core

@@ -119,6 +119,12 @@ public:
     object& operator=(const object& other);
     object& operator=(object&&) noexcept = default;
 
+    /// Create a deep copy of this object.
+    ///
+    /// Dictionaries and streams are fully cloned recursively; primitive types,
+    /// names, strings, arrays, and indirect references are copied by value.
+    [[nodiscard]] object clone() const;
+
     /// Returns `true` if this object holds a PDF null object.
     [[nodiscard]] bool is_null() const noexcept;
 

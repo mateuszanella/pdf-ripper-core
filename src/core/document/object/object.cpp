@@ -50,6 +50,11 @@ object& object::operator=(const object& other)
     return *this;
 }
 
+object object::clone() const
+{
+    return object{*this};
+}
+
 bool object::is_null() const noexcept
 {
     return std::holds_alternative<null>(value_);

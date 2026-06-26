@@ -16,7 +16,7 @@ namespace ripper::pdf::core
 /// Every entry has a consecutive object number beginning at `first_object_number()`, so
 /// the range covered is [`first_object_number`, `first_object_number + count - 1`].
 ///
-/// A subsection is non-copyable due to unique ownership of each `cross_reference_entry`.
+/// A subsection is copyable; each `cross_reference_entry` is deep-cloned on copy.
 class cross_reference_subsection
 {
 public:
@@ -32,8 +32,8 @@ public:
     explicit cross_reference_subsection(std::uint32_t first_object_number,
                                         entry_map entries) noexcept;
 
-    cross_reference_subsection(const cross_reference_subsection&) = delete;
-    cross_reference_subsection& operator=(const cross_reference_subsection&) = delete;
+    cross_reference_subsection(const cross_reference_subsection&) = default;
+    cross_reference_subsection& operator=(const cross_reference_subsection&) = default;
     cross_reference_subsection(cross_reference_subsection&&) noexcept = default;
     cross_reference_subsection& operator=(cross_reference_subsection&&) noexcept = default;
 

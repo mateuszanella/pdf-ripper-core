@@ -62,6 +62,12 @@ public:
     /// dictionary.
     [[nodiscard]] class dictionary* dictionary() noexcept;
 
+    /// Create a deep copy of this indirect object.
+    ///
+    /// The cloned object retains the same identity (document + reference) and
+    /// receives a fully independent copy of the content object.
+    [[nodiscard]] indirect_object clone() const;
+
 private:
     object_identity identity_;
     object content_;
