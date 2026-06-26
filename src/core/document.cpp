@@ -8,6 +8,8 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "ripper/pdf/core/document/document_structure.hpp"
 #include "ripper/pdf/core/document/header.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/document_save_strategy/linearize_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/raw_document_save_strategy.hpp"
@@ -166,6 +168,26 @@ indirect_object* document::resolve_object(indirect_reference ref)
     auto parsed = parser_->parse_object(ref);
 
     return entry->resolve(std::make_unique<indirect_object>(std::move(parsed)));
+}
+
+cross_reference_section& document::create_new_revision()
+{
+    auto& new_section = cross_reference_table().push_section();
+    auto& t = trailer().push_trailer();
+
+    t.dictionary().set(
+        "Size", object{static_cast<std::int64_t>(cross_reference_table().next_object_number())});
+
+    // Point /Prev at the previous section's file offset, if any.
+    auto& sections = cross_reference_table().sections();
+    if (sections.size() > 1)
+    {
+        auto& prev = sections[sections.size() - 2];
+        if (prev.startxref_offset().has_value())
+            t.dictionary().set("Prev", object{static_cast<std::int64_t>(*prev.startxref_offset())});
+    }
+
+    return new_section;
 }
 
 document_structure& document::structure()

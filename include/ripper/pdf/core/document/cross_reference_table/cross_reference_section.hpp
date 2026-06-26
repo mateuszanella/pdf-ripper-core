@@ -150,6 +150,15 @@ public:
     /// a new subsection is created starting at the entry's object number.
     void add_entry(cross_reference_entry entry);
 
+    /// Create a new entry in this section as a deep copy of `source`.
+    ///
+    /// The indirect object (if resolved) is fully cloned so the new entry owns an
+    /// independent copy. The returned reference matches the source's object number
+    /// and generation.
+    ///
+    /// @return The indirect reference of the newly added entry.
+    [[nodiscard]] indirect_reference add_entry_from(const cross_reference_entry& source);
+
 private:
     std::vector<cross_reference_subsection> subsections_;
     std::optional<std::uint64_t> startxref_offset_;

@@ -148,6 +148,18 @@ public:
     /// as long as the document (and its xref) is alive.
     class indirect_object* resolve_object(indirect_reference ref);
 
+    /// Create a new revision (xref section + trailer) for incremental updates.
+    ///
+    /// Appends a new cross-reference section with object 0 (free-list head) and
+    /// a matching trailer with `/Size` set and `/Prev` pointing to the previous
+    /// section's `startxref_offset()` (if one exists).
+    ///
+    /// Use `add_entry_from()` on the returned section to copy existing entries,
+    /// or `reserve()` / `allocate()` to add new objects.
+    ///
+    /// @return A mutable reference to the newly created section.
+    [[nodiscard]] cross_reference_section& create_new_revision();
+
     /// Access the object factory for parsing and creating PDF objects.
     ///
     /// The factory encapsulates all logic for constructing document components

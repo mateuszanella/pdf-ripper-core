@@ -112,6 +112,14 @@ indirect_reference cross_reference_section::allocate(std::unique_ptr<class indir
     return ref;
 }
 
+indirect_reference cross_reference_section::add_entry_from(const cross_reference_entry& source)
+{
+    cross_reference_entry copy{source};
+    auto ref = copy.reference();
+    add_entry(std::move(copy));
+    return ref;
+}
+
 std::map<std::uint32_t, cross_reference_entry*> cross_reference_section::entries()
 {
     std::map<std::uint32_t, cross_reference_entry*> result;

@@ -39,6 +39,12 @@ void trailer_manager::push(trailer t)
     trailers_.push_back(std::move(t));
 }
 
+trailer& trailer_manager::push_trailer()
+{
+    trailers_.emplace_back(dictionary{});
+    return trailers_.back();
+}
+
 trailer trailer_manager::compiled() const
 {
     dictionary merged{};

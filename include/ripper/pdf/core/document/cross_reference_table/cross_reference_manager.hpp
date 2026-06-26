@@ -160,6 +160,18 @@ public:
     /// If no sections exist, an empty section is created and appended first.
     [[nodiscard]] cross_reference_section& active_section();
 
+    /// Append a new empty section to the end of the section list.
+    ///
+    /// The new section is pre-populated with object 0 (generation 65535,
+    /// not in use) and has no `startxref_offset`, representing an in-memory
+    /// section that does not yet exist on disk.
+    ///
+    /// Note that this only creates the xref section, and does not create the
+    /// matching trailer or update the file's `startxref` offset.
+    ///
+    /// @return A mutable reference to the newly created section.
+    [[nodiscard]] cross_reference_section& push_section();
+
     /// Returns a read-only view of all sections in chronological order (oldest first, newest last).
     ///
     /// The returned reference is valid for the lifetime of this manager.

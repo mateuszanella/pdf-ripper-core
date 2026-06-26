@@ -1,6 +1,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
 
 #include <algorithm>
@@ -156,6 +157,20 @@ cross_reference_section& cross_reference_manager::active_section()
 {
     if (sections_.empty())
         sections_.emplace_back(std::vector<cross_reference_subsection>{});
+
+    return sections_.back();
+}
+
+cross_reference_section& cross_reference_manager::push_section()
+{
+    // Build object 0 — the mandatory free-list head (generation 65535, not in use).
+    cross_reference_subsection::entry_map entries;
+    entries.emplace(0, cross_reference_entry{indirect_reference{0, 65535}, 0, false});
+
+    std::vector<cross_reference_subsection> subsections;
+    subsections.emplace_back(0, std::move(entries));
+
+    sections_.emplace_back(std::move(subsections));
 
     return sections_.back();
 }

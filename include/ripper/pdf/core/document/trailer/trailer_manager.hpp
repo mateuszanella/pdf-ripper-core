@@ -74,6 +74,17 @@ public:
     /// subsequent `compiled()` results.
     void push(trailer t);
 
+    /// Create and push an empty trailer.
+    ///
+    /// Mirrors `cross_reference_manager::push_section()`. The new trailer is
+    /// backed by an empty dictionary and becomes the active trailer.
+    ///
+    /// Note that the dictionary must still be manually filled with the relevant
+    /// information to be considered a valid spec-compliant trailer.
+    ///
+    /// @return A mutable reference to the newly added trailer.
+    [[nodiscard]] trailer& push_trailer();
+
     /// Returns the compiled (merged) trailer dictionary.
     ///
     /// Iterates all stored trailers oldest-to-newest and merges their dictionary
