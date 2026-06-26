@@ -141,11 +141,10 @@ TEST_CASE("indirect_object_resolver resolves stream object", "[parser][resolver]
     auto doc = document::open(test_fixture::fixture_pdf_path());
     indirect_object_resolver resolver{doc};
 
-    // Object 3 is a FlateDecode stream whose compressed payload contains
-    // bytes like '{' that would choke a lexer-based scanner.
-    const auto raw = resolver.resolve(indirect_reference{3, 0});
+    // Object 4 is the first content stream in the fixture.
+    const auto raw = resolver.resolve(indirect_reference{4, 0});
 
-    REQUIRE(raw.find("3 0 obj") != std::string::npos);
+    REQUIRE(raw.find("4 0 obj") != std::string::npos);
     REQUIRE(raw.find("stream") != std::string::npos);
     REQUIRE(raw.find("endstream") != std::string::npos);
     REQUIRE(raw.find("endobj") != std::string::npos);
@@ -157,11 +156,11 @@ TEST_CASE("indirect_object_resolver bounds read to next object offset",
     auto doc = document::open(test_fixture::fixture_pdf_path());
     indirect_object_resolver resolver{doc};
 
-    // Object 3 (offset 22) is immediately followed by object 1 (offset 209)
-    // in the fixture. The resolved content must not leak bytes from object 1.
+    // Object 3 is immediately followed by object 4 in the fixture.
+    // The resolved content must not leak bytes from object 4.
     const auto raw = resolver.resolve(indirect_reference{3, 0});
 
-    REQUIRE(raw.find("1 0 obj") == std::string::npos);
+    REQUIRE(raw.find("4 0 obj") == std::string::npos);
 }
 
 TEST_CASE("indirect_object_resolver uses xref table offset as bound for last object",
@@ -170,12 +169,12 @@ TEST_CASE("indirect_object_resolver uses xref table offset as bound for last obj
     auto doc = document::open(test_fixture::fixture_pdf_path());
     indirect_object_resolver resolver{doc};
 
-    // Object 28 is the last object before the xref table in the fixture.
+    // Object 8 is the last object before the xref table in the fixture.
     // The resolver must use the xref table offset (not file size) as the
     // upper bound so that xref and trailer bytes do not leak in.
-    const auto raw = resolver.resolve(indirect_reference{28, 0});
+    const auto raw = resolver.resolve(indirect_reference{8, 0});
 
-    REQUIRE(raw.find("28 0 obj") != std::string::npos);
+    REQUIRE(raw.find("8 0 obj") != std::string::npos);
     REQUIRE(raw.find("endobj") != std::string::npos);
     REQUIRE(raw.find("xref") == std::string::npos);
     REQUIRE(raw.find("trailer") == std::string::npos);

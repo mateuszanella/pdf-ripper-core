@@ -24,7 +24,7 @@ TEST_CASE("document reads a fixture PDF end-to-end", "[document][e2e][read]")
 
     const auto version = std::string{doc.header().version()};
     REQUIRE_FALSE(version.empty());
-    REQUIRE(version.starts_with("1."));
+    REQUIRE(version.starts_with("2."));
 
     auto& xref = doc.cross_reference_table();
     REQUIRE(xref.size() > 0);
