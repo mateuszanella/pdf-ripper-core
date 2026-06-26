@@ -17,7 +17,7 @@
 
 ## Priority 2 — Save Strategies
 
-- [] **Add raw save strategy** — Pass-through save that copies unchanged objects
+- [x] **Add raw save strategy** — Pass-through save that copies unchanged objects
   byte-for-byte from the input file, only serializing modified objects. Produces
   a file where unmodified entries retain their original formatting. Requires:
   - Modify tracking (dirty flag on `cross_reference_entry` or set of modified
