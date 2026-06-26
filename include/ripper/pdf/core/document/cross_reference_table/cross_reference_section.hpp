@@ -153,11 +153,12 @@ public:
     /// Create a new entry in this section as a deep copy of `source`.
     ///
     /// The indirect object (if resolved) is fully cloned so the new entry owns an
-    /// independent copy. The returned reference matches the source's object number
-    /// and generation.
+    /// independent copy.  The returned pointer points into this section's storage
+    /// and is valid until the section is modified.
     ///
-    /// @return The indirect reference of the newly added entry.
-    [[nodiscard]] indirect_reference add_entry_from(const cross_reference_entry& source);
+    /// @return A non-owning pointer to the newly added entry, or `nullptr` if
+    ///         the entry could not be found after insertion.
+    [[nodiscard]] cross_reference_entry* add_entry_from(const cross_reference_entry& source);
 
 private:
     std::vector<cross_reference_subsection> subsections_;

@@ -41,13 +41,11 @@ TEST_CASE("add_entry_from copies a resolved entry into a section",
     REQUIRE(source_entry != nullptr);
     REQUIRE(source_entry->is_resolved());
 
-    auto ref = target.add_entry_from(*source_entry);
-
-    REQUIRE(ref.object_number() == 1);
-    REQUIRE(ref.generation() == 0);
-
-    auto* target_entry = target.find(1);
+    auto* target_entry = target.add_entry_from(*source_entry);
     REQUIRE(target_entry != nullptr);
+
+    REQUIRE(target_entry->reference().object_number() == 1);
+    REQUIRE(target_entry->reference().generation() == 0);
     REQUIRE(target_entry->is_resolved());
     REQUIRE(*target_entry->indirect_object()->dictionary()->get_string("Data") == "source");
 
@@ -68,9 +66,7 @@ TEST_CASE("add_entry_from copies an unresolved entry", "[cross_reference_section
     REQUIRE_FALSE(source_entry->is_resolved());
     REQUIRE(*source_entry->offset() == 5000);
 
-    auto ref = target.add_entry_from(*source_entry);
-
-    auto* target_entry = target.find(3);
+    auto* target_entry = target.add_entry_from(*source_entry);
     REQUIRE(target_entry != nullptr);
     REQUIRE_FALSE(target_entry->is_resolved());
     REQUIRE(*target_entry->offset() == 5000);
@@ -180,10 +176,9 @@ TEST_CASE("create_new_revision + add_entry_from for incremental setup",
     auto* old_entry = doc.cross_reference_table().find(42);
     REQUIRE(old_entry != nullptr);
 
-    auto ref = new_section.add_entry_from(*old_entry);
-    REQUIRE(ref.object_number() == 42);
-
-    auto* copied = new_section.find(42);
+    auto* copied = new_section.add_entry_from(*old_entry);
+    REQUIRE(copied != nullptr);
+    REQUIRE(copied->reference().object_number() == 42);
     REQUIRE(copied != nullptr);
     REQUIRE(copied->is_resolved());
     REQUIRE(*copied->indirect_object()->dictionary()->get_string("Data") == "original");

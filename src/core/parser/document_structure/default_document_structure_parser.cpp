@@ -66,7 +66,7 @@ default_document_structure_parser::find_start_xref_offset(ripper::io::core::read
     reader.seek(search_pos);
 
     std::array<std::byte, line_buffer_size> buffer{};
-    bool found_keyword = false;
+    std::optional<std::uint64_t> result;
 
     while (!reader.eof())
     {
@@ -80,31 +80,26 @@ default_document_structure_parser::find_start_xref_offset(ripper::io::core::read
 
         if (text::starts_with_token(line, start_xref_keyword))
         {
-            found_keyword = true;
-            break;
+            const std::size_t offset_bytes = reader.read_line(buffer);
+            if (offset_bytes == 0)
+            {
+                break;
+            }
+
+            const std::string_view offset_line{byte::as_chars(buffer.data()), offset_bytes};
+            const auto offset = text::parse_size_t(offset_line);
+            if (offset)
+            {
+                result = offset;
+            }
+            else
+            {
+                break;
+            }
         }
     }
 
-    if (!found_keyword)
-    {
-        return std::nullopt;
-    }
-
-    const std::size_t bytes_read = reader.read_line(buffer);
-    if (bytes_read == 0)
-    {
-        throw parse_exception{"Missing startxref offset line"};
-    }
-
-    const std::string_view offset_line{byte::as_chars(buffer.data()), bytes_read};
-
-    const auto offset = text::parse_size_t(offset_line);
-    if (!offset)
-    {
-        throw parse_exception{"Invalid startxref offset"};
-    }
-
-    return offset;
+    return result;
 }
 
 document_structure default_document_structure_parser::parse()
