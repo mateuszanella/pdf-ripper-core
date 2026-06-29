@@ -37,6 +37,11 @@ public:
     ///
     /// If the object is already in the active section, this is a no-op.
     ///
+    /// @warning The underlying `indirect_object` is replaced by a clone in a different
+    /// xref entry. Any raw pointer or reference to the previous indirect_object obtained
+    /// before this call (e.g. via `obj()`, `resolve_object()`, or `dictionary()`) is
+    /// invalidated and must not be used after the rebind.
+    ///
     /// @throws logic_exception if the object cannot be found or cloned.
     void rebind_to_active_revision();
 

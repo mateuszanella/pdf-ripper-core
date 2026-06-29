@@ -74,8 +74,9 @@ public:
 
     /// Save the document using a specific built-in strategy identified by `type`.
     ///
-    /// The injected strategy (if any) is ignored for this single call; the
-    /// built-in implementation corresponding to `type` is used instead.
+    /// The injected strategy (if any) is replaced by the built-in implementation
+    /// corresponding to `type`. After this call, a subsequent parameterless `save()`
+    /// will use this built-in strategy, not the previously injected one.
     ///
     /// @throws logic_exception if no writer or serializer is available.
     void save(save_strategy_type type);
@@ -138,8 +139,9 @@ public:
 
     /// Return a view over the document catalog.
     ///
-    /// Resolves the catalog from the xref on first access (lazy). The returned `catalog`
-    /// is a lightweight non-owning view. Ownership remains with the xref entry.
+    /// Resolves the catalog from the xref each time this method is called (not cached,
+    /// unlike `header()`, `cross_reference_table()`, and `trailer()`). The returned
+    /// `catalog` is a lightweight non-owning view. Ownership remains with the xref entry.
     [[nodiscard]] class catalog catalog();
 
     /// Resolve any indirect object by reference, lazy-loading from file if needed.
