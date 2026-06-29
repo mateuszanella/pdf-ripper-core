@@ -298,6 +298,63 @@ TEST_CASE("incremental save with page tree copy adds a page", "[document][e2e][s
     REQUIRE(read_back.catalog().pages().count() == 4);
 }
 
+TEST_CASE("incremental save with rebind_to_active_revision adds a page without manual cloning",
+          "[document][e2e][save][incremental]")
+{
+    test_fixture::scoped_temp_file output{"pdf_ripper_core_inc_rebind_test.pdf"};
+
+    const auto input_path = test_fixture::fixture_pdf_path();
+    REQUIRE(std::filesystem::exists(input_path));
+
+    auto reader = std::make_unique<ripper::io::core::file_reader>(input_path);
+    auto writer = std::make_unique<ripper::io::core::file_writer>(output.path());
+    document doc{std::move(reader), std::move(writer)};
+
+    // Create a new revision and rely on add_page's internal rebind_to_active_revision
+    doc.create_new_revision();
+
+    auto pages = doc.catalog().pages();
+    REQUIRE(pages.count() == 3);
+
+    (void)pages.add_page();
+
+    REQUIRE_NOTHROW(doc.save(save_strategy_type::incremental));
+    REQUIRE(std::filesystem::exists(output.path()));
+
+    // Re-open and verify 4 pages
+    auto read_back = document::open(output.path());
+    REQUIRE(read_back.catalog().pages().count() == 4);
+}
+
+TEST_CASE("incremental save with rebind_to_active_revision deletes a page without manual cloning",
+          "[document][e2e][save][incremental]")
+{
+    test_fixture::scoped_temp_file output{"pdf_ripper_core_inc_rebind_del_test.pdf"};
+
+    const auto input_path = test_fixture::fixture_pdf_path();
+    REQUIRE(std::filesystem::exists(input_path));
+
+    auto reader = std::make_unique<ripper::io::core::file_reader>(input_path);
+    auto writer = std::make_unique<ripper::io::core::file_writer>(output.path());
+    document doc{std::move(reader), std::move(writer)};
+
+    // Create a new revision and rely on delete_page's internal rebind_to_active_revision
+    doc.create_new_revision();
+
+    auto pages = doc.catalog().pages();
+    REQUIRE(pages.count() == 3);
+
+    pages.delete_page(0);
+    REQUIRE(pages.count() == 2);
+
+    REQUIRE_NOTHROW(doc.save(save_strategy_type::incremental));
+    REQUIRE(std::filesystem::exists(output.path()));
+
+    // Re-open and verify 2 pages
+    auto read_back = document::open(output.path());
+    REQUIRE(read_back.catalog().pages().count() == 2);
+}
+
 TEST_CASE("incremental save with multiple new sections", "[document][e2e][save][incremental]")
 {
     test_fixture::scoped_temp_file output{"pdf_ripper_core_inc_multi_test.pdf"};

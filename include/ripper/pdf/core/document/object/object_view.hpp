@@ -25,6 +25,21 @@ public:
     /// Returns a const pointer to the content dictionary, or nullptr if not a dictionary.
     [[nodiscard]] const class dictionary* dictionary() const noexcept;
 
+    /// Rebind this view to a different indirect_object.
+    ///
+    /// After this call, all operations on this view target `obj`.
+    void rebind(indirect_object& obj) noexcept;
+
+    /// Rebind this view to the object's clone in the active (newest) xref section.
+    ///
+    /// After this call, all modifications through this view affect the active revision
+    /// and will be captured during incremental save.
+    ///
+    /// If the object is already in the active section, this is a no-op.
+    ///
+    /// @throws logic_exception if the object cannot be found or cloned.
+    void rebind_to_active_revision();
+
 protected:
     std::reference_wrapper<indirect_object> obj_;
 };

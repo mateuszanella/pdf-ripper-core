@@ -108,6 +108,8 @@ void pages::each(const std::function<void(class page&)>& callback)
 
 class page pages::add_page()
 {
+    rebind_to_active_revision();
+
     auto& doc = obj().identity().owner();
     auto& xref = doc.cross_reference_table();
 
@@ -153,6 +155,8 @@ class page pages::add_page()
 
 void pages::delete_page(std::uint64_t page_index)
 {
+    rebind_to_active_revision();
+
     auto pg = this->page(page_index);
     if (!pg)
         return;
@@ -171,6 +175,8 @@ void pages::delete_page(std::uint64_t page_index)
     auto ancestor = *maybe_parent;
     while (true)
     {
+        ancestor.rebind_to_active_revision();
+
         auto* d = ancestor.obj().dictionary();
         if (d == nullptr)
             break;

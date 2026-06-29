@@ -170,6 +170,40 @@ indirect_object* document::resolve_object(indirect_reference ref)
     return entry->resolve(std::make_unique<indirect_object>(std::move(parsed)));
 }
 
+indirect_object& document::resolve_object_to_active_revision(indirect_reference ref)
+{
+    auto& xref = cross_reference_table();
+    auto& active = xref.active_section();
+
+    // Already in the active section, no need to resolve
+    if (auto* existing = active.find(ref))
+    {
+        if (auto* obj = existing->indirect_object())
+            return *obj;
+    }
+
+    // Find in any section (newest-wins)
+    auto* entry = xref.find(ref);
+    if (entry == nullptr)
+        throw logic_exception{"Object " + std::to_string(ref.object_number()) + " not found"};
+
+    // Ensure the source entry is resolved (lazy-load from file if needed) before cloning
+    resolve_object(ref);
+
+    // Clone to active section
+    auto* cloned_entry = active.add_entry_from(*entry);
+    if (cloned_entry == nullptr)
+        throw logic_exception{"Failed to clone object " + std::to_string(ref.object_number()) +
+                              " to active revision"};
+
+    auto* obj = cloned_entry->indirect_object();
+    if (obj == nullptr)
+        throw logic_exception{"Cloned object " + std::to_string(ref.object_number()) +
+                              " has no indirect object"};
+
+    return *obj;
+}
+
 cross_reference_section& document::create_new_revision()
 {
     auto& new_section = cross_reference_table().push_section();

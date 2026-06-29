@@ -80,6 +80,8 @@ std::vector<page_tree_node> page_tree_node::children()
 
 void page_tree_node::remove_child(const indirect_reference& ref)
 {
+    rebind_to_active_revision();
+
     auto* d = obj().dictionary();
     if (d == nullptr)
         throw logic_exception{"Page tree node content is not a dictionary"};

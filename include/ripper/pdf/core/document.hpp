@@ -146,7 +146,21 @@ public:
     ///
     /// Returns a raw non-owning pointer into the xref entry. The pointer remains valid
     /// as long as the document (and its xref) is alive.
+    ///
+    /// @throws logic_exception if the object is not found.
     class indirect_object* resolve_object(indirect_reference ref);
+
+    /// Resolve an indirect object and ensure it exists in the active (newest) xref section.
+    ///
+    /// If the object is already in the active section, returns a reference to the existing
+    /// object. If it exists in an older section, clones it to the active section and returns
+    /// a reference to the clone.
+    ///
+    /// Use this when you intend to modify an object and want those modifications captured
+    /// during incremental save.
+    ///
+    /// @throws logic_exception if the object is not found or no active section exists.
+    class indirect_object& resolve_object_to_active_revision(indirect_reference ref);
 
     /// Create a new revision (xref section + trailer) for incremental updates.
     ///
@@ -154,11 +168,20 @@ public:
     /// a matching trailer with `/Size` set and `/Prev` pointing to the previous
     /// section's `startxref_offset()` (if one exists).
     ///
-    /// Use `add_entry_from()` on the returned section to copy existing entries,
-    /// or `reserve()` / `allocate()` to add new objects.
+    /// After calling this method, existing objects can be cloned into the new
+    /// revision using `resolve_object_to_active_revision()` or by calling
+    /// `rebind_to_active_revision()` on any instance of `object_view`. New
+    /// objects can be added via `reserve()` / `allocate()` on the returned section.
+    ///
+    /// Convenience wrappers (e.g. `pages::add_page()`) automatically rebind
+    /// themselves to the active revision, so most users only need to call
+    /// `create_new_revision()` before making changes and saving incrementally.
+    ///
+    /// For full manual control, use `add_entry_from()` on the returned section
+    /// to deep-copy individual entries into the new revision.
     ///
     /// @return A mutable reference to the newly created section.
-    [[nodiscard]] cross_reference_section& create_new_revision();
+    cross_reference_section& create_new_revision();
 
     /// Access the object factory for parsing and creating PDF objects.
     ///
