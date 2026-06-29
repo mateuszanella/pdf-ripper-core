@@ -273,14 +273,16 @@ void object_stream::sync_length()
 
 dictionary::dictionary(dictionary_map_type entries) noexcept : entries_(std::move(entries)) {}
 
-void dictionary::set(std::string key, object value)
+dictionary dictionary::set(std::string key, object value)
 {
     entries_.insert_or_assign(std::move(key), std::move(value));
+    return *this;
 }
 
-bool dictionary::remove(const std::string& key) noexcept
+dictionary dictionary::remove(const std::string& key)
 {
-    return entries_.erase(key) > 0;
+    entries_.erase(key);
+    return *this;
 }
 
 bool dictionary::contains(const std::string& key) const noexcept

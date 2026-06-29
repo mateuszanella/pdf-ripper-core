@@ -256,12 +256,10 @@ public:
     explicit dictionary(dictionary_map_type entries) noexcept;
 
     /// Insert or overwrite a key-value pair.
-    void set(std::string key, object value);
+    dictionary set(std::string key, object value);
 
     /// Remove an entry by key.
-    ///
-    /// Returns `true` if the key existed and was removed, `false` otherwise.
-    bool remove(const std::string& key) noexcept;
+    dictionary remove(const std::string& key);
 
     /// Returns `true` if the dictionary contains the given key.
     [[nodiscard]] bool contains(const std::string& key) const noexcept;
