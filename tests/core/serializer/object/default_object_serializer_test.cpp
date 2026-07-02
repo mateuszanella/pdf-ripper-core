@@ -410,7 +410,7 @@ TEST_CASE("default_object_serializer serializes stream with dictionary other key
 
     dictionary dict;
     dict.set("Length", object{static_cast<std::int64_t>(3)});
-    dict.set("Filter", object{name{"FlateDecode"}});
+    dict.set("Type", object{name{"TestType"}});
 
     std::vector<std::byte> data = {std::byte{'a'}, std::byte{'b'}, std::byte{'c'}};
     object_stream obj_stream{std::move(dict), stream{std::move(data)}};
@@ -418,7 +418,7 @@ TEST_CASE("default_object_serializer serializes stream with dictionary other key
     const auto result = ser.serialize(object{std::move(obj_stream)});
     const auto s = bytes_to_string(result);
 
-    REQUIRE(s.find("/Filter /FlateDecode") != std::string::npos);
+    REQUIRE(s.find("/Type /TestType") != std::string::npos);
     REQUIRE(s.find("stream") != std::string::npos);
     REQUIRE(s.find("abc") != std::string::npos);
     REQUIRE(s.find("endstream") != std::string::npos);

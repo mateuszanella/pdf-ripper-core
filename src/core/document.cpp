@@ -26,7 +26,7 @@ namespace ripper::pdf::core
 {
 document::document(std::unique_ptr<ripper::io::core::reader> reader,
                    std::unique_ptr<ripper::io::core::writer> writer)
-    : reader_(std::move(reader)), writer_(std::move(writer)), factory_(*this)
+    : reader_(std::move(reader)), writer_(std::move(writer))
 {
     if (reader_)
         parser_ = std::make_unique<class parser>(*this);
@@ -121,7 +121,7 @@ header& document::header()
     if (header_.has_value())
         return *header_;
 
-    header_ = has_parser() ? factory_.parse_header() : factory_.create_header();
+    header_ = has_parser() ? object_manager::parse_header(*this) : object_manager::create_header();
 
     return *header_;
 }
@@ -141,7 +141,7 @@ catalog document::catalog()
     auto root_ref = trailer().compiled().root();
 
     if (!root_ref)
-        return factory_.create_catalog();
+        return object_manager::create_catalog(*this);
 
     auto* entry = cross_reference_table().find(*root_ref);
     if (entry == nullptr)
@@ -150,7 +150,7 @@ catalog document::catalog()
     if (entry->is_resolved())
         return ripper::pdf::core::catalog{*entry->indirect_object()};
 
-    return factory_.parse_catalog();
+    return object_manager::parse_catalog(*this);
 }
 
 indirect_object* document::resolve_object(indirect_reference ref)
@@ -229,13 +229,10 @@ document_structure& document::structure()
     if (structure_.has_value())
         return *structure_;
 
-    structure_ = has_parser() ? factory_.parse_structure() : factory_.create_structure();
+    structure_ =
+        has_parser() ? object_manager::parse_structure(*this) : object_manager::create_structure();
 
     return *structure_;
 }
 
-object_factory& document::factory()
-{
-    return factory_;
-}
 } // namespace ripper::pdf::core

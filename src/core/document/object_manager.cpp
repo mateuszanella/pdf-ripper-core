@@ -1,4 +1,4 @@
-#include "ripper/pdf/core/document/object_factory.hpp"
+#include "ripper/pdf/core/document/object_manager.hpp"
 
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
@@ -19,21 +19,20 @@
 
 namespace ripper::pdf::core
 {
-object_factory::object_factory(document& doc) noexcept : doc_(doc) {}
 
-catalog object_factory::parse_catalog()
+catalog object_manager::parse_catalog(document& doc)
 {
-    auto root_ref = doc_.trailer().compiled().root();
+    auto root_ref = doc.trailer().compiled().root();
     if (!root_ref)
         throw parse_exception{"Trailer is missing required /Root reference"};
 
-    return ripper::pdf::core::catalog{*doc_.resolve_object(*root_ref)};
+    return ripper::pdf::core::catalog{*doc.resolve_object(*root_ref)};
 }
 
-catalog object_factory::create_catalog()
+catalog object_manager::create_catalog(document& doc)
 {
-    auto& xref = doc_.cross_reference_table();
-    auto& trl = doc_.trailer().active_trailer();
+    auto& xref = doc.cross_reference_table();
+    auto& trl = doc.trailer().active_trailer();
 
     // Reserve both references up front so the catalog can reference pages
     // by indirect reference from the start.
@@ -46,7 +45,7 @@ catalog object_factory::create_catalog()
     pages_dict.set("Kids", object{array{}});
     pages_dict.set("Count", object{std::int64_t{0}});
 
-    auto pages_obj = std::make_unique<indirect_object>(object_identity{&doc_, pages_ref},
+    auto pages_obj = std::make_unique<indirect_object>(object_identity{&doc, pages_ref},
                                                        object{std::move(pages_dict)});
 
     auto* raw_pages = xref.commit(pages_ref, std::move(pages_obj));
@@ -58,7 +57,7 @@ catalog object_factory::create_catalog()
     catalog_dict.set("Type", object{name{"Catalog"}});
     catalog_dict.set("Pages", object{pages_ref});
 
-    auto catalog_obj = std::make_unique<indirect_object>(object_identity{&doc_, catalog_ref},
+    auto catalog_obj = std::make_unique<indirect_object>(object_identity{&doc, catalog_ref},
                                                          object{std::move(catalog_dict)});
 
     auto* raw_catalog = xref.commit(catalog_ref, std::move(catalog_obj));
@@ -70,15 +69,15 @@ catalog object_factory::create_catalog()
     return ripper::pdf::core::catalog{*raw_catalog};
 }
 
-document_structure object_factory::parse_structure() const
+document_structure object_manager::parse_structure(const document& doc)
 {
-    if (!doc_.has_parser())
+    if (!doc.has_parser())
         throw logic_exception{"No parser available"};
 
-    return doc_.parser()->structure();
+    return doc.parser()->structure();
 }
 
-document_structure object_factory::create_structure() const
+document_structure object_manager::create_structure()
 {
     using entry_t = ripper::pdf::core::cross_reference_entry;
     using iref_t = ripper::pdf::core::indirect_reference;
@@ -103,16 +102,17 @@ document_structure object_factory::create_structure() const
     return document_structure{std::move(xref_manager), std::move(trailer_mgr)};
 }
 
-header object_factory::parse_header() const
+header object_manager::parse_header(const document& doc)
 {
-    if (!doc_.has_parser())
+    if (!doc.has_parser())
         throw logic_exception{"No parser available"};
 
-    return doc_.parser()->header();
+    return doc.parser()->header();
 }
 
-header object_factory::create_header() const
+header object_manager::create_header()
 {
     return ripper::pdf::core::header{"1.4"};
 }
+
 } // namespace ripper::pdf::core

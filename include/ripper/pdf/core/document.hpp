@@ -6,7 +6,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "ripper/pdf/core/document/document_structure.hpp"
 #include "ripper/pdf/core/document/header.hpp"
-#include "ripper/pdf/core/document/object_factory.hpp"
+#include "ripper/pdf/core/document/object_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/document_save_strategy/document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/save_strategy_type.hpp"
@@ -185,12 +185,6 @@ public:
     /// @return A mutable reference to the newly created section.
     cross_reference_section& create_new_revision();
 
-    /// Access the object factory for parsing and creating PDF objects.
-    ///
-    /// The factory encapsulates all logic for constructing document components
-    /// (catalog, pages, objects, etc.) from both file data and in-memory creation.
-    [[nodiscard]] class object_factory& factory();
-
 private:
     /// Parse and return the assembled document structure (xref + trailer + histories) (cached).
     [[nodiscard]] class document_structure& structure();
@@ -206,7 +200,5 @@ private:
     std::optional<class header> header_;
 
     std::optional<class document_structure> structure_;
-
-    class object_factory factory_;
 };
 } // namespace ripper::pdf::core

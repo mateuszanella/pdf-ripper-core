@@ -8,16 +8,15 @@ namespace ripper::pdf::core
 {
 class document;
 
-/// Factory for parsing and creating PDF objects from document backends.
+/// Static utility for parsing and creating PDF document objects.
 ///
 /// This type encapsulates all logic for parsing document objects from file data
 /// and creating new objects to be written to file. It centralizes the coordination
 /// of low-level operations (parser invocation, xref allocation, object commitment)
 /// with domain-level concerns (object type validation, invariant enforcement).
 ///
-/// The factory is owned by a `document` and accessed through `document::factory()`.
-/// All parse/create methods require an owning document to access the parser, xref,
-/// trailer, and serialization infrastructure.
+/// All methods are static and take a `document&` parameter to access the parser,
+/// xref, trailer, and serialization infrastructure.
 ///
 /// ## Responsibilities
 ///
@@ -30,21 +29,15 @@ class document;
 /// - **Structural initialization**: Build initial document structures (header, xref,
 ///   trailer) for new documents or parsed documents.
 ///
-/// ## Access Pattern
-///
-/// Obtain the factory from a `document`:
+/// ## Usage
 ///
 /// ```cpp
-/// auto &factory = doc.factory();
-/// auto cat = factory.create_catalog();
+/// auto cat = object_manager::create_catalog(doc);
 /// ```
-class object_factory
+class object_manager
 {
 public:
-    /// Construct a factory bound to a document.
-    ///
-    /// The document pointer must not be null and must outlive this factory.
-    explicit object_factory(document& doc) noexcept;
+    object_manager() = delete;
 
     /// Parse the catalog from the file and resolve it into the xref.
     ///
@@ -53,7 +46,7 @@ public:
     ///
     /// @throws parse_exception if the trailer /Root is missing or the resolved object
     ///         is not a valid catalog dictionary.
-    [[nodiscard]] class catalog parse_catalog();
+    [[nodiscard]] static class catalog parse_catalog(document& doc);
 
     /// Allocate a new catalog into the xref and set the trailer /Root.
     ///
@@ -61,7 +54,7 @@ public:
     /// commits it to the xref, and wires the trailer /Root to point to it.
     ///
     /// @throws logic_exception if the xref or trailer operations fail.
-    [[nodiscard]] class catalog create_catalog();
+    [[nodiscard]] static class catalog create_catalog(document& doc);
 
     /// Parse the document structure (xref + trailer + histories) from file.
     ///
@@ -69,28 +62,25 @@ public:
     /// and returns the assembled structure without caching.
     ///
     /// @throws parse_exception if the parser fails.
-    [[nodiscard]] class document_structure parse_structure() const;
+    [[nodiscard]] static class document_structure parse_structure(const document& doc);
 
     /// Generate a new document structure with default values.
     ///
     /// Constructs initial xref and trailer entries suitable for a new document,
     /// including the required xref entry 0 with object number 0 and generation 65535.
-    [[nodiscard]] class document_structure create_structure() const;
+    [[nodiscard]] static class document_structure create_structure();
 
     /// Parse the PDF header from file without caching.
     ///
     /// Delegates to the parser to extract the header marker and version.
     ///
     /// @throws parse_exception if the parser fails or no parser is available.
-    [[nodiscard]] class header parse_header() const;
+    [[nodiscard]] static class header parse_header(const document& doc);
 
     /// Generate a new PDF header with default values.
     ///
     /// Returns a header object set to PDF 1.4 (suitable for most documents).
-    [[nodiscard]] class header create_header() const;
-
-private:
-    document& doc_;
+    [[nodiscard]] static class header create_header();
 };
 
 } // namespace ripper::pdf::core
