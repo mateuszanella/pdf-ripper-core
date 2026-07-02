@@ -4,7 +4,6 @@
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/object/stream.hpp"
-#include "ripper/pdf/core/filter/filter_chain.hpp"
 #include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
 #include "ripper/pdf/core/parser/value_parsing.hpp"
 
@@ -109,13 +108,6 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
             std::memcpy(bytes.data(), content_sv.data() + stream_bytes_start_offset, bytes.size());
 
             stream parsed_stream = stream{std::move(bytes)};
-
-            const filter_chain chain{*dict};
-            if (chain.has_filters())
-            {
-                auto decoded = chain.decode(parsed_stream.data());
-                parsed_stream = stream{std::move(decoded)};
-            }
 
             return indirect_object{
                 object_identity{&doc, ref},

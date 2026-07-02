@@ -2,7 +2,7 @@
 
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/filter/filter_chain.hpp"
+#include "ripper/pdf/core/filter/filter_manager.hpp"
 #include "ripper/pdf/core/util/byte.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
@@ -157,10 +157,11 @@ default_object_serializer::serialize_stream_object(const object_stream& stream_o
     const auto dict = stream_obj.dictionary();
     const auto stream = stream_obj.stream();
 
-    const filter_chain chain{dict};
-    if (chain.has_filters())
+    const auto has_filter = dict.contains("Filter");
+
+    if (has_filter)
     {
-        auto encoded = chain.encode(stream.data());
+        auto encoded = filter_manager::encode(dict, stream.data());
 
         dictionary encoded_dict = dict;
         encoded_dict.set("Length", object{static_cast<std::int64_t>(encoded.size())});
