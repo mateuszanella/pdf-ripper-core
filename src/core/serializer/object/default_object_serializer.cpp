@@ -157,9 +157,7 @@ default_object_serializer::serialize_stream_object(const object_stream& stream_o
     const auto dict = stream_obj.dictionary();
     const auto stream = stream_obj.stream();
 
-    const auto has_filter = dict.contains("Filter");
-
-    if (has_filter)
+    if (stream_obj.is_decoded())
     {
         auto encoded = filter_manager::encode(dict, stream.data());
 

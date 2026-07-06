@@ -1,6 +1,7 @@
 #include "ripper/pdf/core/document/object/object.hpp"
 
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
+#include "ripper/pdf/core/filter/filter_manager.hpp"
 
 namespace ripper::pdf::core
 {
@@ -267,6 +268,38 @@ void object_stream::sync_length()
 {
     const std::size_t length = stream_.size();
     dict_.set("Length", object(static_cast<std::int64_t>(length)));
+}
+
+bool object_stream::is_decoded() const noexcept
+{
+    return is_decoded_;
+}
+
+void object_stream::set_decoded(bool state) noexcept
+{
+    is_decoded_ = state;
+}
+
+std::span<const std::byte> object_stream::content()
+{
+    if (is_decoded_)
+        return stream_.data();
+
+    if (!dict_.contains("Filter"))
+    {
+        is_decoded_ = true;
+        return stream_.data();
+    }
+
+    auto decoded = filter_manager::decode(dict_, stream_.data());
+    stream_.data() = std::move(decoded);
+    is_decoded_ = true;
+    return stream_.data();
+}
+
+std::span<const std::byte> object_stream::raw() const noexcept
+{
+    return stream_.data();
 }
 
 /// Dictionary implementation

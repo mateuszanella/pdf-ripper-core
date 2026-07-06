@@ -388,9 +388,28 @@ public:
     /// actual stream size.
     void sync_length();
 
+    /// Returns true if the stream data has been decoded via `content()`.
+    [[nodiscard]] bool is_decoded() const noexcept;
+
+    /// Manually set the decoded state flag.
+    void set_decoded(bool state) noexcept;
+
+    /// Returns decoded content. If not yet decoded, decodes in-place using the
+    /// static filter_manager. After this call, stream().data() returns decoded
+    /// bytes and raw bytes are lost.
+    /// If no /Filter is present, data is inherently decoded (no-op).
+    /// @throws parse_exception if /Filter is unknown.
+    [[nodiscard]] std::span<const std::byte> content();
+
+    /// Returns the current stream data as-is. Does not trigger decode.
+    /// Before content(): returns raw bytes.
+    /// After content(): returns decoded bytes.
+    [[nodiscard]] std::span<const std::byte> raw() const noexcept;
+
 private:
     class dictionary dict_;
     class stream stream_;
+    bool is_decoded_ = false;
 };
 
 } // namespace ripper::pdf::core

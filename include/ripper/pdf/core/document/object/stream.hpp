@@ -6,19 +6,24 @@
 
 namespace ripper::pdf::core
 {
-/// Represents the byte payload of a PDF stream object.
+
+/// Pure byte container for PDF stream data.
+///
+/// This class holds the raw byte payload of a PDF stream object. It has no
+/// knowledge of stream metadata (e.g. `/Filter`, `/Length`) or decoding state.
+/// For decoded content access and filter management, use `object_stream`.
 class stream
 {
 public:
     explicit stream(std::vector<std::byte> data) noexcept;
 
-    /// Returns the decoded stream bytes.
+    /// Returns the stream bytes.
     [[nodiscard]] const std::vector<std::byte>& data() const noexcept;
 
-    /// Returns mutable decoded stream bytes.
+    /// Returns mutable stream bytes.
     [[nodiscard]] std::vector<std::byte>& data() noexcept;
 
-    /// Returns the current size of the decoded stream bytes.
+    /// Returns the current size of the stream bytes.
     [[nodiscard]] std::size_t size() const noexcept;
 
     /// Write bytes to the end of the stream.
@@ -27,4 +32,5 @@ public:
 private:
     std::vector<std::byte> data_;
 };
+
 } // namespace ripper::pdf::core
