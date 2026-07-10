@@ -45,6 +45,7 @@ private:
     [[nodiscard]] static column_widths parse_w(const object_stream& stream_obj);
     [[nodiscard]] static std::vector<subsection_range> parse_index(const object_stream& stream_obj,
                                                                    std::uint32_t size);
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     [[nodiscard]] static std::uint64_t read_field(std::span<const std::byte> data,
                                                   std::size_t offset, std::uint32_t width);
 };

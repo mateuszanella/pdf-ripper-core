@@ -25,6 +25,7 @@ cross_reference_entry::cross_reference_entry(indirect_reference ref,
 {
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 cross_reference_entry::cross_reference_entry(indirect_reference ref, std::uint32_t objstm_number,
                                              std::uint32_t objstm_index) noexcept
     : reference_{ref}, type_{xref_entry_type::compressed},

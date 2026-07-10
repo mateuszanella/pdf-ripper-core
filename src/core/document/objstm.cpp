@@ -63,6 +63,7 @@ std::optional<objstm::object_range> objstm::object_offset(std::uint32_t index) c
     if (index >= count())
         return std::nullopt;
 
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     auto* os = const_cast<objstm*>(this)->obj().content().as_stream();
     if (os == nullptr)
         return std::nullopt;
@@ -105,6 +106,7 @@ std::optional<objstm::object_range> objstm::object_offset(std::uint32_t index) c
                 off_str += static_cast<char>(content[j]);
 
             std::size_t byte_offset = 0;
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             std::from_chars(off_str.data(), off_str.data() + off_str.size(), byte_offset);
 
             // The object's byte range starts at first + byte_offset and ends at

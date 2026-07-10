@@ -11,9 +11,11 @@
 namespace ripper::pdf::core
 {
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 std::vector<std::byte>
 cross_reference_stream_serializer::serialize(const cross_reference_section& section,
                                              std::uint32_t obj_number, char line_break)
+// NOLINTEND(bugprone-easily-swappable-parameters)
 {
     const auto widths = compute_widths(section);
     const auto entries_data = encode_entries(section, widths);
@@ -29,12 +31,13 @@ cross_reference_stream_serializer::serialize(const cross_reference_section& sect
     const auto& subsections = section.subsections();
     if (subsections.size() != 1 || subsections.front().first_object_number() != 0)
     {
-        index_arr.emplace();
+        array idx;
         for (const auto& sub : subsections)
         {
-            index_arr->push_back(object{static_cast<std::int64_t>(sub.first_object_number())});
-            index_arr->push_back(object{static_cast<std::int64_t>(sub.count())});
+            idx.push_back(object{static_cast<std::int64_t>(sub.first_object_number())});
+            idx.push_back(object{static_cast<std::int64_t>(sub.count())});
         }
+        index_arr = std::move(idx);
     }
 
     // Compute /Size (highest object number + 1)
@@ -54,8 +57,6 @@ cross_reference_stream_serializer::serialize(const cross_reference_section& sect
     dict.set("Type", object{name{"XRef"}});
     dict.set("Size", object{static_cast<std::int64_t>(size)});
     dict.set("W", object{std::move(w_arr)});
-    if (index_arr.has_value())
-        dict.set("Index", object{std::move(*index_arr)});
     dict.set("Filter", object{name{"FlateDecode"}});
     dict.set("Length", object{static_cast<std::int64_t>(compressed.size())});
 
@@ -177,7 +178,6 @@ cross_reference_stream_serializer::encode_entries(const cross_reference_section&
                                                   const column_widths& widths)
 {
     std::vector<std::byte> out;
-    const auto entry_size = widths.w0 + widths.w1 + widths.w2;
 
     for (const auto& sub : section.subsections())
     {
@@ -219,8 +219,10 @@ cross_reference_stream_serializer::encode_entries(const cross_reference_section&
     return out;
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void cross_reference_stream_serializer::write_field(std::vector<std::byte>& out,
                                                     std::uint64_t value, std::uint32_t width)
+// NOLINTEND(bugprone-easily-swappable-parameters)
 {
     for (std::int32_t i = static_cast<std::int32_t>(width) - 1; i >= 0; --i)
     {

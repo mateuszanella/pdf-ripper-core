@@ -88,7 +88,7 @@ cross_reference_stream_parser::parse_w(const object_stream& stream_obj)
     const auto w1 = w->at(1).as_integer();
     const auto w2 = w->at(2).as_integer();
 
-    if (!w0 || !w1 || !w2)
+    if (w0 == nullptr || w1 == nullptr || w2 == nullptr)
         throw parse_exception{"/W array entries must be integers"};
 
     result.w0 = static_cast<std::uint32_t>(*w0);
@@ -117,7 +117,7 @@ cross_reference_stream_parser::parse_index(const object_stream& stream_obj, std:
         const auto* first = index->at(i).as_integer();
         const auto* count = index->at(i + 1).as_integer();
 
-        if (!first || !count)
+        if (first == nullptr || count == nullptr)
             throw parse_exception{"/Index array entries must be integers"};
 
         ranges.push_back({static_cast<std::uint32_t>(*first), static_cast<std::uint32_t>(*count)});
@@ -126,8 +126,10 @@ cross_reference_stream_parser::parse_index(const object_stream& stream_obj, std:
     return ranges;
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 std::uint64_t cross_reference_stream_parser::read_field(std::span<const std::byte> data,
                                                         std::size_t offset, std::uint32_t width)
+// NOLINTEND(bugprone-easily-swappable-parameters)
 {
     std::uint64_t value = 0;
     for (std::uint32_t i = 0; i < width; ++i)

@@ -25,9 +25,11 @@ public:
     /// @param section The cross-reference section to serialize.
     /// @param obj_number The object number to assign to the xref stream object.
     /// @param line_break The line break character to use.
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters)
     [[nodiscard]] static std::vector<std::byte> serialize(const cross_reference_section& section,
                                                           std::uint32_t obj_number,
                                                           char line_break = '\n');
+    // NOLINTEND(bugprone-easily-swappable-parameters)
 
 private:
     struct column_widths
@@ -40,7 +42,9 @@ private:
     [[nodiscard]] static column_widths compute_widths(const cross_reference_section& section);
     [[nodiscard]] static std::vector<std::byte>
     encode_entries(const cross_reference_section& section, const column_widths& widths);
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters)
     static void write_field(std::vector<std::byte>& out, std::uint64_t value, std::uint32_t width);
+    // NOLINTEND(bugprone-easily-swappable-parameters)
 };
 
 } // namespace ripper::pdf::core

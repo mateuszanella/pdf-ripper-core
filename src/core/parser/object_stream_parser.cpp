@@ -53,8 +53,12 @@ std::vector<indirect_object> object_stream_parser::parse(document& doc,
             obj_num_str += static_cast<char>(content[j]);
 
         std::uint32_t obj_num = 0;
+
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         auto [ptr1, ec1] =
             std::from_chars(obj_num_str.data(), obj_num_str.data() + obj_num_str.size(), obj_num);
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
         if (ec1 != std::errc{})
             throw parse_exception{"Invalid object number in object stream header"};
 
@@ -75,8 +79,12 @@ std::vector<indirect_object> object_stream_parser::parse(document& doc,
             offset_str += static_cast<char>(content[j]);
 
         std::size_t byte_offset = 0;
+
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         auto [ptr2, ec2] =
             std::from_chars(offset_str.data(), offset_str.data() + offset_str.size(), byte_offset);
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
         if (ec2 != std::errc{})
             throw parse_exception{"Invalid byte offset in object stream header"};
 
@@ -98,9 +106,13 @@ std::vector<indirect_object> object_stream_parser::parse(document& doc,
         if (obj_offset >= content.size() || obj_end > content.size())
             throw parse_exception{"Object stream byte offset out of bounds"};
 
-        // Create a string_view over the object's bytes
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         const auto* obj_start = reinterpret_cast<const char*>(content.data() + obj_offset);
         const auto obj_size = obj_end - obj_offset;
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+
         std::string_view obj_sv{obj_start, obj_size};
 
         // Parse the object value
