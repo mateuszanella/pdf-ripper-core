@@ -43,8 +43,7 @@ TEST_CASE("cross_reference_manager prefers newest section entries", "[xref][mana
 
     auto* entry = manager.find(1);
     REQUIRE(entry != nullptr);
-    REQUIRE(entry->offset().has_value());
-    REQUIRE(*entry->offset() == 22);
+    REQUIRE(entry->offset() == 22);
     REQUIRE(entry->reference().generation() == 1);
 }
 

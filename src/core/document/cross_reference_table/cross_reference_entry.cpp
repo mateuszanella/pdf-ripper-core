@@ -4,25 +4,38 @@
 
 namespace ripper::pdf::core
 {
+
 cross_reference_entry::cross_reference_entry(indirect_reference ref, std::uint64_t offset,
                                              bool in_use) noexcept
-    : reference_{ref}, offset_{offset}, in_use_{in_use}, object_{nullptr}
+    : reference_{ref}, type_{in_use ? xref_entry_type::uncompressed : xref_entry_type::free},
+      field1_{offset}, field2_{0}, is_new_{false}, object_{nullptr}
 {
 }
 
 cross_reference_entry::cross_reference_entry(indirect_reference ref) noexcept
-    : reference_{ref}, offset_{std::nullopt}, in_use_{false}, object_{nullptr}
+    : reference_{ref}, type_{xref_entry_type::free}, field1_{0}, field2_{0}, is_new_{true},
+      object_{nullptr}
 {
 }
 
 cross_reference_entry::cross_reference_entry(indirect_reference ref,
                                              std::unique_ptr<class indirect_object> obj) noexcept
-    : reference_{ref}, offset_{std::nullopt}, in_use_{true}, object_{std::move(obj)}
+    : reference_{ref}, type_{xref_entry_type::uncompressed}, field1_{0}, field2_{0}, is_new_{true},
+      object_{std::move(obj)}
+{
+}
+
+cross_reference_entry::cross_reference_entry(indirect_reference ref, std::uint32_t objstm_number,
+                                             std::uint32_t objstm_index) noexcept
+    : reference_{ref}, type_{xref_entry_type::compressed},
+      field1_{static_cast<std::uint64_t>(objstm_number)}, field2_{objstm_index}, is_new_{false},
+      object_{nullptr}
 {
 }
 
 cross_reference_entry::cross_reference_entry(const cross_reference_entry& other)
-    : reference_{other.reference_}, offset_{other.offset_}, in_use_{other.in_use_},
+    : reference_{other.reference_}, type_{other.type_}, field1_{other.field1_},
+      field2_{other.field2_}, is_new_{other.is_new_},
       object_{other.object_ ? std::make_unique<class indirect_object>(other.object_->clone())
                             : nullptr}
 {
@@ -33,8 +46,10 @@ cross_reference_entry& cross_reference_entry::operator=(const cross_reference_en
     if (this != &other)
     {
         reference_ = other.reference_;
-        offset_ = other.offset_;
-        in_use_ = other.in_use_;
+        type_ = other.type_;
+        field1_ = other.field1_;
+        field2_ = other.field2_;
+        is_new_ = other.is_new_;
         object_ = other.object_ ? std::make_unique<class indirect_object>(other.object_->clone())
                                 : nullptr;
     }
@@ -46,19 +61,39 @@ const indirect_reference& cross_reference_entry::reference() const noexcept
     return reference_;
 }
 
-const std::optional<std::uint64_t>& cross_reference_entry::offset() const noexcept
+xref_entry_type cross_reference_entry::type() const noexcept
 {
-    return offset_;
-}
-
-void cross_reference_entry::set_offset(std::uint64_t offset) noexcept
-{
-    offset_ = offset;
+    return type_;
 }
 
 bool cross_reference_entry::in_use() const noexcept
 {
-    return in_use_;
+    return type_ != xref_entry_type::free;
+}
+
+bool cross_reference_entry::is_compressed() const noexcept
+{
+    return type_ == xref_entry_type::compressed;
+}
+
+std::uint64_t cross_reference_entry::offset() const noexcept
+{
+    return field1_;
+}
+
+void cross_reference_entry::set_offset(std::uint64_t off) noexcept
+{
+    field1_ = off;
+}
+
+std::uint32_t cross_reference_entry::objstm_number() const noexcept
+{
+    return static_cast<std::uint32_t>(field1_);
+}
+
+std::uint32_t cross_reference_entry::objstm_index() const noexcept
+{
+    return field2_;
 }
 
 bool cross_reference_entry::is_resolved() const noexcept
@@ -68,7 +103,7 @@ bool cross_reference_entry::is_resolved() const noexcept
 
 bool cross_reference_entry::is_new() const noexcept
 {
-    return !offset_.has_value();
+    return is_new_;
 }
 
 indirect_object* cross_reference_entry::indirect_object() const noexcept
@@ -82,13 +117,15 @@ indirect_object* cross_reference_entry::resolve(std::unique_ptr<class indirect_o
         return nullptr;
 
     object_ = std::move(obj);
-    in_use_ = true;
+    if (type_ == xref_entry_type::free)
+        type_ = xref_entry_type::uncompressed;
 
     return object_.get();
 }
 
 void cross_reference_entry::mark_deleted() noexcept
 {
-    in_use_ = false;
+    type_ = xref_entry_type::free;
 }
+
 } // namespace ripper::pdf::core

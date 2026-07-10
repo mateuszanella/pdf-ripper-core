@@ -1,9 +1,6 @@
 #include "ripper/pdf/core/parser/parser.hpp"
 
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/parser/cross_reference_table/cross_reference_table_parser.hpp"
-#include "ripper/pdf/core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
-#include "ripper/pdf/core/parser/document_structure/default_document_structure_parser.hpp"
 #include "ripper/pdf/core/parser/document_structure/document_structure_parser.hpp"
 #include "ripper/pdf/core/parser/header/header_parser.hpp"
 #include "ripper/pdf/core/parser/indirect_object_resolver.hpp"
