@@ -5,6 +5,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/parser/cross_reference_table/compressed_cross_reference_table_parser.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "ripper/pdf/core/parser/trailer/default_trailer_parser.hpp"
 #include "ripper/pdf/core/util/byte.hpp"
@@ -135,61 +136,161 @@ document_structure default_document_structure_parser::parse()
         // Step 2: Seek to the startxref offset of the current xref/trailer pair
         reader.seek(current_offset);
 
-        // Collect bytes until we find the end of trailer (>>)
-        std::string collected_content;
-        constexpr std::size_t k_buf_size = 4096;
-        std::array<std::byte, k_buf_size> buffer{};
-        bool has_trailer_end_been_found = false;
-
-        while (!reader.eof() && !has_trailer_end_been_found)
+        // Step 3: Detect format by reading the first few bytes
+        constexpr std::size_t k_peek_size = 64;
+        std::array<std::byte, k_peek_size> peek_buffer{};
+        const std::size_t peek_bytes = reader.read(peek_buffer);
+        if (peek_bytes == 0)
         {
-            const std::size_t bytes_read = reader.read(buffer);
-            if (bytes_read == 0)
+            if (xref_sections.empty())
+                throw parse_exception{
+                    "Unable to find complete trailer while parsing document structure"};
+            break;
+        }
+
+        reader.seek(current_offset);
+
+        std::string_view peek_sv{byte::as_chars(peek_buffer.data()), peek_bytes};
+        // Trim leading whitespace
+        while (!peek_sv.empty() && (peek_sv.front() == ' ' || peek_sv.front() == '\n' ||
+                                    peek_sv.front() == '\r' || peek_sv.front() == '\t'))
+            peek_sv.remove_prefix(1);
+
+        // Traditional xref table.
+        if (text::starts_with_token(peek_sv, "xref"))
+        {
+            // Collect bytes until we find the end of trailer (>>)
+            std::string collected_content;
+            constexpr std::size_t k_buf_size = 4096;
+            std::array<std::byte, k_buf_size> buffer{};
+            bool has_trailer_end_been_found = false;
+
+            while (!reader.eof() && !has_trailer_end_been_found)
             {
+                const std::size_t bytes_read = reader.read(buffer);
+                if (bytes_read == 0)
+                    break;
+
+                std::string_view chunk{byte::as_chars(buffer.data()), bytes_read};
+                collected_content += chunk;
+
+                if (collected_content.find("trailer") != std::string::npos &&
+                    collected_content.find(">>") != std::string::npos)
+                {
+                    has_trailer_end_been_found = true;
+                }
+            }
+
+            if (!has_trailer_end_been_found)
+            {
+                if (xref_sections.empty())
+                    throw parse_exception{
+                        "Unable to find complete trailer while parsing document structure"};
                 break;
             }
 
-            std::string_view chunk{byte::as_chars(buffer.data()), bytes_read};
-            collected_content += chunk;
+            auto xref_section = _xref_parser->parse(collected_content);
+            xref_section.set_startxref_offset(static_cast<std::uint64_t>(current_offset));
+            xref_sections.push_back(std::move(xref_section));
 
-            // Check if we've collected the complete trailer
-            if (collected_content.find("trailer") != std::string::npos &&
-                collected_content.find(">>") != std::string::npos)
+            auto trailer_result = _trailer_parser->parse(collected_content);
+
+            // Check for /XRefStm (hybrid PDF with xref stream in traditional trailer)
+            const auto* xrefstm = trailer_result.dictionary().get_integer("XRefStm");
+            if (xrefstm != nullptr && *xrefstm >= 0)
             {
-                has_trailer_end_been_found = true;
-            }
-        }
+                auto stm_offset = static_cast<std::size_t>(*xrefstm);
+                if (!visited_offsets.contains(stm_offset))
+                {
+                    visited_offsets.insert(stm_offset);
+                    reader.seek(stm_offset);
 
-        // If we couldn't find a complete trailer, we can't continue parsing this pair.
-        // If it's the first pair, we consider this a fatal error, otherwise we just stop
-        // and return what we have so far.
-        if (!has_trailer_end_been_found)
+                    // Read bytes until we find "endobj"
+                    std::string stm_content;
+                    constexpr std::size_t k_stm_buf_size = 4096;
+                    std::array<std::byte, k_stm_buf_size> stm_buffer{};
+                    bool found_stm_endobj = false;
+
+                    while (!reader.eof() && !found_stm_endobj)
+                    {
+                        const std::size_t stm_bytes_read = reader.read(stm_buffer);
+                        if (stm_bytes_read == 0)
+                            break;
+
+                        std::string_view stm_chunk{byte::as_chars(stm_buffer.data()),
+                                                   stm_bytes_read};
+                        stm_content += stm_chunk;
+
+                        if (stm_content.find("endobj") != std::string::npos)
+                            found_stm_endobj = true;
+                    }
+
+                    if (found_stm_endobj)
+                    {
+                        auto [stm_section, stm_trailer] =
+                            compressed_cross_reference_table_parser::parse(
+                                _document, stm_content, indirect_reference{0, 0});
+                        // Merge: stream entries take precedence
+                        for (auto& entry : stm_section.entries())
+                        {
+                            xref_sections.back().add_entry(std::move(*entry.second));
+                        }
+                    }
+                }
+            }
+
+            trailer_history.push_back(std::move(trailer_result));
+
+            auto prev_offset_result = extract_prev_offset(trailer_history.back());
+            if (!prev_offset_result)
+                break;
+
+            current_offset = *prev_offset_result;
+        }
+        // Compressed xref stream (PDF 1.5+)
+        else
         {
-            if (xref_sections.empty())
+            // Read bytes until we find "endobj"
+            std::string collected_content;
+            constexpr std::size_t k_buf_size = 4096;
+            std::array<std::byte, k_buf_size> buffer{};
+            bool found_endobj = false;
+
+            while (!reader.eof() && !found_endobj)
             {
-                throw parse_exception{
-                    "Unable to find complete trailer while parsing document structure"};
+                const std::size_t bytes_read = reader.read(buffer);
+                if (bytes_read == 0)
+                    break;
+
+                std::string_view chunk{byte::as_chars(buffer.data()), bytes_read};
+                collected_content += chunk;
+
+                if (collected_content.find("endobj") != std::string::npos)
+                    found_endobj = true;
             }
-            break;
+
+            if (!found_endobj)
+            {
+                if (xref_sections.empty())
+                    throw parse_exception{
+                        "Unable to find complete trailer while parsing document structure"};
+                break;
+            }
+
+            auto [section, trailer_obj] = compressed_cross_reference_table_parser::parse(
+                _document, collected_content, indirect_reference{0, 0});
+
+            section.set_startxref_offset(static_cast<std::uint64_t>(current_offset));
+
+            xref_sections.push_back(std::move(section));
+            trailer_history.push_back(std::move(trailer_obj));
+
+            auto prev_offset_result = extract_prev_offset(trailer_history.back());
+            if (!prev_offset_result)
+                break;
+
+            current_offset = *prev_offset_result;
         }
-
-        // Step 3: Parse xref section from collected bytes
-        auto xref_section = _xref_parser->parse(collected_content);
-        xref_section.set_startxref_offset(static_cast<std::uint64_t>(current_offset));
-        xref_sections.push_back(std::move(xref_section));
-
-        // Step 4: Parse trailer from collected bytes
-        auto trailerResult = _trailer_parser->parse(collected_content);
-        trailer_history.push_back(std::move(trailerResult));
-
-        // Step 5: Check for /Prev to repeat
-        auto prev_offset_result = extract_prev_offset(trailer_history.back());
-        if (!prev_offset_result)
-        {
-            break;
-        }
-
-        current_offset = *prev_offset_result;
     }
 
     // Sections were collected newest-first (following /Prev from end of file toward beginning).

@@ -142,7 +142,7 @@ TEST_CASE("cross_reference_entry copy handles unresolved entries", "[cross_refer
     REQUIRE(copy.reference().object_number() == 7);
     REQUIRE(copy.reference().generation() == 0);
     REQUIRE_FALSE(copy.is_resolved());
-    REQUIRE(*copy.offset() == 12345);
+    REQUIRE(copy.offset() == 12345);
     REQUIRE(copy.in_use());
 }
 
@@ -197,7 +197,7 @@ TEST_CASE("cross_reference_section copy creates independent section",
     REQUIRE(copy.find(1) != nullptr);
     REQUIRE(copy.find(2) != nullptr);
     REQUIRE(copy.find(1)->in_use());
-    REQUIRE(*copy.find(2)->offset() == 200);
+    REQUIRE(copy.find(2)->offset() == 200);
     REQUIRE_FALSE(copy.startxref_offset().has_value());
 }
 

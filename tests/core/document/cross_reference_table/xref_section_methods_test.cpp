@@ -64,12 +64,12 @@ TEST_CASE("add_entry_from copies an unresolved entry", "[cross_reference_section
     auto* source_entry = source.find(3);
     REQUIRE(source_entry != nullptr);
     REQUIRE_FALSE(source_entry->is_resolved());
-    REQUIRE(*source_entry->offset() == 5000);
+    REQUIRE(source_entry->offset() == 5000);
 
     auto* target_entry = target.add_entry_from(*source_entry);
     REQUIRE(target_entry != nullptr);
     REQUIRE_FALSE(target_entry->is_resolved());
-    REQUIRE(*target_entry->offset() == 5000);
+    REQUIRE(target_entry->offset() == 5000);
     REQUIRE(target_entry->in_use());
 }
 

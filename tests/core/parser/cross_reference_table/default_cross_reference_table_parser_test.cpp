@@ -26,8 +26,7 @@ trailer
     REQUIRE(entry0 != nullptr);
     REQUIRE(entry0->reference().object_number() == 0);
     REQUIRE(entry0->reference().generation() == 0);
-    REQUIRE(entry0->offset().has_value());
-    REQUIRE(*entry0->offset() == 1);
+    REQUIRE(entry0->offset() == 1);
     REQUIRE(entry0->in_use());
 
     auto* entry1 = section.find(1);
@@ -54,8 +53,7 @@ trailer
     REQUIRE(entry != nullptr);
     REQUIRE(entry->reference().object_number() == 5);
     REQUIRE(entry->reference().generation() == 0);
-    REQUIRE(entry->offset().has_value());
-    REQUIRE(*entry->offset() == 42);
+    REQUIRE(entry->offset() == 42);
     REQUIRE(entry->in_use());
 }
 

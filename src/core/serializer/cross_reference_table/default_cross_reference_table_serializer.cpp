@@ -28,7 +28,7 @@ std::string format_entry(std::uint64_t offset, std::uint32_t generation, bool in
 
 void append_entry(std::vector<std::byte>& out, const cross_reference_entry& entry)
 {
-    byte::append_bytes(out, format_entry(entry.offset().value_or(0),
+    byte::append_bytes(out, format_entry(entry.offset(),
                                          static_cast<std::uint32_t>(entry.reference().generation()),
                                          entry.in_use()));
 }
