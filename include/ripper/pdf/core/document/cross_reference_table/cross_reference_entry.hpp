@@ -81,6 +81,18 @@ public:
     explicit cross_reference_entry(indirect_reference ref, std::uint32_t objstm_number,
                                    std::uint32_t objstm_index) noexcept;
 
+    /// Construct a free (type-0) entry from an xref stream.
+    ///
+    /// Free entries form a linked list. Each free entry stores the next free
+    /// object number and the generation number to use if the slot is reused.
+    ///
+    /// @param ref The indirect reference (object number).
+    /// @param next_free_obj The object number of the next free object.
+    /// @param reuse_gen The generation to use if this object is reused.
+    [[nodiscard]] static cross_reference_entry make_free(indirect_reference ref,
+                                                         std::uint32_t next_free_obj,
+                                                         std::uint16_t reuse_gen) noexcept;
+
     /// Copy constructor. Deep-clones the indirect object if resolved.
     cross_reference_entry(const cross_reference_entry& other);
 
@@ -130,6 +142,16 @@ public:
     /// Valid only for compressed (type-2) entries.
     [[nodiscard]] std::uint32_t objstm_index() const noexcept;
 
+    /// Returns the next free object number in the linked free list.
+    ///
+    /// Valid only for free (type-0) entries.
+    [[nodiscard]] std::uint32_t next_free_object() const noexcept;
+
+    /// Returns the generation number to use if this free entry is reused.
+    ///
+    /// Valid only for free (type-0) entries.
+    [[nodiscard]] std::uint16_t reuse_generation() const noexcept;
+
     /// Returns whether the indirect object has been loaded or constructed in memory.
     [[nodiscard]] bool is_resolved() const noexcept;
 
@@ -171,7 +193,9 @@ private:
     /// Type 2 (compressed): object number of containing object stream.
     std::uint64_t field1_ = 0;
 
-    /// Index within the containing object stream. Only valid for type 2.
+    /// Type-interpreted value.
+    /// Type 0 (free):       generation to use if this object is reused.
+    /// Type 2 (compressed): index within the containing object stream.
     std::uint32_t field2_ = 0;
 
     bool is_new_ = false;

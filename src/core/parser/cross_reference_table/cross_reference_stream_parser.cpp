@@ -42,7 +42,6 @@ cross_reference_section cross_reference_stream_parser::parse(const object_stream
                 widths.w2 > 0 ? read_field(entry_data, widths.w0 + widths.w1, widths.w2) : 0;
 
             const auto obj_num = range.first + i;
-            const indirect_reference ref{obj_num, 0};
 
             const auto type = static_cast<xref_entry_type>(type_raw);
 
@@ -50,17 +49,22 @@ cross_reference_section cross_reference_stream_parser::parse(const object_stream
             {
                 case xref_entry_type::free:
                 {
-                    section.add_entry(cross_reference_entry{ref, 0, false});
+                    section.add_entry(cross_reference_entry::make_free(
+                        indirect_reference{obj_num, 0}, static_cast<std::uint32_t>(field1),
+                        static_cast<std::uint16_t>(field2)));
                     break;
                 }
                 case xref_entry_type::uncompressed:
                 {
-                    section.add_entry(cross_reference_entry{ref, field1, true});
+                    section.add_entry(cross_reference_entry{
+                        indirect_reference{obj_num, static_cast<std::uint16_t>(field2)}, field1,
+                        true});
                     break;
                 }
                 case xref_entry_type::compressed:
                 {
-                    section.add_entry(cross_reference_entry{ref, static_cast<std::uint32_t>(field1),
+                    section.add_entry(cross_reference_entry{indirect_reference{obj_num, 0},
+                                                            static_cast<std::uint32_t>(field1),
                                                             static_cast<std::uint32_t>(field2)});
                     break;
                 }

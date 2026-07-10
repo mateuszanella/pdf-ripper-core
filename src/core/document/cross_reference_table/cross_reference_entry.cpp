@@ -34,6 +34,20 @@ cross_reference_entry::cross_reference_entry(indirect_reference ref, std::uint32
 {
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
+cross_reference_entry cross_reference_entry::make_free(indirect_reference ref,
+                                                       std::uint32_t next_free_obj,
+                                                       std::uint16_t reuse_gen) noexcept
+// NOLINTEND(bugprone-easily-swappable-parameters)
+{
+    cross_reference_entry entry{ref};
+    entry.type_ = xref_entry_type::free;
+    entry.field1_ = next_free_obj;
+    entry.field2_ = reuse_gen;
+    entry.is_new_ = false;
+    return entry;
+}
+
 cross_reference_entry::cross_reference_entry(const cross_reference_entry& other)
     : reference_{other.reference_}, type_{other.type_}, field1_{other.field1_},
       field2_{other.field2_}, is_new_{other.is_new_},
@@ -95,6 +109,16 @@ std::uint32_t cross_reference_entry::objstm_number() const noexcept
 std::uint32_t cross_reference_entry::objstm_index() const noexcept
 {
     return field2_;
+}
+
+std::uint32_t cross_reference_entry::next_free_object() const noexcept
+{
+    return static_cast<std::uint32_t>(field1_);
+}
+
+std::uint16_t cross_reference_entry::reuse_generation() const noexcept
+{
+    return static_cast<std::uint16_t>(field2_);
 }
 
 bool cross_reference_entry::is_resolved() const noexcept

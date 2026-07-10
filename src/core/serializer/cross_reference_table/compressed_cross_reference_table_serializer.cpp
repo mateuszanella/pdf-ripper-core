@@ -88,14 +88,32 @@ compressed_cross_reference_table_serializer::compute_widths(
             if (entry.type() == xref_entry_type::uncompressed)
             {
                 auto val = entry.offset();
+
                 while (val >= (1ULL << (widths.w1 * 8)))
                     ++widths.w1;
+
+                auto gen = static_cast<std::uint64_t>(entry.reference().generation());
+
+                while (gen >= (1ULL << (widths.w2 * 8)))
+                    ++widths.w2;
             }
             if (entry.type() == xref_entry_type::compressed)
             {
                 auto val = entry.objstm_number();
                 while (val >= (1ULL << (widths.w1 * 8)))
                     ++widths.w1;
+            }
+            if (entry.type() == xref_entry_type::free)
+            {
+                auto val = entry.next_free_object();
+
+                while (val >= (1ULL << (widths.w1 * 8)))
+                    ++widths.w1;
+
+                auto gen = static_cast<std::uint64_t>(entry.reuse_generation());
+
+                while (gen >= (1ULL << (widths.w2 * 8)))
+                    ++widths.w2;
             }
 
             if (entry.type() == xref_entry_type::compressed)
@@ -130,7 +148,7 @@ compressed_cross_reference_table_serializer::encode_entries(const cross_referenc
             switch (entry.type())
             {
                 case xref_entry_type::free:
-                    write_field(out, 0, widths.w1);
+                    write_field(out, entry.next_free_object(), widths.w1);
                     break;
                 case xref_entry_type::uncompressed:
                     write_field(out, entry.offset(), widths.w1);
@@ -143,7 +161,7 @@ compressed_cross_reference_table_serializer::encode_entries(const cross_referenc
             switch (entry.type())
             {
                 case xref_entry_type::free:
-                    write_field(out, 0, widths.w2);
+                    write_field(out, entry.reuse_generation(), widths.w2);
                     break;
                 case xref_entry_type::uncompressed:
                     write_field(out, entry.reference().generation(), widths.w2);
