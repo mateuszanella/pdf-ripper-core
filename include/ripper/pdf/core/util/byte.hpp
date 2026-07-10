@@ -5,6 +5,7 @@
 #include <charconv>
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -49,5 +50,30 @@ inline void append_bytes(std::vector<std::byte>& out, const std::vector<std::byt
 {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     return reinterpret_cast<const char*>(data);
+}
+
+/// Returns true if the byte is a PDF whitespace character (space, LF, CR, or tab).
+[[nodiscard]] inline bool is_whitespace(std::byte b) noexcept
+{
+    return b == std::byte{' '} || b == std::byte{'\n'} || b == std::byte{'\r'} ||
+           b == std::byte{'\t'};
+}
+
+/// Advance `pos` past consecutive whitespace bytes within [0, limit).
+[[nodiscard]] inline std::size_t skip_whitespace(std::span<const std::byte> data,
+                                                  std::size_t pos, std::size_t limit) noexcept
+{
+    while (pos < limit && is_whitespace(data[pos]))
+        ++pos;
+    return pos;
+}
+
+/// Advance `pos` past consecutive non-whitespace bytes within [0, limit).
+[[nodiscard]] inline std::size_t skip_non_whitespace(std::span<const std::byte> data,
+                                                      std::size_t pos, std::size_t limit) noexcept
+{
+    while (pos < limit && !is_whitespace(data[pos]))
+        ++pos;
+    return pos;
 }
 } // namespace ripper::pdf::core::byte

@@ -6,6 +6,7 @@
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
 #include "ripper/pdf/core/parser/value_parsing.hpp"
+#include "ripper/pdf/core/util/byte.hpp"
 
 #include <charconv>
 
@@ -36,16 +37,11 @@ std::vector<indirect_object> object_stream_parser::parse(document& doc,
     std::size_t pos = 0;
     for (std::uint32_t i = 0; i < n; ++i)
     {
-        // Skip whitespace
-        while (pos < first && (content[pos] == std::byte{' '} || content[pos] == std::byte{'\n'} ||
-                               content[pos] == std::byte{'\r'} || content[pos] == std::byte{'\t'}))
-            ++pos;
+        pos = byte::skip_whitespace(content, pos, first);
 
         // Parse object number
         auto obj_num_start = pos;
-        while (pos < first && content[pos] != std::byte{' '} && content[pos] != std::byte{'\n'} &&
-               content[pos] != std::byte{'\r'} && content[pos] != std::byte{'\t'})
-            ++pos;
+        pos = byte::skip_non_whitespace(content, pos, first);
 
         std::string obj_num_str;
         obj_num_str.reserve(pos - obj_num_start);
@@ -62,16 +58,11 @@ std::vector<indirect_object> object_stream_parser::parse(document& doc,
         if (ec1 != std::errc{})
             throw parse_exception{"Invalid object number in object stream header"};
 
-        // Skip whitespace
-        while (pos < first && (content[pos] == std::byte{' '} || content[pos] == std::byte{'\n'} ||
-                               content[pos] == std::byte{'\r'} || content[pos] == std::byte{'\t'}))
-            ++pos;
+        pos = byte::skip_whitespace(content, pos, first);
 
         // Parse byte offset
         auto offset_start = pos;
-        while (pos < first && content[pos] != std::byte{' '} && content[pos] != std::byte{'\n'} &&
-               content[pos] != std::byte{'\r'} && content[pos] != std::byte{'\t'})
-            ++pos;
+        pos = byte::skip_non_whitespace(content, pos, first);
 
         std::string offset_str;
         offset_str.reserve(pos - offset_start);

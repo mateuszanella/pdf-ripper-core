@@ -5,9 +5,11 @@
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/object_stream_parser.hpp"
+#include "ripper/pdf/core/util/byte.hpp"
 
 #include <charconv>
 #include <string>
+#include <vector>
 
 namespace ripper::pdf::core
 {
@@ -69,68 +71,45 @@ std::optional<objstm::object_range> objstm::object_offset(std::uint32_t index) c
         return std::nullopt;
 
     auto content = os->raw();
+    const auto n = count();
     const auto first = first_offset();
 
-    // Parse the header to find the byte offset for the object at `index`.
+    // Parse all header entries to collect absolute byte positions.
     // Header format: N pairs of (object_number byte_offset).
+    std::vector<std::size_t> positions;
+    positions.reserve(n);
+
     std::size_t pos = 0;
-    for (std::uint32_t i = 0; i <= index; ++i)
+    for (std::uint32_t i = 0; i < n; ++i)
     {
-        // Skip whitespace
-        while (pos < first && (content[pos] == std::byte{' '} || content[pos] == std::byte{'\n'} ||
-                               content[pos] == std::byte{'\r'} || content[pos] == std::byte{'\t'}))
-            ++pos;
+        pos = byte::skip_whitespace(content, pos, first);
+        pos = byte::skip_non_whitespace(content, pos, first);
+        pos = byte::skip_whitespace(content, pos, first);
 
-        // Parse object number (skip it, we trust the index)
-        while (pos < first && content[pos] != std::byte{' '} && content[pos] != std::byte{'\n'} &&
-               content[pos] != std::byte{'\r'} && content[pos] != std::byte{'\t'})
-            ++pos;
+        auto off_start = pos;
+        pos = byte::skip_non_whitespace(content, pos, first);
 
-        // Skip whitespace
-        while (pos < first && (content[pos] == std::byte{' '} || content[pos] == std::byte{'\n'} ||
-                               content[pos] == std::byte{'\r'} || content[pos] == std::byte{'\t'}))
-            ++pos;
+        std::string off_str;
+        off_str.reserve(pos - off_start);
+        for (std::size_t j = off_start; j < pos; ++j)
+            off_str += static_cast<char>(content[j]);
 
-        if (i == index)
-        {
-            // Parse the byte offset for this object
-            auto off_start = pos;
-            while (pos < first && content[pos] != std::byte{' '} &&
-                   content[pos] != std::byte{'\n'} && content[pos] != std::byte{'\r'} &&
-                   content[pos] != std::byte{'\t'})
-                ++pos;
+        std::size_t byte_offset = 0;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        std::from_chars(off_str.data(), off_str.data() + off_str.size(), byte_offset);
 
-            std::string off_str;
-            off_str.reserve(pos - off_start);
-            for (std::size_t j = off_start; j < pos; ++j)
-                off_str += static_cast<char>(content[j]);
-
-            std::size_t byte_offset = 0;
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            std::from_chars(off_str.data(), off_str.data() + off_str.size(), byte_offset);
-
-            // The object's byte range starts at first + byte_offset and ends at
-            // the next object's offset or the end of the stream.
-            const auto obj_start = first + byte_offset;
-            const auto obj_end = (i + 1 < count()) ? first + byte_offset + 1024 : content.size();
-
-            // Find the actual end by looking for the next "endobj" or end of stream
-            auto actual_end = obj_end;
-            if (actual_end > content.size())
-                actual_end = content.size();
-
-            const auto len = actual_end > obj_start ? actual_end - obj_start : 0;
-
-            return object_range{obj_start, len};
-        }
-
-        // Skip the byte offset value (not our target)
-        while (pos < first && content[pos] != std::byte{' '} && content[pos] != std::byte{'\n'} &&
-               content[pos] != std::byte{'\r'} && content[pos] != std::byte{'\t'})
-            ++pos;
+        positions.push_back(first + byte_offset);
     }
 
-    return std::nullopt;
+    const auto obj_start = positions[index];
+    const auto obj_end = (index + 1 < n) ? positions[index + 1] : content.size();
+
+    if (obj_start >= content.size() || obj_end > content.size())
+        return std::nullopt;
+
+    const auto len = obj_end > obj_start ? obj_end - obj_start : 0;
+
+    return object_range{obj_start, len};
 }
 
 std::vector<indirect_object> objstm::objects()
