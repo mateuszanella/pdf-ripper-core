@@ -9,11 +9,11 @@ namespace ripper::pdf::core
 ///
 /// Composed of the cross-reference manager (which owns all xref sections) and the
 /// trailer manager (which owns the complete trailer history for all revisions).
-class document_structure
+class document_revision
 {
 public:
-    /// Construct a document_structure from fully assembled components.
-    explicit document_structure(cross_reference_manager xref_manager,
+    /// Construct a document_revision from fully assembled components.
+    explicit document_revision(cross_reference_manager xref_manager,
                                 trailer_manager trailer_manager) noexcept;
 
     /// Returns a mutable reference to the cross-reference manager.

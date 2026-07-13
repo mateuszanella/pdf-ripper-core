@@ -3,7 +3,7 @@
 #include "ripper/io/core/reader/reader.hpp"
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/cross_reference_table_parser.hpp"
-#include "ripper/pdf/core/parser/document_structure/document_structure_parser.hpp"
+#include "ripper/pdf/core/parser/document_revision/document_revision_parser.hpp"
 #include "ripper/pdf/core/parser/trailer/trailer_parser.hpp"
 
 #include <memory>
@@ -11,16 +11,16 @@
 
 namespace ripper::pdf::core
 {
-class default_document_structure_parser : public document_structure_parser
+class default_document_revision_parser : public document_revision_parser
 {
 public:
-    explicit default_document_structure_parser(document& document);
+    explicit default_document_revision_parser(document& document);
 
-    default_document_structure_parser(
+    default_document_revision_parser(
         document& document, std::unique_ptr<class cross_reference_table_parser> xref_parser,
         std::unique_ptr<class trailer_parser> trailer_parser);
 
-    [[nodiscard]] document_structure parse();
+    [[nodiscard]] document_revision parse();
 
 private:
     document& _document;

@@ -6,7 +6,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
-#include "ripper/pdf/core/document/document_structure.hpp"
+#include "ripper/pdf/core/document/document_revision.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
@@ -69,15 +69,15 @@ catalog object_manager::create_catalog(document& doc)
     return ripper::pdf::core::catalog{*raw_catalog};
 }
 
-document_structure object_manager::parse_structure(const document& doc)
+document_revision object_manager::parse_revision(const document& doc)
 {
     if (!doc.has_parser())
         throw logic_exception{"No parser available"};
 
-    return doc.parser()->structure();
+    return doc.parser()->revision();
 }
 
-document_structure object_manager::create_structure()
+document_revision object_manager::create_revision()
 {
     using entry_t = ripper::pdf::core::cross_reference_entry;
     using iref_t = ripper::pdf::core::indirect_reference;
@@ -99,7 +99,7 @@ document_structure object_manager::create_structure()
     trailer_t initial_trailer{dictionary{}};
     trailer_manager_t trailer_mgr{std::vector<trailer_t>{std::move(initial_trailer)}};
 
-    return document_structure{std::move(xref_manager), std::move(trailer_mgr)};
+    return document_revision{std::move(xref_manager), std::move(trailer_mgr)};
 }
 
 header object_manager::parse_header(const document& doc)

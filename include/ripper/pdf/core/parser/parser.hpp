@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ripper/pdf/core/document/document_structure.hpp"
+#include "ripper/pdf/core/document/document_revision.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 
@@ -37,7 +37,7 @@ public:
     [[nodiscard]] header header();
 
     /// Parse and return compiled document structure and traversal history.
-    [[nodiscard]] document_structure structure();
+    [[nodiscard]] document_revision revision();
 
     /// Parse any indirect object by reference and return the fully resolved `indirect_object`.
     ///

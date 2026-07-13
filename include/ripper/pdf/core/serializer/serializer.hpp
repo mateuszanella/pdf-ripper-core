@@ -42,9 +42,14 @@ public:
     /// Serialize a single cross-reference section to a byte buffer.
     ///
     /// Emits the `xref` block for `section` only. Use this when interleaving object
-    /// writes with xref writes during an incremental update:
+    /// writes with xref writes during an incremental update.
+    ///
+    /// `trailer` carries the trailer dictionary entries that the compressed serializer
+    /// merges into the xref stream dictionary when the section is compressed; the
+    /// traditional serializer ignores it.
     [[nodiscard]] std::vector<std::byte>
-    serialize_cross_reference_section(const cross_reference_section& section);
+    serialize_cross_reference_section(const cross_reference_section& section,
+                                      const trailer& trailer);
 
     /// Serialize a PDF trailer block to a byte buffer.
     ///
@@ -52,6 +57,20 @@ public:
     /// The trailer dictionary is serialized as-is — no keys are stripped.
     [[nodiscard]] std::vector<std::byte> serialize_trailer(const trailer& t,
                                                            std::uint64_t xref_offset);
+
+    /// Serialize a single PDF revision (xref section + trailer + startxref + %%EOF).
+    ///
+    /// When `section.is_compressed()` is true, emits a compressed xref stream indirect
+    /// object (with the trailer dictionary merged into the stream dictionary) followed
+    /// by `startxref\n<xref_offset>\n%%EOF`. Otherwise, emits the traditional `xref` block
+    /// followed by the trailer block (`trailer\n<<dict>>\nstartxref\n<xref_offset>\n%%EOF`).
+    ///
+    /// `xref_offset` is the byte offset in the output file where the serialized xref
+    /// block (or xref stream indirect object) begins. It is written after `startxref`
+    /// so reader applications can locate the revision.
+    [[nodiscard]] std::vector<std::byte>
+    serialize_revision(const cross_reference_section& section, const trailer& trailer,
+                       std::uint64_t xref_offset);
 
 private:
     const document& document_;

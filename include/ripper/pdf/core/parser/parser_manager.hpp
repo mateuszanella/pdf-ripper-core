@@ -9,7 +9,7 @@ class header_parser;
 class cross_reference_table_parser;
 class trailer_parser;
 class object_parser;
-class document_structure_parser;
+class document_revision_parser;
 class indirect_object_resolver;
 
 /// Owns and exposes the parser subcomponents used to process a `document`.
@@ -39,7 +39,7 @@ public:
     void set_trailer_parser(std::unique_ptr<class trailer_parser> object);
 
     /// Replace the document-structure parser implementation.
-    void set_document_structure_parser(std::unique_ptr<class document_structure_parser> object);
+    void set_document_revision_parser(std::unique_ptr<class document_revision_parser> object);
 
     /// Replace the indirect-indirect_object resolver implementation.
     void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> object);
@@ -57,7 +57,7 @@ public:
     [[nodiscard]] class trailer_parser& trailer_parser();
 
     /// Access the configured document-structure parser.
-    [[nodiscard]] class document_structure_parser& document_structure_parser();
+    [[nodiscard]] class document_revision_parser& document_revision_parser();
 
     /// Access the configured indirect-indirect_object resolver.
     [[nodiscard]] class indirect_object_resolver& object_resolver();
@@ -71,7 +71,7 @@ private:
     std::unique_ptr<class header_parser> header_parser_;
     std::unique_ptr<class cross_reference_table_parser> xref_parser_;
     std::unique_ptr<class trailer_parser> trailer_parser_;
-    std::unique_ptr<class document_structure_parser> structure_parser_;
+    std::unique_ptr<class document_revision_parser> revision_parser_;
     std::unique_ptr<class indirect_object_resolver> object_resolver_;
     std::unique_ptr<class object_parser> object_parser_;
 };

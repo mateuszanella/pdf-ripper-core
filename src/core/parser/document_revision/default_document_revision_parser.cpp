@@ -1,4 +1,4 @@
-#include "ripper/pdf/core/parser/document_structure/default_document_structure_parser.hpp"
+#include "ripper/pdf/core/parser/document_revision/default_document_revision_parser.hpp"
 
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
@@ -13,6 +13,9 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
+#include <cctype>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -21,14 +24,48 @@
 
 namespace ripper::pdf::core
 {
-default_document_structure_parser::default_document_structure_parser(document& document)
-    : default_document_structure_parser(document,
+namespace
+{
+/// Extract the object number from the leading `N G obj` header of an xref stream.
+///
+/// The xref stream's content begins with an indirect-object header of the form
+/// `N G obj\n<<...>>`. This function parses the leading integer `N` so the
+/// in-memory section carries the same identity as the file. Returns
+/// `std::nullopt` if the header is missing or malformed.
+[[nodiscard]] std::optional<std::uint32_t>
+extract_xref_stream_object_number(std::string_view content)
+{
+    // Skip leading whitespace
+    auto pos = content.find_first_not_of(" \t\r\n");
+    if (pos == std::string_view::npos)
+        return std::nullopt;
+
+    // Parse the leading integer (object number).
+    const auto num_start = pos;
+    for (; pos < content.size(); ++pos)
+        if (!std::isdigit(static_cast<unsigned char>(content[pos])))
+            break;
+
+    if (pos == num_start)
+        return std::nullopt;
+
+    std::uint32_t object_number = 0;
+    const auto sv = content.substr(num_start, pos - num_start);
+    const auto [_, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), object_number);
+    if (ec != std::errc{})
+        return std::nullopt;
+
+    return object_number;
+}
+} // namespace
+default_document_revision_parser::default_document_revision_parser(document& document)
+    : default_document_revision_parser(document,
                                         std::make_unique<default_cross_reference_table_parser>(),
                                         std::make_unique<default_trailer_parser>())
 {
 }
 
-default_document_structure_parser::default_document_structure_parser(
+default_document_revision_parser::default_document_revision_parser(
     document& document, std::unique_ptr<class cross_reference_table_parser> xref_parser,
     std::unique_ptr<class trailer_parser> trailer_parser)
     : _document{document}, _xref_parser{std::move(xref_parser)},
@@ -41,7 +78,7 @@ default_document_structure_parser::default_document_structure_parser(
 }
 
 std::optional<std::size_t>
-default_document_structure_parser::extract_prev_offset(const trailer& trailer)
+default_document_revision_parser::extract_prev_offset(const trailer& trailer)
 {
     auto prev = trailer.prev();
     if (!prev)
@@ -55,7 +92,7 @@ default_document_structure_parser::extract_prev_offset(const trailer& trailer)
  *       since the startxref keyword could appear in the last 1024 bytes multiple times.
  */
 std::optional<std::size_t>
-default_document_structure_parser::find_start_xref_offset(ripper::io::core::reader& reader)
+default_document_revision_parser::find_start_xref_offset(ripper::io::core::reader& reader)
 {
     constexpr std::string_view start_xref_keyword = "startxref";
     constexpr std::size_t line_buffer_size = 256;
@@ -103,7 +140,7 @@ default_document_structure_parser::find_start_xref_offset(ripper::io::core::read
     return result;
 }
 
-document_structure default_document_structure_parser::parse()
+document_revision default_document_revision_parser::parse()
 {
     auto* reader_ptr = _document.reader();
     if (reader_ptr == nullptr)
@@ -282,6 +319,11 @@ document_structure default_document_structure_parser::parse()
 
             section.set_startxref_offset(static_cast<std::uint64_t>(current_offset));
 
+            // Extract the xref stream's own object number from the `N G obj` header
+            // so the in-memory section carries the same identity as the file.
+            if (const auto obj_num = extract_xref_stream_object_number(collected_content))
+                section.set_xref_stream_object_number(*obj_num);
+
             xref_sections.push_back(std::move(section));
             trailer_history.push_back(std::move(trailer_obj));
 
@@ -301,7 +343,7 @@ document_structure default_document_structure_parser::parse()
     cross_reference_manager xref_manager{std::move(xref_sections)};
     trailer_manager trailer_mgr{std::move(trailer_history)};
 
-    return document_structure{
+    return document_revision{
         std::move(xref_manager),
         std::move(trailer_mgr),
     };

@@ -2,6 +2,7 @@
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/util/byte.hpp"
 
 #include <cstdint>
@@ -35,7 +36,8 @@ void append_entry(std::vector<std::byte>& out, const cross_reference_entry& entr
 } // namespace
 
 std::vector<std::byte>
-default_cross_reference_table_serializer::serialize(const cross_reference_section& section) const
+default_cross_reference_table_serializer::serialize(const cross_reference_section& section,
+                                                    const trailer& /*trailer*/) const
 {
     std::vector<std::byte> out;
 

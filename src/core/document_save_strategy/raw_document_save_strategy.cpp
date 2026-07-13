@@ -5,6 +5,8 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/serializer/serializer.hpp"
@@ -90,13 +92,12 @@ void raw_document_save_strategy::save(document& doc)
 
         auto xref_start = static_cast<std::uint64_t>(w.tell());
 
-        // Serialize the cross-reference section for this revision.
-        (void)w.write(s.serialize_cross_reference_section(section));
-
-        // Serialize the corresponding trailer as-is, without modifying its dictionary.
-        // The /Prev chain (if any) is whatever the caller has in memory.
-        if (i < trailers.size())
-            (void)w.write(s.serialize_trailer(trailers[i], xref_start));
+        // Serialize the revision (xref block + trailer + startxref + %%EOF) as a
+        // single unit. For compressed sections the trailer dictionary is merged
+        // into the xref stream dictionary; for traditional sections the trailer
+        // block is emitted as-is — the caller owns `/Prev` correctness.
+        const auto& t = (i < trailers.size()) ? trailers[i] : trailer{dictionary{}};
+        (void)w.write(s.serialize_revision(section, t, xref_start));
     }
 
     w.flush();

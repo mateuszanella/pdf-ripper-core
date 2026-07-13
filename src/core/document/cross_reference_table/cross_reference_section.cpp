@@ -172,4 +172,20 @@ void cross_reference_section::set_startxref_offset(std::uint64_t offset) noexcep
 {
     startxref_offset_ = offset;
 }
+
+bool cross_reference_section::is_compressed() const noexcept
+{
+    return xref_stream_object_number_.has_value();
+}
+
+std::optional<std::uint32_t> cross_reference_section::xref_stream_object_number() const noexcept
+{
+    return xref_stream_object_number_;
+}
+
+void cross_reference_section::set_xref_stream_object_number(
+    std::optional<std::uint32_t> object_number) noexcept
+{
+    xref_stream_object_number_ = object_number;
+}
 } // namespace ripper::pdf::core

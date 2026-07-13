@@ -4,6 +4,8 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object_identity.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/serializer/cross_reference_table/default_cross_reference_table_serializer.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -35,7 +37,7 @@ TEST_CASE("default_cross_reference_table_serializer serializes single subsection
     cross_reference_section section{std::move(subsections)};
 
     default_cross_reference_table_serializer ser;
-    const auto result = ser.serialize(section);
+    const auto result = ser.serialize(section, trailer{dictionary{}});
 
     const auto expected =
         "xref\n0 3\n0000000000 65535 f\r\n0000000042 00000 n\r\n0000000100 00000 n\r\n";
@@ -53,7 +55,7 @@ TEST_CASE("default_cross_reference_table_serializer serializes single in-use ent
     cross_reference_section section{std::move(subsections)};
 
     default_cross_reference_table_serializer ser;
-    const auto result = ser.serialize(section);
+    const auto result = ser.serialize(section, trailer{dictionary{}});
 
     REQUIRE(bytes_to_string(result) == "xref\n5 1\n0000012345 00000 n\r\n");
 }
@@ -69,7 +71,7 @@ TEST_CASE("default_cross_reference_table_serializer serializes free entry only",
     cross_reference_section section{std::move(subsections)};
 
     default_cross_reference_table_serializer ser;
-    const auto result = ser.serialize(section);
+    const auto result = ser.serialize(section, trailer{dictionary{}});
 
     REQUIRE(bytes_to_string(result) == "xref\n0 1\n0000000000 65535 f\r\n");
 }
@@ -91,7 +93,7 @@ TEST_CASE("default_cross_reference_table_serializer serializes multiple subsecti
     cross_reference_section section{std::move(subsections)};
 
     default_cross_reference_table_serializer ser;
-    const auto result = ser.serialize(section);
+    const auto result = ser.serialize(section, trailer{dictionary{}});
 
     const auto expected = "xref\n0 2\n0000000000 65535 f\r\n0000000100 00000 n\r\n"
                           "5 2\n0000000200 00000 n\r\n0000000300 00000 n\r\n";
@@ -103,7 +105,7 @@ TEST_CASE("default_cross_reference_table_serializer serializes empty section", "
     cross_reference_section section{{}};
 
     default_cross_reference_table_serializer ser;
-    const auto result = ser.serialize(section);
+    const auto result = ser.serialize(section, trailer{dictionary{}});
 
     REQUIRE(bytes_to_string(result) == "xref\n");
 }
@@ -126,7 +128,7 @@ TEST_CASE("default_cross_reference_table_serializer serializes entry with missin
     cross_reference_section section{std::move(subsections)};
 
     default_cross_reference_table_serializer ser;
-    const auto result = ser.serialize(section);
+    const auto result = ser.serialize(section, trailer{dictionary{}});
 
     // offset.value_or(0) → offset is nullopt, so 0; entry is in-use with gen 0
     REQUIRE(bytes_to_string(result) == "xref\n1 1\n0000000000 00000 n\r\n");
@@ -145,7 +147,7 @@ TEST_CASE("default_cross_reference_table_serializer formats 20-byte entries corr
     cross_reference_section section{std::move(subsections)};
 
     default_cross_reference_table_serializer ser;
-    const auto result_bytes = ser.serialize(section);
+    const auto result_bytes = ser.serialize(section, trailer{dictionary{}});
 
     // The output has: "xref\n" + "0 2\n" + entry0 + entry1
     // Entry format: 10-digit offset + ' ' + 5-digit generation + ' ' + n/f + "\r\n" = 20

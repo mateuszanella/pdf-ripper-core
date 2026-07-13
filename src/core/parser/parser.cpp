@@ -1,7 +1,7 @@
 #include "ripper/pdf/core/parser/parser.hpp"
 
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/parser/document_structure/document_structure_parser.hpp"
+#include "ripper/pdf/core/parser/document_revision/document_revision_parser.hpp"
 #include "ripper/pdf/core/parser/header/header_parser.hpp"
 #include "ripper/pdf/core/parser/indirect_object_resolver.hpp"
 #include "ripper/pdf/core/parser/object_parser.hpp"
@@ -34,9 +34,9 @@ header parser::header()
     return manager().header_parser().parse();
 }
 
-document_structure parser::structure()
+document_revision parser::revision()
 {
-    return manager().document_structure_parser().parse();
+    return manager().document_revision_parser().parse();
 }
 
 indirect_object parser::parse_object(indirect_reference ref, bool preload_stream)

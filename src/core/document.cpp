@@ -6,7 +6,7 @@
 #include "ripper/io/core/writer/writer.hpp"
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "ripper/pdf/core/document/document_structure.hpp"
+#include "ripper/pdf/core/document/document_revision.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
@@ -128,12 +128,12 @@ header& document::header()
 
 cross_reference_manager& document::cross_reference_table()
 {
-    return structure().xref();
+    return revision().xref();
 }
 
 trailer_manager& document::trailer()
 {
-    return structure().trailer();
+    return revision().trailer();
 }
 
 catalog document::catalog()
@@ -224,15 +224,15 @@ cross_reference_section& document::create_new_revision()
     return new_section;
 }
 
-document_structure& document::structure()
+document_revision& document::revision()
 {
-    if (structure_.has_value())
-        return *structure_;
+    if (revision_.has_value())
+        return *revision_;
 
-    structure_ =
-        has_parser() ? object_manager::parse_structure(*this) : object_manager::create_structure();
+    revision_ =
+        has_parser() ? object_manager::parse_revision(*this) : object_manager::create_revision();
 
-    return *structure_;
+    return *revision_;
 }
 
 } // namespace ripper::pdf::core

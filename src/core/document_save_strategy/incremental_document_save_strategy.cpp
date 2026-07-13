@@ -111,21 +111,26 @@ void incremental_document_save_strategy::save(document& doc)
 
         auto xref_start = static_cast<std::uint64_t>(w.tell());
 
-        (void)w.write(s.serialize_cross_reference_section(section));
-        section.set_startxref_offset(xref_start);
-
-        // Write the corresponding trailer, fixing up /Prev.
+        // Fix up the trailer's /Prev before serialization. The revision serializer
+        // merges trailer dictionary entries into the xref stream dictionary when
+        // the section is compressed, so setting /Prev here is reflected in both the
+        // traditional trailer block and the compressed xref stream output.
         if (i < trailers.size())
         {
             auto& t = trailers[i];
-
             if (prev_xref_start.has_value())
                 t.dictionary().set("Prev", object{static_cast<std::int64_t>(*prev_xref_start)});
             else
                 t.dictionary().remove("Prev");
-
-            (void)w.write(s.serialize_trailer(t, xref_start));
         }
+
+        // Serialize the revision (xref block + trailer + startxref + %%EOF) as a
+        // single unit. For compressed sections the trailer dictionary is merged into
+        // the xref stream dictionary; for traditional sections the trailer block is
+        // emitted after the xref block.
+        const auto& t = (i < trailers.size()) ? trailers[i] : trailer{dictionary{}};
+        (void)w.write(s.serialize_revision(section, t, xref_start));
+        section.set_startxref_offset(xref_start);
 
         prev_xref_start = xref_start;
     }

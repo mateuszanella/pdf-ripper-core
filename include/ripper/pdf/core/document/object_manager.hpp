@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
-#include "ripper/pdf/core/document/document_structure.hpp"
+#include "ripper/pdf/core/document/document_revision.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 
 namespace ripper::pdf::core
@@ -62,13 +62,13 @@ public:
     /// and returns the assembled structure without caching.
     ///
     /// @throws parse_exception if the parser fails.
-    [[nodiscard]] static class document_structure parse_structure(const document& doc);
+    [[nodiscard]] static class document_revision parse_revision(const document& doc);
 
     /// Generate a new document structure with default values.
     ///
     /// Constructs initial xref and trailer entries suitable for a new document,
     /// including the required xref entry 0 with object number 0 and generation 65535.
-    [[nodiscard]] static class document_structure create_structure();
+    [[nodiscard]] static class document_revision create_revision();
 
     /// Parse the PDF header from file without caching.
     ///

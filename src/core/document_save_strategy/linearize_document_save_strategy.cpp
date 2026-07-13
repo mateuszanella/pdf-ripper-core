@@ -87,9 +87,11 @@ void linearize_document_save_strategy::save(document& doc)
 
     auto xref_start = static_cast<std::uint64_t>(w.tell());
 
-    // Flush the cross-reference section and trailer to the output stream.
-    (void)w.write(s.serialize_cross_reference_section(xref));
-    (void)w.write(s.serialize_trailer(doc.trailer().active_trailer(), xref_start));
+    // Serialize the revision (xref block + trailer + startxref + %%EOF) as a single
+    // unit. If the section is a compressed xref stream, the trailer dictionary is
+    // merged into the xref stream dictionary and only `startxref\n%%EOF` follows.
+    // Otherwise, the traditional `trailer\n<<dict>>\nstartxref\n%%EOF` block is emitted.
+    (void)w.write(s.serialize_revision(xref, doc.trailer().active_trailer(), xref_start));
 
     w.flush();
     w.close();

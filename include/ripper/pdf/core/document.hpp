@@ -4,7 +4,7 @@
 #include "ripper/io/core/writer/writer.hpp"
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "ripper/pdf/core/document/document_structure.hpp"
+#include "ripper/pdf/core/document/document_revision.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
@@ -187,18 +187,25 @@ public:
 
 private:
     /// Parse and return the assembled document structure (xref + trailer + histories) (cached).
-    [[nodiscard]] class document_structure& structure();
+    [[nodiscard]] class document_revision& revision();
 
+    /// The underlying reader for the PDF file.
     std::unique_ptr<ripper::io::core::reader> reader_;
+    /// The parser for the PDF file. Always present when a reader is available.
     std::unique_ptr<class parser> parser_;
 
+    /// The underlying writer for the PDF file.
     std::unique_ptr<ripper::io::core::writer> writer_;
+    /// The serializer for the PDF file. Always present when a writer is available.
     std::unique_ptr<class serializer> serializer_;
 
+    /// The current save strategy implementation.
     std::unique_ptr<class document_save_strategy> save_strategy_;
 
+    /// The parsed header of the PDF file.
     std::optional<class header> header_;
 
-    std::optional<class document_structure> structure_;
+    /// The parsed document revisions (xrefs + trailers).
+    std::optional<class document_revision> revision_;
 };
 } // namespace ripper::pdf::core

@@ -4,10 +4,13 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/object/stream.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/filter/filter_manager.hpp"
 #include "ripper/pdf/core/serializer/object/object_serializer.hpp"
 #include "ripper/pdf/core/util/byte.hpp"
+
+#include <string>
 
 namespace ripper::pdf::core
 {
@@ -19,8 +22,15 @@ void compressed_cross_reference_table_serializer::set_object_serializer(
 }
 
 std::vector<std::byte>
-compressed_cross_reference_table_serializer::serialize(const cross_reference_section& section) const
+compressed_cross_reference_table_serializer::serialize(const cross_reference_section& section,
+                                                        const trailer& trailer) const
 {
+    if (!section.is_compressed() || !section.xref_stream_object_number().has_value())
+        throw logic_exception{"Compressed xref serializer requires a section with "
+                              "xref_stream_object_number set"};
+
+    const auto obj_num = *section.xref_stream_object_number();
+
     const auto widths = compute_widths(section);
     const auto entries_data = encode_entries(section, widths);
 
@@ -37,7 +47,12 @@ compressed_cross_reference_table_serializer::serialize(const cross_reference_sec
     w_arr.push_back(object{static_cast<std::int64_t>(widths.w1)});
     w_arr.push_back(object{static_cast<std::int64_t>(widths.w2)});
 
-    dictionary dict;
+    // Start from the trailer dictionary so trailer-only entries (Root, Info, ID,
+    // Encrypt, Prev) are merged into the xref stream dictionary per PDF spec
+    // §7.5.8. The xref-specific keys (Type, Size, W, Index, Filter, Length)
+    // are then set explicitly and take precedence over any trailer values.
+    dictionary dict{trailer.dictionary().entries()};
+
     dict.set("Type", object{name{"XRef"}});
     dict.set("Size", object{static_cast<std::int64_t>(size)});
     dict.set("W", object{std::move(w_arr)});
@@ -54,6 +69,12 @@ compressed_cross_reference_table_serializer::serialize(const cross_reference_sec
         }
         dict.set("Index", object{std::move(idx)});
     }
+    else
+    {
+        // Remove any /Index the trailer might have carried; the section's
+        // contiguous layout starting at object 0 does not need it.
+        dict.remove("Index");
+    }
 
     auto compressed = filter_manager::encode(dictionary{}, entries_data);
     dict.set("Length", object{static_cast<std::int64_t>(compressed.size())});
@@ -65,7 +86,7 @@ compressed_cross_reference_table_serializer::serialize(const cross_reference_sec
         object{object_stream{std::move(dict), stream{std::move(compressed)}}});
 
     std::vector<std::byte> out;
-    byte::append_bytes(out, "0 0 obj\n");
+    byte::append_bytes(out, std::to_string(obj_num) + " 0 obj\n");
     byte::append_bytes(out, body);
     byte::append_bytes(out, "\nendobj\n");
 
