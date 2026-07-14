@@ -3,18 +3,17 @@
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
-#include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
-#include "ripper/pdf/core/document/document_revision.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/revision.hpp"
+#include "ripper/pdf/core/document/revision_history.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
-#include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/parser.hpp"
 
+#include <memory>
 #include <utility>
 
 namespace ripper::pdf::core
@@ -34,12 +33,9 @@ catalog object_manager::create_catalog(document& doc)
     auto& xref = doc.cross_reference_table();
     auto& trl = doc.trailer().active_trailer();
 
-    // Reserve both references up front so the catalog can reference pages
-    // by indirect reference from the start.
     auto catalog_ref = xref.reserve();
     auto pages_ref = xref.reserve();
 
-    // Build the root /Pages node: an empty page tree with zero pages.
     dictionary pages_dict;
     pages_dict.set("Type", object{name{"Pages"}});
     pages_dict.set("Kids", object{array{}});
@@ -52,7 +48,6 @@ catalog object_manager::create_catalog(document& doc)
     if (raw_pages == nullptr)
         throw logic_exception{"Failed to commit root Pages object to cross-reference table"};
 
-    // Build the /Catalog pointing at the new /Pages node.
     dictionary catalog_dict;
     catalog_dict.set("Type", object{name{"Catalog"}});
     catalog_dict.set("Pages", object{pages_ref});
@@ -69,37 +64,30 @@ catalog object_manager::create_catalog(document& doc)
     return ripper::pdf::core::catalog{*raw_catalog};
 }
 
-document_revision object_manager::parse_revision(const document& doc)
+std::unique_ptr<revision_history> object_manager::parse_revision_history(const document& doc)
 {
     if (!doc.has_parser())
         throw logic_exception{"No parser available"};
 
-    return doc.parser()->revision();
+    return doc.parser()->revision_history();
 }
 
-document_revision object_manager::create_revision()
+std::unique_ptr<revision_history> object_manager::create_revision_history()
 {
-    using entry_t = ripper::pdf::core::cross_reference_entry;
-    using iref_t = ripper::pdf::core::indirect_reference;
-    using trailer_t = ripper::pdf::core::trailer;
-    using trailer_manager_t = ripper::pdf::core::trailer_manager;
-
-    // Build the initial section with a single subsection containing object 0 (free-list head)
     cross_reference_subsection::entry_map entries;
-    entries.emplace(0, entry_t{iref_t{0, 65535}, 0, false});
+    entries.emplace(0, cross_reference_entry{indirect_reference{0, 65535}, 0, false});
 
     std::vector<cross_reference_subsection> subsections;
     subsections.emplace_back(0, std::move(entries));
 
-    std::vector<cross_reference_section> sections;
-    sections.emplace_back(std::move(subsections));
+    cross_reference_section section{std::move(subsections)};
 
-    cross_reference_manager xref_manager{std::move(sections)};
+    trailer t{dictionary{}};
 
-    trailer_t initial_trailer{dictionary{}};
-    trailer_manager_t trailer_mgr{std::vector<trailer_t>{std::move(initial_trailer)}};
+    std::vector<revision> revisions;
+    revisions.emplace_back(std::move(section), std::move(t));
 
-    return document_revision{std::move(xref_manager), std::move(trailer_mgr)};
+    return std::make_unique<revision_history>(std::move(revisions));
 }
 
 header object_manager::parse_header(const document& doc)

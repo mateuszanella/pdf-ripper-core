@@ -1,9 +1,10 @@
-#include "ripper/pdf/core/parser/document_revision/default_document_revision_parser.hpp"
+#include "ripper/pdf/core/parser/revision_history/default_revision_history_parser.hpp"
 
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
-#include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
+#include "ripper/pdf/core/document/revision.hpp"
+#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/compressed_cross_reference_table_parser.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
@@ -13,8 +14,8 @@
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cctype>
+#include <charconv>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -35,12 +36,10 @@ namespace
 [[nodiscard]] std::optional<std::uint32_t>
 extract_xref_stream_object_number(std::string_view content)
 {
-    // Skip leading whitespace
     auto pos = content.find_first_not_of(" \t\r\n");
     if (pos == std::string_view::npos)
         return std::nullopt;
 
-    // Parse the leading integer (object number).
     const auto num_start = pos;
     for (; pos < content.size(); ++pos)
         if (!std::isdigit(static_cast<unsigned char>(content[pos])))
@@ -58,14 +57,15 @@ extract_xref_stream_object_number(std::string_view content)
     return object_number;
 }
 } // namespace
-default_document_revision_parser::default_document_revision_parser(document& document)
-    : default_document_revision_parser(document,
-                                        std::make_unique<default_cross_reference_table_parser>(),
-                                        std::make_unique<default_trailer_parser>())
+
+default_revision_history_parser::default_revision_history_parser(document& document)
+    : default_revision_history_parser(document,
+                                      std::make_unique<default_cross_reference_table_parser>(),
+                                      std::make_unique<default_trailer_parser>())
 {
 }
 
-default_document_revision_parser::default_document_revision_parser(
+default_revision_history_parser::default_revision_history_parser(
     document& document, std::unique_ptr<class cross_reference_table_parser> xref_parser,
     std::unique_ptr<class trailer_parser> trailer_parser)
     : _document{document}, _xref_parser{std::move(xref_parser)},
@@ -78,7 +78,7 @@ default_document_revision_parser::default_document_revision_parser(
 }
 
 std::optional<std::size_t>
-default_document_revision_parser::extract_prev_offset(const trailer& trailer)
+default_revision_history_parser::extract_prev_offset(const trailer& trailer)
 {
     auto prev = trailer.prev();
     if (!prev)
@@ -87,12 +87,8 @@ default_document_revision_parser::extract_prev_offset(const trailer& trailer)
     return static_cast<std::size_t>(*prev);
 }
 
-/**
- * @todo Technically, this implementation does not really get the last startxref,
- *       since the startxref keyword could appear in the last 1024 bytes multiple times.
- */
 std::optional<std::size_t>
-default_document_revision_parser::find_start_xref_offset(ripper::io::core::reader& reader)
+default_revision_history_parser::find_start_xref_offset(ripper::io::core::reader& reader)
 {
     constexpr std::string_view start_xref_keyword = "startxref";
     constexpr std::size_t line_buffer_size = 256;
@@ -140,7 +136,7 @@ default_document_revision_parser::find_start_xref_offset(ripper::io::core::reade
     return result;
 }
 
-document_revision default_document_revision_parser::parse()
+std::unique_ptr<revision_history> default_revision_history_parser::parse()
 {
     auto* reader_ptr = _document.reader();
     if (reader_ptr == nullptr)
@@ -152,17 +148,12 @@ document_revision default_document_revision_parser::parse()
     if (!start_xref_result)
         throw parse_exception{"Missing startxref section"};
 
-    std::vector<cross_reference_section> xref_sections;
-    std::vector<trailer> trailer_history;
+    std::vector<revision> revisions;
     std::unordered_set<std::size_t> visited_offsets;
     std::size_t current_offset = *start_xref_result;
 
-    // In this main loop, we iterate through the whole chain of xref/trailer
-    // pairs starting from the last one (pointed by startxref) and following
-    // /Prev links until we reach the end of the chain or encounter an error.
     for (;;)
     {
-        // Ensure we don't loop infinitely in case of circular /Prev references
         if (visited_offsets.contains(current_offset))
         {
             break;
@@ -170,16 +161,14 @@ document_revision default_document_revision_parser::parse()
 
         visited_offsets.insert(current_offset);
 
-        // Step 2: Seek to the startxref offset of the current xref/trailer pair
         reader.seek(current_offset);
 
-        // Step 3: Detect format by reading the first few bytes
         constexpr std::size_t k_peek_size = 64;
         std::array<std::byte, k_peek_size> peek_buffer{};
         const std::size_t peek_bytes = reader.read(peek_buffer);
         if (peek_bytes == 0)
         {
-            if (xref_sections.empty())
+            if (revisions.empty())
                 throw parse_exception{
                     "Unable to find complete trailer while parsing document structure"};
             break;
@@ -188,15 +177,12 @@ document_revision default_document_revision_parser::parse()
         reader.seek(current_offset);
 
         std::string_view peek_sv{byte::as_chars(peek_buffer.data()), peek_bytes};
-        // Trim leading whitespace
         while (!peek_sv.empty() && (peek_sv.front() == ' ' || peek_sv.front() == '\n' ||
                                     peek_sv.front() == '\r' || peek_sv.front() == '\t'))
             peek_sv.remove_prefix(1);
 
-        // Traditional xref table.
         if (text::starts_with_token(peek_sv, "xref"))
         {
-            // Collect bytes until we find the end of trailer (>>)
             std::string collected_content;
             constexpr std::size_t k_buf_size = 4096;
             std::array<std::byte, k_buf_size> buffer{};
@@ -220,7 +206,7 @@ document_revision default_document_revision_parser::parse()
 
             if (!has_trailer_end_been_found)
             {
-                if (xref_sections.empty())
+                if (revisions.empty())
                     throw parse_exception{
                         "Unable to find complete trailer while parsing document structure"};
                 break;
@@ -228,12 +214,12 @@ document_revision default_document_revision_parser::parse()
 
             auto xref_section = _xref_parser->parse(collected_content);
             xref_section.set_startxref_offset(static_cast<std::uint64_t>(current_offset));
-            xref_sections.push_back(std::move(xref_section));
 
             auto trailer_result = _trailer_parser->parse(collected_content);
 
-            // Check for /XRefStm (hybrid PDF with xref stream in traditional trailer)
-            const auto* xrefstm = trailer_result.dictionary().get_integer("XRefStm");
+            revisions.emplace_back(std::move(xref_section), std::move(trailer_result));
+
+            const auto* xrefstm = revisions.back().trailer().dictionary().get_integer("XRefStm");
             if (xrefstm != nullptr && *xrefstm >= 0)
             {
                 auto stm_offset = static_cast<std::size_t>(*xrefstm);
@@ -242,7 +228,6 @@ document_revision default_document_revision_parser::parse()
                     visited_offsets.insert(stm_offset);
                     reader.seek(stm_offset);
 
-                    // Read bytes until we find "endobj"
                     std::string stm_content;
                     constexpr std::size_t k_stm_buf_size = 4096;
                     std::array<std::byte, k_stm_buf_size> stm_buffer{};
@@ -267,27 +252,22 @@ document_revision default_document_revision_parser::parse()
                         auto [stm_section, stm_trailer] =
                             compressed_cross_reference_table_parser::parse(
                                 _document, stm_content, indirect_reference{0, 0});
-                        // Merge: stream entries take precedence
                         for (auto& entry : stm_section.entries())
                         {
-                            xref_sections.back().add_entry(std::move(*entry.second));
+                            revisions.back().section().add_entry(std::move(*entry.second));
                         }
                     }
                 }
             }
 
-            trailer_history.push_back(std::move(trailer_result));
-
-            auto prev_offset_result = extract_prev_offset(trailer_history.back());
+            auto prev_offset_result = extract_prev_offset(revisions.back().trailer());
             if (!prev_offset_result)
                 break;
 
             current_offset = *prev_offset_result;
         }
-        // Compressed xref stream (PDF 1.5+)
         else
         {
-            // Read bytes until we find "endobj"
             std::string collected_content;
             constexpr std::size_t k_buf_size = 4096;
             std::array<std::byte, k_buf_size> buffer{};
@@ -308,7 +288,7 @@ document_revision default_document_revision_parser::parse()
 
             if (!found_endobj)
             {
-                if (xref_sections.empty())
+                if (revisions.empty())
                     throw parse_exception{
                         "Unable to find complete trailer while parsing document structure"};
                 break;
@@ -319,15 +299,12 @@ document_revision default_document_revision_parser::parse()
 
             section.set_startxref_offset(static_cast<std::uint64_t>(current_offset));
 
-            // Extract the xref stream's own object number from the `N G obj` header
-            // so the in-memory section carries the same identity as the file.
             if (const auto obj_num = extract_xref_stream_object_number(collected_content))
                 section.set_xref_stream_object_number(*obj_num);
 
-            xref_sections.push_back(std::move(section));
-            trailer_history.push_back(std::move(trailer_obj));
+            revisions.emplace_back(std::move(section), std::move(trailer_obj));
 
-            auto prev_offset_result = extract_prev_offset(trailer_history.back());
+            auto prev_offset_result = extract_prev_offset(revisions.back().trailer());
             if (!prev_offset_result)
                 break;
 
@@ -335,17 +312,8 @@ document_revision default_document_revision_parser::parse()
         }
     }
 
-    // Sections were collected newest-first (following /Prev from end of file toward beginning).
-    // Reverse to chronological order (oldest first, newest last) before building the manager.
-    std::reverse(xref_sections.begin(), xref_sections.end());
-    std::reverse(trailer_history.begin(), trailer_history.end());
+    std::reverse(revisions.begin(), revisions.end());
 
-    cross_reference_manager xref_manager{std::move(xref_sections)};
-    trailer_manager trailer_mgr{std::move(trailer_history)};
-
-    return document_revision{
-        std::move(xref_manager),
-        std::move(trailer_mgr),
-    };
+    return std::make_unique<revision_history>(std::move(revisions));
 }
 } // namespace ripper::pdf::core

@@ -35,8 +35,8 @@ public:
     ///
     /// `trailer` carries the trailer dictionary entries that are merged into
     /// the xref stream dictionary.
-    [[nodiscard]] std::vector<std::byte>
-    serialize(const cross_reference_section& section, const trailer& trailer) const override;
+    [[nodiscard]] std::vector<std::byte> serialize(const cross_reference_section& section,
+                                                   const trailer& trailer) const override;
 
     /// Inject the object serializer used to serialize the stream dictionary.
     void set_object_serializer(class object_serializer& serializer);

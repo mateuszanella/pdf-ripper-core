@@ -8,7 +8,8 @@
 namespace ripper::pdf::core
 {
 
-TEST_CASE("cross_reference_section is traditional by default", "[cross_reference_section][compressed]")
+TEST_CASE("cross_reference_section is traditional by default",
+          "[cross_reference_section][compressed]")
 {
     cross_reference_section section{{}};
     REQUIRE_FALSE(section.is_compressed());

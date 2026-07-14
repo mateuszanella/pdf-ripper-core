@@ -34,9 +34,8 @@ void serializer_manager::set_object_serializer(std::unique_ptr<class object_seri
     // propagate the object serializer so its dictionary serialization works.
     if (cross_reference_table_serializer_ != nullptr)
     {
-        auto* compressed =
-            dynamic_cast<class compressed_cross_reference_table_serializer*>(
-                cross_reference_table_serializer_.get());
+        auto* compressed = dynamic_cast<class compressed_cross_reference_table_serializer*>(
+            cross_reference_table_serializer_.get());
         if (compressed != nullptr)
             compressed->set_object_serializer(object_serializer());
     }

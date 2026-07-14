@@ -1,7 +1,6 @@
 #pragma once
 
-#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
-#include "ripper/pdf/core/document/trailer/trailer.hpp"
+#include "ripper/pdf/core/document/revision.hpp"
 #include "ripper/pdf/core/serializer/cross_reference_table/cross_reference_table_serializer.hpp"
 #include "ripper/pdf/core/serializer/trailer/trailer_serializer.hpp"
 
@@ -16,8 +15,8 @@ namespace ripper::pdf::core
 ///
 /// A revision is the unit of incremental update in a PDF file. It is composed of one
 /// cross-reference section and one trailer dictionary. Depending on whether the section
-/// is a compressed xref stream (PDF 1.5+, `section.is_compressed()`) or a traditional
-/// xref table, the serialized output differs:
+/// is a compressed xref stream (PDF 1.5+, `rev.section().is_compressed()`) or a
+/// traditional xref table, the serialized output differs:
 ///
 ///   - **Traditional**: `xref` block + `trailer` dictionary + `startxref\n<offset>\n%%EOF`
 ///   - **Compressed**:  xref stream indirect object (the trailer dictionary is merged
@@ -46,21 +45,19 @@ public:
     explicit revision_serializer(cross_reference_table_serializer& xref_serializer,
                                  trailer_serializer& trailer_srl) noexcept;
 
-    /// Serialize one revision (xref section + trailer + startxref + %%EOF) to a byte buffer.
+    /// Serialize one revision to a byte buffer.
     ///
-    /// When `section.is_compressed()` is true, the trailer dictionary is merged into the
-    /// xref stream dictionary by the compressed serializer, so only the trailing
-    /// `startxref\n<offset>\n%%EOF` block is appended from the trailer serializer's
-    /// `serialize_startxref()` output. Otherwise, the full trailer block
+    /// When `rev.section().is_compressed()` is true, the trailer dictionary is merged
+    /// into the xref stream dictionary by the compressed serializer, so only the
+    /// trailing `startxref\n<offset>\n%%EOF` block is appended from the trailer
+    /// serializer's `serialize_startxref()` output. Otherwise, the full trailer block
     /// (`trailer\n<<dict>>\nstartxref\n<offset>\n%%EOF`) is emitted.
     ///
-    /// @param section The cross-reference section to serialize.
-    /// @param trailer The trailer dictionary paired with this section.
+    /// @param rev The revision to serialize.
     /// @param xref_offset The byte offset in the output file where the serialized xref
     ///                    block (or xref stream indirect object) begins.
-    [[nodiscard]] std::vector<std::byte>
-    serialize(const cross_reference_section& section, const trailer& trailer,
-              std::uint64_t xref_offset) const;
+    [[nodiscard]] std::vector<std::byte> serialize(const revision& rev,
+                                                   std::uint64_t xref_offset) const;
 
 private:
     cross_reference_table_serializer& xref_serializer_;

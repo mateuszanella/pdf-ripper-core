@@ -66,8 +66,9 @@ std::string indirect_object_resolver::resolve_uncompressed(indirect_reference re
     // Determine the byte range occupied by this object on disk
     std::optional<std::uint64_t> next_offset;
 
-    for (auto& section : xref.sections())
+    for (auto& rev : document_.revision_history().revisions())
     {
+        auto& section = rev.section();
         for (const auto& entry_pair : section.entries())
         {
             const auto& off = entry_pair.second->offset();

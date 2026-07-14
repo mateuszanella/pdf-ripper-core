@@ -23,7 +23,7 @@ void compressed_cross_reference_table_serializer::set_object_serializer(
 
 std::vector<std::byte>
 compressed_cross_reference_table_serializer::serialize(const cross_reference_section& section,
-                                                        const trailer& trailer) const
+                                                       const trailer& trailer) const
 {
     if (!section.is_compressed() || !section.xref_stream_object_number().has_value())
         throw logic_exception{"Compressed xref serializer requires a section with "

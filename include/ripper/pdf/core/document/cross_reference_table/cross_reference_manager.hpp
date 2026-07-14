@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_table.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
+#include "ripper/pdf/core/document/revision.hpp"
 
 #include <cstdint>
 #include <map>
@@ -14,78 +14,88 @@ namespace ripper::pdf::core
 class indirect_object;
 class cross_reference_entry;
 
-/// Top-level orchestrator for all cross-reference sections in a PDF document.
+/// Non-owning compiled view over all revisions in a revision_history.
 ///
 /// A PDF file may contain multiple cross-reference sections, one per incremental update.
-/// The manager owns all of them in chronological order (oldest first, newest last) and
-/// provides a unified entry point for all cross-reference operations.
+/// The manager provides a unified entry point for all cross-reference operations,
+/// scanning revisions from newest to oldest for lookups and compiling entry maps
+/// from oldest to newest.
+///
+/// The manager does NOT own the revisions — they are owned by revision_history.
+/// The manager holds a reference to the revisions vector and must not outlive it.
 ///
 /// ## Lookup semantics
 ///
-/// When looking up an entry by object number, the manager scans sections from newest to
-/// oldest. The first match is returned, so the most recent revision of any object always
-/// takes precedence over earlier revisions.
+/// When looking up an entry by object number, the manager scans revisions from
+/// newest to oldest. The first match is returned, so the most recent revision of
+/// any object always takes precedence over earlier revisions.
 ///
 /// ## Allocation semantics
 ///
-/// New indirect objects are allocated into the active section (the last, newest section).
-/// If no sections exist, an empty section is created on demand.
+/// New indirect objects are allocated into the active revision's section (the
+/// last, newest revision). If no revisions exist, the revision_history must
+/// provide at least one revision before allocation.
 ///
 /// ## Compiled view
 ///
-/// `entries()` returns a flat pointer map compiled across all sections where newest wins
-/// for duplicate object numbers. This is the canonical view of the document's current state.
+/// `entries()` returns a flat pointer map compiled across all revisions where
+/// newest wins for duplicate object numbers. This is the canonical view of the
+/// document's current state.
 ///
-/// Implements the `cross_reference_table` interface, sharing the same API as individual
-/// `cross_reference_section` objects for uniform access.
+/// ## Ordering
+///
+/// Revisions are stored oldest-first (index 0 is the original revision,
+/// `back()` is the most recently added revision). This mirrors the convention
+/// used by `revision_history`.
+///
+/// Implements the `cross_reference_table` interface, sharing the same API as
+/// individual `cross_reference_section` objects for uniform access.
 class cross_reference_manager : public cross_reference_table
 {
 public:
-    /// Construct a manager from a list of sections in chronological order (oldest first, newest
-    /// last).
+    /// Construct a manager as a non-owning view over a revisions vector.
     ///
-    /// `sections` is typically produced by the document structure parser, which collects
-    /// sections from newest to oldest (following `startxref` and `/Prev` links) and then
-    /// reverses them before passing them here.
-    explicit cross_reference_manager(std::vector<cross_reference_section> sections) noexcept;
+    /// `revisions` must be in chronological order (oldest first, newest last).
+    /// The manager stores a reference and must not outlive the vector.
+    explicit cross_reference_manager(std::vector<revision>& revisions) noexcept;
 
     cross_reference_manager(const cross_reference_manager&) = delete;
     cross_reference_manager& operator=(const cross_reference_manager&) = delete;
-    cross_reference_manager(cross_reference_manager&&) noexcept = default;
-    cross_reference_manager& operator=(cross_reference_manager&&) noexcept = default;
+    cross_reference_manager(cross_reference_manager&&) = delete;
+    cross_reference_manager& operator=(cross_reference_manager&&) = delete;
     ~cross_reference_manager() = default;
 
-    /// Look up a mutable entry by object number across all sections.
+    /// Look up a mutable entry by object number across all revisions.
     ///
-    /// Scans sections from newest to oldest and returns the first matching entry,
+    /// Scans revisions from newest to oldest and returns the first matching entry,
     /// ensuring the most recent revision of an object always takes precedence.
     ///
     /// Returns a raw pointer to the entry (valid for the lifetime of this manager),
-    /// or `nullptr` if no entry exists for the given object number in any section.
+    /// or `nullptr` if no entry exists for the given object number in any revision.
     [[nodiscard]] cross_reference_entry* find(std::uint32_t object_number) noexcept override;
 
-    /// Look up a read-only entry by object number across all sections.
+    /// Look up a read-only entry by object number across all revisions.
     ///
-    /// Scans sections from newest to oldest and returns the first matching entry,
+    /// Scans revisions from newest to oldest and returns the first matching entry,
     /// ensuring the most recent revision of an object always takes precedence.
     ///
     /// Returns a raw pointer to the entry (valid for the lifetime of this manager),
-    /// or `nullptr` if no entry exists for the given object number in any section.
+    /// or `nullptr` if no entry exists for the given object number in any revision.
     [[nodiscard]] const cross_reference_entry*
     find(std::uint32_t object_number) const noexcept override;
 
-    /// Look up a mutable entry by exact indirect reference across all sections.
+    /// Look up a mutable entry by exact indirect reference across all revisions.
     ///
-    /// Scans sections from newest to oldest and returns the first entry whose
+    /// Scans revisions from newest to oldest and returns the first entry whose
     /// object number and generation both match. Unlike `find(object_number)`,
     /// this does NOT fall back to a newer revision with a different generation.
     ///
     /// Returns a raw pointer to the entry, or `nullptr` if not found.
     [[nodiscard]] cross_reference_entry* find(const indirect_reference& ref) noexcept override;
 
-    /// Look up a read-only entry by exact indirect reference across all sections.
+    /// Look up a read-only entry by exact indirect reference across all revisions.
     ///
-    /// Scans sections from newest to oldest and returns the first entry whose
+    /// Scans revisions from newest to oldest and returns the first entry whose
     /// object number and generation both match. Unlike `find(object_number)`,
     /// this does NOT fall back to a newer revision with a different generation.
     ///
@@ -95,8 +105,8 @@ public:
 
     /// Reserve a slot for a new indirect object and return its assigned indirect reference.
     ///
-    /// Computes the next available object number across all sections, creates a pending
-    /// entry in the active (newest) section, and returns the assigned indirect reference.
+    /// Computes the next available object number across all revisions, creates a pending
+    /// entry in the active revision's section, and returns the assigned indirect reference.
     /// The entry must be committed via `commit()` before it is usable.
     ///
     /// Use `allocate()` for the simpler single-step case.
@@ -104,11 +114,11 @@ public:
 
     /// Commit a constructed indirect object to a previously reserved reference.
     ///
-    /// Locates the entry for `ref` across all sections (scanning newest to oldest),
+    /// Locates the entry for `ref` across all revisions (scanning newest to oldest),
     /// transfers ownership of `object` into it, and marks it as resolved. Returns a
     /// raw non-owning pointer to the committed indirect object.
     ///
-    /// Returns `nullptr` if `ref` is not found in any section, or if the entry was not
+    /// Returns `nullptr` if `ref` is not found in any revision, or if the entry was not
     /// in a reserved (new and unresolved) state.
     [[nodiscard]] class indirect_object*
     commit(const indirect_reference& ref,
@@ -117,18 +127,18 @@ public:
     /// Allocate and immediately commit a new in-memory indirect object.
     ///
     /// Combines `reserve()` and `commit()` into a single step. Assigns the next globally
-    /// available object number, adds the resolved entry to the active (newest) section,
+    /// available object number, adds the resolved entry to the active revision's section,
     /// and returns the assigned indirect reference.
     [[nodiscard]] indirect_reference
     allocate(std::unique_ptr<class indirect_object> object) override;
 
-    /// Return a compiled flat non-owning pointer map of all entries across all sections.
+    /// Return a compiled flat non-owning pointer map of all entries across all revisions.
     ///
-    /// Iterates sections from oldest to newest, applying `insert_or_assign` so that newer
+    /// Iterates revisions from oldest to newest, applying `insert_or_assign` so that newer
     /// entries overwrite older ones for the same object number. The result is the canonical
     /// compiled view of the document: for each object number, the newest revision wins.
     ///
-    /// The returned map contains raw pointers into the underlying section storage. Pointers
+    /// The returned map contains raw pointers into the underlying revision storage. Pointers
     /// are valid as long as this manager is not modified.
     [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> entries() override;
 
@@ -138,63 +148,30 @@ public:
     /// where `in_use()` is false, with the single exception of object 0, which is always
     /// retained as the mandatory free-list head.
     ///
-    /// The returned map contains raw pointers into the underlying section storage. Pointers
+    /// The returned map contains raw pointers into the underlying revision storage. Pointers
     /// are valid as long as this manager is not modified.
     [[nodiscard]] std::map<std::uint32_t, cross_reference_entry*> active_entries();
 
-    /// Returns the total number of entries across all sections.
+    /// Returns the total number of entries across all revisions.
     ///
-    /// Counts every entry in every section, including entries for the same object number
+    /// Counts every entry in every revision, including entries for the same object number
     /// that appear in multiple revisions. To count unique objects, use `entries().size()`.
     [[nodiscard]] std::size_t size() const noexcept override;
 
-    /// Returns the next available object number for allocation across all sections.
+    /// Returns the next available object number for allocation across all revisions.
     ///
-    /// This is the maximum of `next_object_number()` over all sections, ensuring that
-    /// newly allocated objects do not collide with any object from any revision.
-    /// Returns 1 if no sections or entries are present.
+    /// This is the maximum of `next_object_number()` over all revision sections, ensuring
+    /// that newly allocated objects do not collide with any object from any revision.
+    /// Returns 1 if no revisions or entries are present.
     [[nodiscard]] std::uint32_t next_object_number() const noexcept override;
 
-    /// Returns a mutable reference to the active (last/newest) section for new object allocation.
+    /// Returns a mutable reference to the active revision's section (last, newest).
     ///
-    /// If no sections exist, an empty section is created and appended first.
+    /// The revision_history guarantees at least one revision exists after construction,
+    /// so this never returns a dangling reference for a properly constructed history.
     [[nodiscard]] cross_reference_section& active_section();
 
-    /// Append a new empty section to the end of the section list.
-    ///
-    /// The new section is pre-populated with object 0 (generation 65535,
-    /// not in use) and has no `startxref_offset`, representing an in-memory
-    /// section that does not yet exist on disk.
-    ///
-    /// Note that this only creates the xref section, and does not create the
-    /// matching trailer or update the file's `startxref` offset.
-    ///
-    /// @return A mutable reference to the newly created section.
-    [[nodiscard]] cross_reference_section& push_section();
-
-    /// Returns a read-only view of all sections in chronological order (oldest first, newest last).
-    ///
-    /// The returned reference is valid for the lifetime of this manager.
-    [[nodiscard]] const std::vector<cross_reference_section>& sections() const noexcept;
-
-    /// Returns a mutable view of all sections in chronological order (oldest first, newest last).
-    ///
-    /// The returned reference is valid for the lifetime of this manager.
-    [[nodiscard]] std::vector<cross_reference_section>& sections() noexcept;
-
-    /// Consolidate all sections into a single section containing only the active entries.
-    ///
-    /// Computes the newest-wins active view across all sections (same logic as
-    /// `active_entries()`), moves those entries in object-number order into a fresh
-    /// `cross_reference_section`, and replaces the internal section list with that
-    /// single section. Superseded revisions and free entries (except object 0) are
-    /// discarded.
-    ///
-    /// After a squash the manager behaves as if the document were freshly created
-    /// with exactly the current live objects. Used when running a full save/rewrite.
-    void squash();
-
 private:
-    std::vector<cross_reference_section> sections_;
+    std::vector<revision>& revisions_;
 };
 } // namespace ripper::pdf::core

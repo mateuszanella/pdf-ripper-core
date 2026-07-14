@@ -23,7 +23,7 @@ public:
     ~default_cross_reference_table_serializer() override = default;
 
     /// Serialize a single cross-reference section to a byte buffer.
-    [[nodiscard]] std::vector<std::byte>
-    serialize(const cross_reference_section& section, const trailer& trailer) const override;
+    [[nodiscard]] std::vector<std::byte> serialize(const cross_reference_section& section,
+                                                   const trailer& trailer) const override;
 };
 } // namespace ripper::pdf::core

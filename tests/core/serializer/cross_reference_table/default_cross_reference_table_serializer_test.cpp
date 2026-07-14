@@ -3,8 +3,8 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
-#include "ripper/pdf/core/document/object/object_identity.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/object/object_identity.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/serializer/cross_reference_table/default_cross_reference_table_serializer.hpp"
 

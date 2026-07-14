@@ -4,11 +4,11 @@
 #include "ripper/pdf/core/parser/cross_reference_table/cross_reference_table_parser.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/default_cross_reference_table_parser.hpp"
 #include "ripper/pdf/core/parser/default_object_parser.hpp"
-#include "ripper/pdf/core/parser/document_revision/default_document_revision_parser.hpp"
-#include "ripper/pdf/core/parser/document_revision/document_revision_parser.hpp"
 #include "ripper/pdf/core/parser/header/header_parser.hpp"
 #include "ripper/pdf/core/parser/indirect_object_resolver.hpp"
 #include "ripper/pdf/core/parser/object_parser.hpp"
+#include "ripper/pdf/core/parser/revision_history/default_revision_history_parser.hpp"
+#include "ripper/pdf/core/parser/revision_history/revision_history_parser.hpp"
 #include "ripper/pdf/core/parser/trailer/default_trailer_parser.hpp"
 #include "ripper/pdf/core/parser/trailer/trailer_parser.hpp"
 
@@ -37,8 +37,8 @@ void parser_manager::set_trailer_parser(std::unique_ptr<class trailer_parser> ob
     trailer_parser_ = std::move(object);
 }
 
-void parser_manager::set_document_revision_parser(
-    std::unique_ptr<class document_revision_parser> object)
+void parser_manager::set_revision_history_parser(
+    std::unique_ptr<class revision_history_parser> object)
 {
     revision_parser_ = std::move(object);
 }
@@ -78,10 +78,10 @@ trailer_parser& parser_manager::trailer_parser()
     return *trailer_parser_;
 }
 
-document_revision_parser& parser_manager::document_revision_parser()
+revision_history_parser& parser_manager::revision_history_parser()
 {
     if (!revision_parser_)
-        revision_parser_ = std::make_unique<class default_document_revision_parser>(document_);
+        revision_parser_ = std::make_unique<class default_revision_history_parser>(document_);
 
     return *revision_parser_;
 }

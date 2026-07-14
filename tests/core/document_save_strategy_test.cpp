@@ -277,13 +277,13 @@ TEST_CASE("incremental save with page tree copy adds a page", "[document][e2e][s
     document doc{std::move(reader), std::move(writer)};
 
     // Create a new revision and copy the page tree entry into it.
-    auto& new_section = doc.create_new_revision();
+    auto& new_rev = doc.create_new_revision();
 
     auto pages_ref = doc.catalog().root_pages_indirect_reference();
     auto* pages_entry = doc.cross_reference_table().find(pages_ref);
     REQUIRE(pages_entry != nullptr);
 
-    auto* copied_pages = new_section.add_entry_from(*pages_entry);
+    auto* copied_pages = new_rev.section().add_entry_from(*pages_entry);
     REQUIRE(copied_pages != nullptr);
 
     // Now add a page, the lookup resolves the page tree from the new section.
@@ -375,7 +375,7 @@ TEST_CASE("incremental save with multiple new sections", "[document][e2e][save][
 
     // Re-open. Should have 3 sections (1 original + 2 new).
     auto read_back = document::open(output.path());
-    REQUIRE(read_back.cross_reference_table().sections().size() == 3);
+    REQUIRE(read_back.revision_history().revisions().size() == 3);
     REQUIRE(read_back.catalog().pages().count() == 3);
 }
 } // namespace ripper::pdf::core

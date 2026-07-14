@@ -1,8 +1,10 @@
 #pragma once
 
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
-#include "ripper/pdf/core/document/document_revision.hpp"
 #include "ripper/pdf/core/document/header.hpp"
+#include "ripper/pdf/core/document/revision_history.hpp"
+
+#include <memory>
 
 namespace ripper::pdf::core
 {
@@ -56,19 +58,20 @@ public:
     /// @throws logic_exception if the xref or trailer operations fail.
     [[nodiscard]] static class catalog create_catalog(document& doc);
 
-    /// Parse the document structure (xref + trailer + histories) from file.
+    /// Parse the revision history from file.
     ///
     /// Delegates to the parser to reconstruct the xref and trailer from the input
-    /// and returns the assembled structure without caching.
+    /// and returns the assembled revision history without caching.
     ///
     /// @throws parse_exception if the parser fails.
-    [[nodiscard]] static class document_revision parse_revision(const document& doc);
+    [[nodiscard]] static std::unique_ptr<revision_history>
+    parse_revision_history(const document& doc);
 
-    /// Generate a new document structure with default values.
+    /// Generate a new revision history with default values.
     ///
     /// Constructs initial xref and trailer entries suitable for a new document,
     /// including the required xref entry 0 with object number 0 and generation 65535.
-    [[nodiscard]] static class document_revision create_revision();
+    [[nodiscard]] static std::unique_ptr<revision_history> create_revision_history();
 
     /// Parse the PDF header from file without caching.
     ///

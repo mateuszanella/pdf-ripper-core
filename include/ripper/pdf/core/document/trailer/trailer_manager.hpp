@@ -1,24 +1,27 @@
 #pragma once
 
+#include "ripper/pdf/core/document/revision.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 
+#include <cstddef>
 #include <vector>
 
 namespace ripper::pdf::core
 {
-/// Owns and manages the complete trailer history of a PDF document.
+/// Non-owning compiled view over the trailer history of a revision_history.
 ///
-/// A PDF document with incremental updates contains one trailer per revision,
-/// each pointing to the previous one via the `/Prev` byte offset. The
-/// `trailer_manager` stores all trailers in chronological order (oldest first,
-/// newest last) and provides a compiled (merged) view that represents the
-/// effective trailer dictionary for the document as a whole.
+/// A PDF document with incremental updates contains one trailer per revision.
+/// The trailer_manager provides a compiled (merged) view and active-trailer
+/// access over the revisions owned by revision_history.
+///
+/// The manager does NOT own the revisions — they are owned by revision_history.
+/// The manager holds a reference to the revisions vector and must not outlive it.
 ///
 /// ## Ordering
 ///
-/// Trailers are stored oldest-first (index 0 is the original trailer from the
-/// first revision, `back()` is the most recently added revision). This mirrors
-/// the ordering convention used by `cross_reference_manager`.
+/// Revisions are stored oldest-first (index 0 is the original revision's trailer,
+/// `back()` is the most recently added revision). This mirrors the ordering
+/// convention used by `revision_history`.
 ///
 /// ## Compiled view
 ///
@@ -29,83 +32,48 @@ namespace ripper::pdf::core
 ///
 /// ## Active trailer
 ///
-/// `active_trailer()` returns a reference to the most recently added trailer
-/// (the `back()` of the internal vector). Writers that produce a new revision
-/// modify the active trailer. An empty trailer is created on demand if none
-/// exist yet.
-///
+/// `active_trailer()` returns a reference to the most recently added revision's
+/// trailer. Writers that produce a new revision modify the active trailer.
 class trailer_manager
 {
 public:
-    /// Construct a trailer_manager from a chronologically ordered list of trailers.
+    /// Construct a trailer manager as a non-owning view over a revisions vector.
     ///
-    /// `trailers` must be in oldest-first order. Typically the parser builds this
-    /// list by collecting trailers newest-first (following `/Prev`) and then
-    /// reversing before constructing the manager.
-    explicit trailer_manager(std::vector<trailer> trailers) noexcept;
+    /// `revisions` must be in chronological order (oldest first, newest last).
+    /// The manager stores a reference and must not outlive the vector.
+    explicit trailer_manager(std::vector<revision>& revisions) noexcept;
 
-    /// Returns a mutable reference to the ordered list of all trailers (oldest first).
-    ///
-    /// Primarily useful for serialisation and diagnostic tooling that need to
-    /// enumerate every revision trailer individually.
-    [[nodiscard]] std::vector<trailer>& trailers() noexcept;
-
-    /// Returns a const reference to the ordered list of all trailers (oldest first).
-    [[nodiscard]] const std::vector<trailer>& trailers() const noexcept;
+    trailer_manager(const trailer_manager&) = delete;
+    trailer_manager& operator=(const trailer_manager&) = delete;
+    trailer_manager(trailer_manager&&) = delete;
+    trailer_manager& operator=(trailer_manager&&) = delete;
 
     /// Returns a mutable reference to the active (newest) trailer.
     ///
     /// The active trailer is the one modified by writers when producing a new
-    /// revision. It is always the last element of the internal vector. If no
-    /// trailers exist yet, an empty trailer backed by an empty dictionary is
-    /// created and pushed before returning.
+    /// revision. It is always the last element of the internal vector. The
+    /// revision_history guarantees at least one revision exists after construction.
     [[nodiscard]] trailer& active_trailer();
 
     /// Returns a const reference to the active (newest) trailer.
     ///
-    /// Requires that at least one trailer has been added. Behaviour is undefined
-    /// if the manager is empty — ensure `push()` or the constructor has populated
-    /// the manager before calling the const overload.
+    /// Requires that at least one revision has been added. The revision_history
+    /// guarantees this after construction.
     [[nodiscard]] const trailer& active_trailer() const noexcept;
-
-    /// Push a new trailer as the most recent revision.
-    ///
-    /// The pushed trailer becomes the new active trailer and will be included in
-    /// subsequent `compiled()` results.
-    void push(trailer t);
-
-    /// Create and push an empty trailer.
-    ///
-    /// Mirrors `cross_reference_manager::push_section()`. The new trailer is
-    /// backed by an empty dictionary and becomes the active trailer.
-    ///
-    /// Note that the dictionary must still be manually filled with the relevant
-    /// information to be considered a valid spec-compliant trailer.
-    ///
-    /// @return A mutable reference to the newly added trailer.
-    [[nodiscard]] trailer& push_trailer();
 
     /// Returns the compiled (merged) trailer dictionary.
     ///
-    /// Iterates all stored trailers oldest-to-newest and merges their dictionary
+    /// Iterates all stored revisions oldest-to-newest and merges their dictionary
     /// entries so that newer values overwrite older ones. The result is a new
     /// `trailer` object computed on each call; it is not cached.
     ///
-    /// Returns an empty-dictionary trailer if no trailers have been added.
+    /// Returns an empty-dictionary trailer if no revisions have been added.
     [[nodiscard]] trailer compiled() const;
 
-    /// Returns the number of trailers stored in this manager.
+    /// Returns the number of revisions (each carrying one trailer).
     [[nodiscard]] std::size_t size() const noexcept;
 
-    /// Consolidate all trailers into a single trailer.
-    ///
-    /// Computes the same newest-wins merged view as `compiled()`, strips the `/Prev`
-    /// entry (which is meaningless after consolidation), and replaces the internal
-    /// trailer list with the resulting single trailer. Used when performing a full
-    /// save/rewrite where the incremental revision history is discarded.
-    void squash();
-
 private:
-    std::vector<trailer> trailers_;
+    std::vector<revision>& revisions_;
 };
 } // namespace ripper::pdf::core

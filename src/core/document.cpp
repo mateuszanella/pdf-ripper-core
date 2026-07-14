@@ -5,10 +5,14 @@
 #include "ripper/io/core/writer/file_writer.hpp"
 #include "ripper/io/core/writer/writer.hpp"
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "ripper/pdf/core/document/document_revision.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/revision.hpp"
+#include "ripper/pdf/core/document/revision_history.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/document_save_strategy/incremental_document_save_strategy.hpp"
@@ -19,6 +23,7 @@
 #include "ripper/pdf/core/parser/parser.hpp"
 #include "ripper/pdf/core/serializer/serializer.hpp"
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 
@@ -128,12 +133,17 @@ header& document::header()
 
 cross_reference_manager& document::cross_reference_table()
 {
-    return revision().xref();
+    return revision_history_impl().xref();
 }
 
 trailer_manager& document::trailer()
 {
-    return revision().trailer();
+    return revision_history_impl().trailer();
+}
+
+revision_history& document::revision_history()
+{
+    return revision_history_impl();
 }
 
 catalog document::catalog()
@@ -175,22 +185,18 @@ indirect_object& document::resolve_object_to_active_revision(indirect_reference 
     auto& xref = cross_reference_table();
     auto& active = xref.active_section();
 
-    // Already in the active section, no need to resolve
     if (auto* existing = active.find(ref))
     {
         if (auto* obj = existing->indirect_object())
             return *obj;
     }
 
-    // Find in any section (newest-wins)
     auto* entry = xref.find(ref);
     if (entry == nullptr)
         throw logic_exception{"Object " + std::to_string(ref.object_number()) + " not found"};
 
-    // Ensure the source entry is resolved (lazy-load from file if needed) before cloning
     resolve_object(ref);
 
-    // Clone to active section
     auto* cloned_entry = active.add_entry_from(*entry);
     if (cloned_entry == nullptr)
         throw logic_exception{"Failed to clone object " + std::to_string(ref.object_number()) +
@@ -204,35 +210,43 @@ indirect_object& document::resolve_object_to_active_revision(indirect_reference 
     return *obj;
 }
 
-cross_reference_section& document::create_new_revision()
+revision& document::create_new_revision()
 {
-    auto& new_section = cross_reference_table().push_section();
-    auto& t = trailer().push_trailer();
+    cross_reference_subsection::entry_map entries;
+    entries.emplace(0, cross_reference_entry{indirect_reference{0, 65535}, 0, false});
 
-    t.dictionary().set(
+    std::vector<cross_reference_subsection> subsections;
+    subsections.emplace_back(0, std::move(entries));
+
+    cross_reference_section new_section{std::move(subsections)};
+
+    class trailer new_trailer{dictionary{}};
+    new_trailer.dictionary().set(
         "Size", object{static_cast<std::int64_t>(cross_reference_table().next_object_number())});
 
-    // Point /Prev at the previous section's file offset, if any.
-    auto& sections = cross_reference_table().sections();
-    if (sections.size() > 1)
+    auto& revs = revision_history_impl().revisions();
+    if (revs.size() > 1)
     {
-        auto& prev = sections[sections.size() - 2];
-        if (prev.startxref_offset().has_value())
-            t.dictionary().set("Prev", object{static_cast<std::int64_t>(*prev.startxref_offset())});
+        auto& prev = revs[revs.size() - 2];
+        if (prev.section().startxref_offset().has_value())
+            new_trailer.dictionary().set(
+                "Prev", object{static_cast<std::int64_t>(*prev.section().startxref_offset())});
     }
 
-    return new_section;
+    revision new_rev{std::move(new_section), std::move(new_trailer)};
+    revision_history_impl().push_revision(std::move(new_rev));
+
+    return revision_history_impl().active_revision();
 }
 
-document_revision& document::revision()
+revision_history& document::revision_history_impl()
 {
-    if (revision_.has_value())
-        return *revision_;
+    if (revision_history_ != nullptr)
+        return *revision_history_;
 
-    revision_ =
-        has_parser() ? object_manager::parse_revision(*this) : object_manager::create_revision();
+    revision_history_ = has_parser() ? object_manager::parse_revision_history(*this)
+                                     : object_manager::create_revision_history();
 
-    return *revision_;
+    return *revision_history_;
 }
-
 } // namespace ripper::pdf::core
