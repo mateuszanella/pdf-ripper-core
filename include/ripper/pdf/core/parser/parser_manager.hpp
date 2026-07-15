@@ -25,9 +25,6 @@ public:
     /// The manager stores a reference and does not take ownership of the document.
     explicit parser_manager(document& doc);
 
-    /// Destroy the manager and all owned parser components.
-    ~parser_manager();
-
     /// Replace the header parser implementation.
     void set_header_parser(std::unique_ptr<class header_parser> object);
 
@@ -66,7 +63,7 @@ public:
     [[nodiscard]] class object_parser& object_parser();
 
 private:
-    document& document_;
+    document* document_;
 
     std::unique_ptr<class header_parser> header_parser_;
     std::unique_ptr<class cross_reference_table_parser> xref_parser_;

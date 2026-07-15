@@ -40,13 +40,8 @@ public:
     /// Construct a trailer manager as a non-owning view over a revisions vector.
     ///
     /// `revisions` must be in chronological order (oldest first, newest last).
-    /// The manager stores a reference and must not outlive the vector.
+    /// The manager stores a raw pointer and must not outlive the vector.
     explicit trailer_manager(std::vector<revision>& revisions) noexcept;
-
-    trailer_manager(const trailer_manager&) = delete;
-    trailer_manager& operator=(const trailer_manager&) = delete;
-    trailer_manager(trailer_manager&&) = delete;
-    trailer_manager& operator=(trailer_manager&&) = delete;
 
     /// Returns a mutable reference to the active (newest) trailer.
     ///
@@ -74,6 +69,6 @@ public:
     [[nodiscard]] std::size_t size() const noexcept;
 
 private:
-    std::vector<revision>& revisions_;
+    std::vector<revision>* revisions_;
 };
 } // namespace ripper::pdf::core

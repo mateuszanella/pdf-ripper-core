@@ -3,7 +3,6 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 
-#include <memory>
 #include <utility>
 
 namespace ripper::pdf::core

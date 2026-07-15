@@ -10,14 +10,11 @@
 #include "ripper/pdf/core/serializer/trailer/default_trailer_serializer.hpp"
 
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 namespace ripper::pdf::core
 {
-serializer_manager::serializer_manager(const document& doc) : document_{doc} {}
-
-serializer_manager::~serializer_manager() = default;
+serializer_manager::serializer_manager(const document& doc) : document_{&doc} {}
 
 void serializer_manager::set_header_serializer(std::unique_ptr<class header_serializer> object)
 {

@@ -56,14 +56,8 @@ public:
     /// Construct a manager as a non-owning view over a revisions vector.
     ///
     /// `revisions` must be in chronological order (oldest first, newest last).
-    /// The manager stores a reference and must not outlive the vector.
+    /// The manager stores a raw pointer and must not outlive the vector.
     explicit cross_reference_manager(std::vector<revision>& revisions) noexcept;
-
-    cross_reference_manager(const cross_reference_manager&) = delete;
-    cross_reference_manager& operator=(const cross_reference_manager&) = delete;
-    cross_reference_manager(cross_reference_manager&&) = delete;
-    cross_reference_manager& operator=(cross_reference_manager&&) = delete;
-    ~cross_reference_manager() = default;
 
     /// Look up a mutable entry by object number across all revisions.
     ///
@@ -172,6 +166,6 @@ public:
     [[nodiscard]] cross_reference_section& active_section();
 
 private:
-    std::vector<revision>& revisions_;
+    std::vector<revision>* revisions_;
 };
 } // namespace ripper::pdf::core

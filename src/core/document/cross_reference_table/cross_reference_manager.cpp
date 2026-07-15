@@ -11,13 +11,13 @@
 namespace ripper::pdf::core
 {
 cross_reference_manager::cross_reference_manager(std::vector<revision>& revisions) noexcept
-    : revisions_{revisions}
+    : revisions_{&revisions}
 {
 }
 
 cross_reference_entry* cross_reference_manager::find(std::uint32_t object_number) noexcept
 {
-    for (auto it = revisions_.rbegin(); it != revisions_.rend(); ++it)
+    for (auto it = revisions_->rbegin(); it != revisions_->rend(); ++it)
     {
         if (auto* e = it->section().find(object_number))
             return e;
@@ -29,7 +29,7 @@ cross_reference_entry* cross_reference_manager::find(std::uint32_t object_number
 const cross_reference_entry*
 cross_reference_manager::find(std::uint32_t object_number) const noexcept
 {
-    for (auto it = revisions_.rbegin(); it != revisions_.rend(); ++it)
+    for (auto it = revisions_->rbegin(); it != revisions_->rend(); ++it)
     {
         if (const auto* e = it->section().find(object_number))
             return e;
@@ -40,7 +40,7 @@ cross_reference_manager::find(std::uint32_t object_number) const noexcept
 
 cross_reference_entry* cross_reference_manager::find(const indirect_reference& ref) noexcept
 {
-    for (auto it = revisions_.rbegin(); it != revisions_.rend(); ++it)
+    for (auto it = revisions_->rbegin(); it != revisions_->rend(); ++it)
     {
         if (auto* e = it->section().find(ref))
             return e;
@@ -52,7 +52,7 @@ cross_reference_entry* cross_reference_manager::find(const indirect_reference& r
 const cross_reference_entry*
 cross_reference_manager::find(const indirect_reference& ref) const noexcept
 {
-    for (auto it = revisions_.rbegin(); it != revisions_.rend(); ++it)
+    for (auto it = revisions_->rbegin(); it != revisions_->rend(); ++it)
     {
         if (const auto* e = it->section().find(ref))
             return e;
@@ -100,7 +100,7 @@ indirect_reference cross_reference_manager::allocate(std::unique_ptr<class indir
 std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::entries()
 {
     std::map<std::uint32_t, cross_reference_entry*> result;
-    for (auto& rev : revisions_)
+    for (auto& rev : *revisions_)
     {
         for (auto& [num, ptr] : rev.section().entries())
             result.insert_or_assign(num, ptr);
@@ -125,7 +125,7 @@ std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::active_
 std::size_t cross_reference_manager::size() const noexcept
 {
     std::size_t total = 0;
-    for (const auto& rev : revisions_)
+    for (const auto& rev : *revisions_)
         total += rev.section().size();
 
     return total;
@@ -134,7 +134,7 @@ std::size_t cross_reference_manager::size() const noexcept
 std::uint32_t cross_reference_manager::next_object_number() const noexcept
 {
     std::uint32_t result = 1;
-    for (const auto& rev : revisions_)
+    for (const auto& rev : *revisions_)
         result = std::max(result, rev.section().next_object_number());
 
     return result;
@@ -142,6 +142,6 @@ std::uint32_t cross_reference_manager::next_object_number() const noexcept
 
 cross_reference_section& cross_reference_manager::active_section()
 {
-    return revisions_.back().section();
+    return revisions_->back().section();
 }
 } // namespace ripper::pdf::core

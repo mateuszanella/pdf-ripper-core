@@ -17,9 +17,7 @@
 
 namespace ripper::pdf::core
 {
-parser_manager::parser_manager(document& doc) : document_{doc} {}
-
-parser_manager::~parser_manager() = default;
+parser_manager::parser_manager(document& doc) : document_{&doc} {}
 
 void parser_manager::set_header_parser(std::unique_ptr<class header_parser> object)
 {
@@ -57,7 +55,7 @@ void parser_manager::set_object_parser(std::unique_ptr<class object_parser> obje
 header_parser& parser_manager::header_parser()
 {
     if (!header_parser_)
-        header_parser_ = std::make_unique<class header_parser>(document_);
+        header_parser_ = std::make_unique<class header_parser>(*document_);
 
     return *header_parser_;
 }
@@ -81,7 +79,7 @@ trailer_parser& parser_manager::trailer_parser()
 revision_history_parser& parser_manager::revision_history_parser()
 {
     if (!revision_parser_)
-        revision_parser_ = std::make_unique<class default_revision_history_parser>(document_);
+        revision_parser_ = std::make_unique<class default_revision_history_parser>(*document_);
 
     return *revision_parser_;
 }
@@ -89,7 +87,7 @@ revision_history_parser& parser_manager::revision_history_parser()
 indirect_object_resolver& parser_manager::object_resolver()
 {
     if (!object_resolver_)
-        object_resolver_ = std::make_unique<class indirect_object_resolver>(document_);
+        object_resolver_ = std::make_unique<class indirect_object_resolver>(*document_);
 
     return *object_resolver_;
 }

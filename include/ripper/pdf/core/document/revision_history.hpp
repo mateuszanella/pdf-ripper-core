@@ -12,11 +12,8 @@ namespace ripper::pdf::core
 ///
 /// Owns all revisions in chronological order (oldest first, newest last) and
 /// composes the cross-reference manager and trailer manager as non-owning
-/// compiled views bound to the revisions vector.
-///
-/// Revision_history is non-movable and non-copyable because the view-managers
-/// hold internal references to the revisions vector. It is stored in document
-/// via std::unique_ptr.
+/// compiled views bound to the revisions vector. The views are held as
+/// raw pointers for copyability and mobility.
 class revision_history
 {
 public:
@@ -26,11 +23,6 @@ public:
     /// list by collecting revisions newest-first (following /Prev) and then
     /// reversing before constructing the history.
     explicit revision_history(std::vector<revision> revisions);
-
-    revision_history(const revision_history&) = delete;
-    revision_history& operator=(const revision_history&) = delete;
-    revision_history(revision_history&&) = delete;
-    revision_history& operator=(revision_history&&) = delete;
 
     /// Returns a mutable reference to the ordered list of all revisions (oldest first).
     [[nodiscard]] std::vector<revision>& revisions() noexcept;
@@ -71,8 +63,13 @@ public:
     [[nodiscard]] std::size_t size() const noexcept;
 
 private:
+    // The list of revisions in chronological order (oldest first, newest last).
     std::vector<revision> revisions_;
+
+    // Compiled cross-reference manager view over all revisions.
     cross_reference_manager xref_view_;
+
+    // Compiled trailer manager view over all revisions.
     class trailer_manager trailer_view_;
 };
 } // namespace ripper::pdf::core

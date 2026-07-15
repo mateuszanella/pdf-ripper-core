@@ -26,8 +26,6 @@ public:
     /// The serializer manager stores a reference and does not take ownership of the document.
     explicit serializer_manager(const document& doc);
 
-    ~serializer_manager();
-
     /// Replace the header serializer implementation.
     void set_header_serializer(std::unique_ptr<class header_serializer> object);
 
@@ -80,7 +78,7 @@ public:
     [[nodiscard]] class revision_serializer& revision_serializer();
 
 private:
-    const document& document_;
+    const document* document_;
 
     std::unique_ptr<class header_serializer> header_serializer_;
     std::unique_ptr<class object_serializer> object_serializer_;

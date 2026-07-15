@@ -40,7 +40,9 @@ std::unique_ptr<revision_history> parser::revision_history()
 indirect_object parser::parse_object(indirect_reference ref, bool preload_stream)
 {
     auto content = manager().object_resolver().resolve(ref);
+
     (void)preload_stream;
+
     return manager().object_parser().parse(document_, ref, content);
 }
 } // namespace ripper::pdf::core
