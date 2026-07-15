@@ -8,7 +8,6 @@
 #include "ripper/pdf/core/parser/revision_history/revision_history_parser.hpp"
 
 #include <memory>
-#include <utility>
 
 namespace ripper::pdf::core
 {

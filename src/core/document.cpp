@@ -228,9 +228,11 @@ revision& document::create_new_revision()
     if (revs.size() > 1)
     {
         auto& prev = revs[revs.size() - 2];
-        if (prev.section().startxref_offset().has_value())
-            new_trailer.dictionary().set(
-                "Prev", object{static_cast<std::int64_t>(*prev.section().startxref_offset())});
+
+        auto prev_startxref = prev.section().startxref_offset();
+        if (prev_startxref)
+            new_trailer.dictionary().set("Prev",
+                                         object{static_cast<std::int64_t>(*prev_startxref)});
     }
 
     revision new_rev{std::move(new_section), std::move(new_trailer)};

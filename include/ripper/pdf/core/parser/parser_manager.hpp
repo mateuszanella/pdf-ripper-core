@@ -1,16 +1,17 @@
 #pragma once
 
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/parser/cross_reference_table/cross_reference_table_parser.hpp"
+#include "ripper/pdf/core/parser/header/header_parser.hpp"
+#include "ripper/pdf/core/parser/indirect_object_resolver.hpp"
+#include "ripper/pdf/core/parser/object_parser.hpp"
+#include "ripper/pdf/core/parser/revision_history/revision_history_parser.hpp"
+#include "ripper/pdf/core/parser/trailer/trailer_parser.hpp"
+
 #include <memory>
 
 namespace ripper::pdf::core
 {
-class document;
-class header_parser;
-class cross_reference_table_parser;
-class trailer_parser;
-class object_parser;
-class revision_history_parser;
-class indirect_object_resolver;
 
 /// Owns and exposes the parser subcomponents used to process a `document`.
 ///
@@ -23,7 +24,7 @@ public:
     /// Construct a manager bound to `doc`.
     ///
     /// The manager stores a reference and does not take ownership of the document.
-    explicit parser_manager(document& doc);
+    explicit parser_manager(class document& doc);
 
     /// Replace the header parser implementation.
     void set_header_parser(std::unique_ptr<class header_parser> object);

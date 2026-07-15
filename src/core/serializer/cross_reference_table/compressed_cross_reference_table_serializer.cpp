@@ -10,6 +10,7 @@
 #include "ripper/pdf/core/serializer/object/object_serializer.hpp"
 #include "ripper/pdf/core/util/byte.hpp"
 
+#include <cassert>
 #include <string>
 
 namespace ripper::pdf::core
@@ -25,11 +26,10 @@ std::vector<std::byte>
 compressed_cross_reference_table_serializer::serialize(const cross_reference_section& section,
                                                        const trailer& trailer) const
 {
-    if (!section.is_compressed() || !section.xref_stream_object_number().has_value())
+    const auto xref_obj_num = section.xref_stream_object_number();
+    if (!section.is_compressed() || !xref_obj_num.has_value())
         throw logic_exception{"Compressed xref serializer requires a section with "
                               "xref_stream_object_number set"};
-
-    const auto obj_num = *section.xref_stream_object_number();
 
     const auto widths = compute_widths(section);
     const auto entries_data = encode_entries(section, widths);
@@ -86,7 +86,7 @@ compressed_cross_reference_table_serializer::serialize(const cross_reference_sec
         object{object_stream{std::move(dict), stream{std::move(compressed)}}});
 
     std::vector<std::byte> out;
-    byte::append_bytes(out, std::to_string(obj_num) + " 0 obj\n");
+    byte::append_bytes(out, std::to_string(xref_obj_num.value()) + " 0 obj\n");
     byte::append_bytes(out, body);
     byte::append_bytes(out, "\nendobj\n");
 

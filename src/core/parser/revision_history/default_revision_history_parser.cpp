@@ -50,7 +50,11 @@ extract_xref_stream_object_number(std::string_view content)
 
     std::uint32_t object_number = 0;
     const auto sv = content.substr(num_start, pos - num_start);
+
+    /// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     const auto [_, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), object_number);
+    /// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
     if (ec != std::errc{})
         return std::nullopt;
 
@@ -300,7 +304,7 @@ std::unique_ptr<revision_history> default_revision_history_parser::parse()
             section.set_startxref_offset(static_cast<std::uint64_t>(current_offset));
 
             if (const auto obj_num = extract_xref_stream_object_number(collected_content))
-                section.set_xref_stream_object_number(*obj_num);
+                section.set_xref_stream_object_number(obj_num);
 
             revisions.emplace_back(std::move(section), std::move(trailer_obj));
 

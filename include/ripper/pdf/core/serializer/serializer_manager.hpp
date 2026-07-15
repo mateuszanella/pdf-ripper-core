@@ -5,6 +5,7 @@
 #include "ripper/pdf/core/serializer/header/header_serializer.hpp"
 #include "ripper/pdf/core/serializer/indirect_object/indirect_object_serializer.hpp"
 #include "ripper/pdf/core/serializer/object/object_serializer.hpp"
+#include "ripper/pdf/core/serializer/revision_serializer.hpp"
 #include "ripper/pdf/core/serializer/trailer/trailer_serializer.hpp"
 
 #include <memory>
