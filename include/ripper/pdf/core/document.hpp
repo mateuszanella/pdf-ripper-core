@@ -7,7 +7,7 @@
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object_manager.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/document_save_strategy/document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/save_strategy_type.hpp"
@@ -141,12 +141,12 @@ public:
     /// to modify the current revision's trailer.
     [[nodiscard]] class trailer_manager& trailer();
 
-    /// Return the revision history (cached).
+    /// Return the revision manager (cached).
     ///
     /// Provides direct access to the ordered list of revisions, the active revision,
     /// and the view-managers (xref, trailer). Use `revisions()` to enumerate all
     /// revisions for save strategies or introspection.
-    [[nodiscard]] class revision_history& revision_history();
+    [[nodiscard]] class revision_manager& revisions();
 
     /// Return a view over the document catalog.
     ///
@@ -194,8 +194,9 @@ public:
     class revision& create_new_revision();
 
 private:
-    /// Parse or create and return the revision history (cached).
-    [[nodiscard]] class revision_history& revision_history_impl();
+    /// Lazy-initialize and return the revision manager — the entrypoint through which
+    /// all parsed document state (xref entries, trailers, revisions) is accessed.
+    [[nodiscard]] class revision_manager& initialize_revision_manager();
 
     /// The underlying reader for the PDF file.
     std::unique_ptr<ripper::io::core::reader> reader_;
@@ -213,7 +214,7 @@ private:
     /// The parsed header of the PDF file.
     std::optional<class header> header_;
 
-    /// The parsed revision history (xrefs + trailers).
-    std::unique_ptr<class revision_history> revision_history_;
+    /// The lazily-initialized revision manager (xrefs + trailers).
+    std::unique_ptr<class revision_manager> revision_manager_;
 };
 } // namespace ripper::pdf::core

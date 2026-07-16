@@ -1,7 +1,7 @@
 #include "ripper/io/core/reader/memory_reader.hpp"
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/parser/revision_history/default_revision_history_parser.hpp"
 

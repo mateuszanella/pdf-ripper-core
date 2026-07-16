@@ -12,7 +12,7 @@
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/document_save_strategy/incremental_document_save_strategy.hpp"
@@ -133,17 +133,17 @@ header& document::header()
 
 cross_reference_manager& document::cross_reference_table()
 {
-    return revision_history_impl().xref();
+    return initialize_revision_manager().xref();
 }
 
 trailer_manager& document::trailer()
 {
-    return revision_history_impl().trailer();
+    return initialize_revision_manager().trailer();
 }
 
-revision_history& document::revision_history()
+revision_manager& document::revisions()
 {
-    return revision_history_impl();
+    return initialize_revision_manager();
 }
 
 catalog document::catalog()
@@ -224,7 +224,7 @@ revision& document::create_new_revision()
     new_trailer.dictionary().set(
         "Size", object{static_cast<std::int64_t>(cross_reference_table().next_object_number())});
 
-    auto& revs = revision_history_impl().revisions();
+    auto& revs = initialize_revision_manager().all();
     if (revs.size() > 1)
     {
         auto& prev = revs[revs.size() - 2];
@@ -236,19 +236,19 @@ revision& document::create_new_revision()
     }
 
     revision new_rev{std::move(new_section), std::move(new_trailer)};
-    revision_history_impl().push_revision(std::move(new_rev));
+    initialize_revision_manager().push(std::move(new_rev));
 
-    return revision_history_impl().active_revision();
+    return initialize_revision_manager().current();
 }
 
-revision_history& document::revision_history_impl()
+revision_manager& document::initialize_revision_manager()
 {
-    if (revision_history_ != nullptr)
-        return *revision_history_;
+    if (revision_manager_ != nullptr)
+        return *revision_manager_;
 
-    revision_history_ = has_parser() ? object_manager::parse_revision_history(*this)
+    revision_manager_ = has_parser() ? object_manager::parse_revision_history(*this)
                                      : object_manager::create_revision_history();
 
-    return *revision_history_;
+    return *revision_manager_;
 }
 } // namespace ripper::pdf::core

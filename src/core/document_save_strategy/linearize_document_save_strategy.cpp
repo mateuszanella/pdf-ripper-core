@@ -5,8 +5,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
-#include "ripper/pdf/core/document/revision.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/serializer/serializer.hpp"
 
@@ -25,7 +24,7 @@ void linearize_document_save_strategy::save(document& doc)
     if (!doc.has_serializer())
         throw logic_exception{"No serializer available"};
 
-    doc.revision_history().squash();
+    doc.revisions().squash();
 
     doc.trailer().active_trailer().set_size(doc.cross_reference_table().next_object_number());
 
@@ -66,7 +65,7 @@ void linearize_document_save_strategy::save(document& doc)
 
     auto xref_start = static_cast<std::uint64_t>(w.tell());
 
-    (void)w.write(s.serialize_revision(doc.revision_history().active_revision(), xref_start));
+    (void)w.write(s.serialize_revision(doc.revisions().current(), xref_start));
 
     w.flush();
     w.close();

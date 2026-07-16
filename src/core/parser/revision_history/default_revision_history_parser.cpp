@@ -3,7 +3,7 @@
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/compressed_cross_reference_table_parser.hpp"
@@ -140,7 +140,7 @@ default_revision_history_parser::find_start_xref_offset(ripper::io::core::reader
     return result;
 }
 
-std::unique_ptr<revision_history> default_revision_history_parser::parse()
+std::unique_ptr<revision_manager> default_revision_history_parser::parse()
 {
     auto* reader_ptr = _document.reader();
     if (reader_ptr == nullptr)
@@ -318,6 +318,6 @@ std::unique_ptr<revision_history> default_revision_history_parser::parse()
 
     std::reverse(revisions.begin(), revisions.end());
 
-    return std::make_unique<revision_history>(std::move(revisions));
+    return std::make_unique<revision_manager>(std::move(revisions));
 }
 } // namespace ripper::pdf::core

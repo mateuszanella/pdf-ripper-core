@@ -6,7 +6,7 @@
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
@@ -73,7 +73,7 @@ TEST_CASE("add_entry_from copies an unresolved entry", "[cross_reference_section
 }
 
 TEST_CASE("push_revision creates revision_history with object 0",
-          "[revision_history][push_revision]")
+          "[revision_manager][push_revision]")
 {
     cross_reference_subsection::entry_map entries;
     entries.emplace(0, cross_reference_entry{indirect_reference{0, 65535}, 0, false});
@@ -87,16 +87,16 @@ TEST_CASE("push_revision creates revision_history with object 0",
     std::vector<revision> revisions;
     revisions.emplace_back(std::move(section), std::move(t));
 
-    revision_history history{std::move(revisions)};
+    revision_manager manager{std::move(revisions)};
 
-    REQUIRE(history.revisions().size() == 1);
-    REQUIRE(history.active_revision().section().size() == 1);
+    REQUIRE(manager.all().size() == 1);
+    REQUIRE(manager.current().section().size() == 1);
 
-    auto* obj0 = history.active_revision().section().find(0);
+    auto* obj0 = manager.current().section().find(0);
     REQUIRE(obj0 != nullptr);
     REQUIRE_FALSE(obj0->in_use());
     REQUIRE(obj0->reference().generation() == 65535);
-    REQUIRE_FALSE(history.active_revision().section().startxref_offset().has_value());
+    REQUIRE_FALSE(manager.current().section().startxref_offset().has_value());
 }
 
 TEST_CASE("create_new_revision creates section and trailer with /Prev",
@@ -114,11 +114,11 @@ TEST_CASE("create_new_revision creates section and trailer with /Prev",
     std::vector<revision> revisions;
     revisions.emplace_back(std::move(existing_section), std::move(existing_trailer));
 
-    revision_history history{std::move(revisions)};
+    revision_manager manager{std::move(revisions)};
 
-    REQUIRE(history.revisions().size() == 1);
-    REQUIRE(history.revisions()[0].section().startxref_offset().has_value());
-    REQUIRE(*history.revisions()[0].section().startxref_offset() == 42);
+    REQUIRE(manager.all().size() == 1);
+    REQUIRE(manager.all()[0].section().startxref_offset().has_value());
+    REQUIRE(*manager.all()[0].section().startxref_offset() == 42);
 }
 
 TEST_CASE("create_new_revision on document creates section and trailer",
@@ -134,7 +134,7 @@ TEST_CASE("create_new_revision on document creates section and trailer",
 
     auto& new_rev = doc.create_new_revision();
 
-    REQUIRE(doc.revision_history().revisions().size() == 2);
+    REQUIRE(doc.revisions().all().size() == 2);
     REQUIRE(new_rev.section().size() == 1);
     auto* obj0 = new_rev.section().find(0);
     REQUIRE(obj0 != nullptr);

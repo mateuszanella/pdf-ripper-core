@@ -3,7 +3,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -45,9 +45,9 @@ TEST_CASE("cross_reference_manager prefers newest section entries", "[xref][mana
     revisions.push_back(make_revision_from_entries(std::move(older_entries)));
     revisions.push_back(make_revision_from_entries(std::move(newer_entries)));
 
-    revision_history history{std::move(revisions)};
+    revision_manager manager{std::move(revisions)};
 
-    auto* entry = history.xref().find(1);
+    auto* entry = manager.xref().find(1);
     REQUIRE(entry != nullptr);
     REQUIRE(entry->offset() == 22);
     REQUIRE(entry->reference().generation() == 1);
@@ -63,8 +63,8 @@ TEST_CASE("cross_reference_manager active_entries filters deleted objects", "[xr
     std::vector<revision> revisions;
     revisions.push_back(make_revision_from_entries(std::move(entries)));
 
-    revision_history history{std::move(revisions)};
-    auto active = history.xref().active_entries();
+    revision_manager manager{std::move(revisions)};
+    auto active = manager.xref().active_entries();
 
     REQUIRE(active.contains(0));
     REQUIRE_FALSE(active.contains(1));
@@ -85,10 +85,10 @@ TEST_CASE("cross_reference_manager reserve appends pending entry", "[xref][manag
     std::vector<revision> revisions;
     revisions.emplace_back(std::move(section), std::move(t));
 
-    revision_history history{std::move(revisions)};
+    revision_manager manager{std::move(revisions)};
 
-    const auto ref = history.xref().reserve();
-    auto* entry = history.xref().find(ref);
+    const auto ref = manager.xref().reserve();
+    auto* entry = manager.xref().find(ref);
 
     REQUIRE(ref.object_number() == 1);
     REQUIRE(entry != nullptr);

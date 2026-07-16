@@ -6,7 +6,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/serializer/serializer.hpp"
@@ -31,7 +31,7 @@ void incremental_document_save_strategy::save(document& doc)
     if (!doc.has_serializer())
         throw logic_exception{"No serializer available"};
 
-    auto& revisions = doc.revision_history().revisions();
+    auto& revisions = doc.revisions().all();
 
     if (revisions.empty())
         throw logic_exception{"No revisions available"};

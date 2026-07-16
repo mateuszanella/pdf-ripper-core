@@ -2,7 +2,7 @@
 
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
 #include "ripper/pdf/core/document/header.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 
 #include <memory>
 
@@ -64,14 +64,14 @@ public:
     /// and returns the assembled revision history without caching.
     ///
     /// @throws parse_exception if the parser fails.
-    [[nodiscard]] static std::unique_ptr<revision_history>
+    [[nodiscard]] static std::unique_ptr<revision_manager>
     parse_revision_history(const document& doc);
 
     /// Generate a new revision history with default values.
     ///
     /// Constructs initial xref and trailer entries suitable for a new document,
     /// including the required xref entry 0 with object number 0 and generation 65535.
-    [[nodiscard]] static std::unique_ptr<revision_history> create_revision_history();
+    [[nodiscard]] static std::unique_ptr<revision_manager> create_revision_history();
 
     /// Parse the PDF header from file without caching.
     ///

@@ -14,14 +14,14 @@ namespace ripper::pdf::core
 class indirect_object;
 class cross_reference_entry;
 
-/// Non-owning compiled view over all revisions in a revision_history.
+/// Non-owning compiled view over all revisions in a revision_manager.
 ///
 /// A PDF file may contain multiple cross-reference sections, one per incremental update.
 /// The manager provides a unified entry point for all cross-reference operations,
 /// scanning revisions from newest to oldest for lookups and compiling entry maps
 /// from oldest to newest.
 ///
-/// The manager does NOT own the revisions — they are owned by revision_history.
+/// The manager does NOT own the revisions — they are owned by revision_manager.
 /// The manager holds a reference to the revisions vector and must not outlive it.
 ///
 /// ## Lookup semantics
@@ -33,7 +33,7 @@ class cross_reference_entry;
 /// ## Allocation semantics
 ///
 /// New indirect objects are allocated into the active revision's section (the
-/// last, newest revision). If no revisions exist, the revision_history must
+/// last, newest revision). If no revisions exist, the revision_manager must
 /// provide at least one revision before allocation.
 ///
 /// ## Compiled view
@@ -46,7 +46,7 @@ class cross_reference_entry;
 ///
 /// Revisions are stored oldest-first (index 0 is the original revision,
 /// `back()` is the most recently added revision). This mirrors the convention
-/// used by `revision_history`.
+/// used by `revision_manager`.
 ///
 /// Implements the `cross_reference_table` interface, sharing the same API as
 /// individual `cross_reference_section` objects for uniform access.
@@ -161,7 +161,7 @@ public:
 
     /// Returns a mutable reference to the active revision's section (last, newest).
     ///
-    /// The revision_history guarantees at least one revision exists after construction,
+    /// The revision_manager guarantees at least one revision exists after construction,
     /// so this never returns a dangling reference for a properly constructed history.
     [[nodiscard]] cross_reference_section& active_section();
 

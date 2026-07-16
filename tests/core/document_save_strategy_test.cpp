@@ -375,7 +375,7 @@ TEST_CASE("incremental save with multiple new sections", "[document][e2e][save][
 
     // Re-open. Should have 3 sections (1 original + 2 new).
     auto read_back = document::open(output.path());
-    REQUIRE(read_back.revision_history().revisions().size() == 3);
+    REQUIRE(read_back.revisions().all().size() == 3);
     REQUIRE(read_back.catalog().pages().count() == 3);
 }
 } // namespace ripper::pdf::core

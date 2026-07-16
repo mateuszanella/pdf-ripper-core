@@ -22,7 +22,7 @@ public:
                                     std::unique_ptr<class cross_reference_table_parser> xref_parser,
                                     std::unique_ptr<class trailer_parser> trailer_parser);
 
-    [[nodiscard]] std::unique_ptr<revision_history> parse() override;
+    [[nodiscard]] std::unique_ptr<revision_manager> parse() override;
 
 private:
     document& _document;

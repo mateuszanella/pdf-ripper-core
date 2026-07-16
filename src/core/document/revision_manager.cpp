@@ -1,4 +1,4 @@
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
@@ -7,57 +7,57 @@
 
 namespace ripper::pdf::core
 {
-revision_history::revision_history(std::vector<revision> revisions)
+revision_manager::revision_manager(std::vector<revision> revisions)
     : revisions_{std::move(revisions)}, xref_view_{revisions_}, trailer_view_{revisions_}
 {
 }
 
-std::vector<revision>& revision_history::revisions() noexcept
+std::vector<revision>& revision_manager::all() noexcept
 {
     return revisions_;
 }
 
-const std::vector<revision>& revision_history::revisions() const noexcept
+const std::vector<revision>& revision_manager::all() const noexcept
 {
     return revisions_;
 }
 
-revision& revision_history::active_revision()
+revision& revision_manager::current()
 {
     return revisions_.back();
 }
 
-const revision& revision_history::active_revision() const noexcept
+const revision& revision_manager::current() const noexcept
 {
     return revisions_.back();
 }
 
-void revision_history::push_revision(class revision r)
+void revision_manager::push(class revision r)
 {
     revisions_.push_back(std::move(r));
 }
 
-cross_reference_manager& revision_history::xref() noexcept
+cross_reference_manager& revision_manager::xref() noexcept
 {
     return xref_view_;
 }
 
-const cross_reference_manager& revision_history::xref() const noexcept
+const cross_reference_manager& revision_manager::xref() const noexcept
 {
     return xref_view_;
 }
 
-trailer_manager& revision_history::trailer() noexcept
+trailer_manager& revision_manager::trailer() noexcept
 {
     return trailer_view_;
 }
 
-const trailer_manager& revision_history::trailer() const noexcept
+const trailer_manager& revision_manager::trailer() const noexcept
 {
     return trailer_view_;
 }
 
-void revision_history::squash()
+void revision_manager::squash()
 {
     auto active = xref_view_.active_entries();
 
@@ -73,7 +73,7 @@ void revision_history::squash()
     revisions_.emplace_back(std::move(consolidated), std::move(compiled_trailer));
 }
 
-std::size_t revision_history::size() const noexcept
+std::size_t revision_manager::size() const noexcept
 {
     return revisions_.size();
 }

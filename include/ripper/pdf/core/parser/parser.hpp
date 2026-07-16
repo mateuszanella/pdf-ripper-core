@@ -2,7 +2,7 @@
 
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 
 #include <memory>
 
@@ -37,7 +37,7 @@ public:
     [[nodiscard]] header header();
 
     /// Parse and return the complete revision history of the document.
-    [[nodiscard]] std::unique_ptr<revision_history> revision_history();
+    [[nodiscard]] std::unique_ptr<revision_manager> revision_history();
 
     /// Parse any indirect object by reference and return the fully resolved `indirect_object`.
     ///

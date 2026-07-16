@@ -8,7 +8,7 @@
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
-#include "ripper/pdf/core/document/revision_history.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/parser.hpp"
@@ -64,7 +64,7 @@ catalog object_manager::create_catalog(document& doc)
     return ripper::pdf::core::catalog{*raw_catalog};
 }
 
-std::unique_ptr<revision_history> object_manager::parse_revision_history(const document& doc)
+std::unique_ptr<revision_manager> object_manager::parse_revision_history(const document& doc)
 {
     if (!doc.has_parser())
         throw logic_exception{"No parser available"};
@@ -72,7 +72,7 @@ std::unique_ptr<revision_history> object_manager::parse_revision_history(const d
     return doc.parser()->revision_history();
 }
 
-std::unique_ptr<revision_history> object_manager::create_revision_history()
+std::unique_ptr<revision_manager> object_manager::create_revision_history()
 {
     cross_reference_subsection::entry_map entries;
     entries.emplace(0, cross_reference_entry{indirect_reference{0, 65535}, 0, false});
@@ -87,7 +87,7 @@ std::unique_ptr<revision_history> object_manager::create_revision_history()
     std::vector<revision> revisions;
     revisions.emplace_back(std::move(section), std::move(t));
 
-    return std::make_unique<revision_history>(std::move(revisions));
+    return std::make_unique<revision_manager>(std::move(revisions));
 }
 
 header object_manager::parse_header(const document& doc)

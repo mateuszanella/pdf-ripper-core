@@ -31,7 +31,7 @@ header parser::header()
     return manager().header_parser().parse();
 }
 
-std::unique_ptr<revision_history> parser::revision_history()
+std::unique_ptr<revision_manager> parser::revision_history()
 {
     return manager().revision_history_parser().parse();
 }

@@ -8,20 +8,20 @@
 
 namespace ripper::pdf::core
 {
-/// Non-owning compiled view over the trailer history of a revision_history.
+/// Non-owning compiled view over the trailer history of a revision_manager.
 ///
 /// A PDF document with incremental updates contains one trailer per revision.
 /// The trailer_manager provides a compiled (merged) view and active-trailer
-/// access over the revisions owned by revision_history.
+/// access over the revisions owned by revision_manager.
 ///
-/// The manager does NOT own the revisions — they are owned by revision_history.
+/// The manager does NOT own the revisions — they are owned by revision_manager.
 /// The manager holds a reference to the revisions vector and must not outlive it.
 ///
 /// ## Ordering
 ///
 /// Revisions are stored oldest-first (index 0 is the original revision's trailer,
 /// `back()` is the most recently added revision). This mirrors the ordering
-/// convention used by `revision_history`.
+/// convention used by `revision_manager`.
 ///
 /// ## Compiled view
 ///
@@ -47,12 +47,12 @@ public:
     ///
     /// The active trailer is the one modified by writers when producing a new
     /// revision. It is always the last element of the internal vector. The
-    /// revision_history guarantees at least one revision exists after construction.
+    /// revision_manager guarantees at least one revision exists after construction.
     [[nodiscard]] trailer& active_trailer();
 
     /// Returns a const reference to the active (newest) trailer.
     ///
-    /// Requires that at least one revision has been added. The revision_history
+    /// Requires that at least one revision has been added. The revision_manager
     /// guarantees this after construction.
     [[nodiscard]] const trailer& active_trailer() const noexcept;
 
