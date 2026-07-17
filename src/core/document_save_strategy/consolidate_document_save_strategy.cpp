@@ -1,4 +1,4 @@
-#include "ripper/pdf/core/document_save_strategy/linearize_document_save_strategy.hpp"
+#include "ripper/pdf/core/document_save_strategy/consolidate_document_save_strategy.hpp"
 
 #include "ripper/io/core/writer/writer.hpp"
 #include "ripper/pdf/core/document.hpp"
@@ -16,7 +16,7 @@
 namespace ripper::pdf::core
 {
 
-void linearize_document_save_strategy::save(document& doc)
+void consolidate_document_save_strategy::save(document& doc)
 {
     if (!doc.has_writer())
         throw logic_exception{"No writer backend available"};

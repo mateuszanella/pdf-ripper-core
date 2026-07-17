@@ -15,8 +15,8 @@
 #include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
+#include "ripper/pdf/core/document_save_strategy/consolidate_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/incremental_document_save_strategy.hpp"
-#include "ripper/pdf/core/document_save_strategy/linearize_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/raw_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/save_strategy_type.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
@@ -53,7 +53,7 @@ document document::create(const std::filesystem::path& path)
 void document::save()
 {
     if (!save_strategy_)
-        save_strategy_ = std::make_unique<linearize_document_save_strategy>();
+        save_strategy_ = std::make_unique<consolidate_document_save_strategy>();
 
     save_strategy_->save(*this);
 }
@@ -62,8 +62,8 @@ void document::save(save_strategy_type type)
 {
     switch (type)
     {
-        case save_strategy_type::linearize:
-            save_strategy_ = std::make_unique<linearize_document_save_strategy>();
+        case save_strategy_type::consolidate:
+            save_strategy_ = std::make_unique<consolidate_document_save_strategy>();
             break;
         case save_strategy_type::raw:
             save_strategy_ = std::make_unique<raw_document_save_strategy>();

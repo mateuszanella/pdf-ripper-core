@@ -5,7 +5,7 @@
 namespace ripper::pdf::core
 {
 
-/// Linearize (full-rewrite) document save strategy.
+/// Consolidate (full-rewrite) document save strategy.
 ///
 /// This is the default strategy used when no custom strategy has been injected
 /// via `document::set_save_strategy()`.  It:
@@ -14,7 +14,7 @@ namespace ripper::pdf::core
 ///   2. Resolves all in-use entries that still reside on disk.
 ///   3. Serialises every active object, the cross-reference table, and the
 ///      trailer to the document's writer backend.
-class linearize_document_save_strategy final : public document_save_strategy
+class consolidate_document_save_strategy final : public document_save_strategy
 {
 public:
     void save(document& doc) override;

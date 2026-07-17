@@ -67,7 +67,7 @@ public:
     /// Save the document to the configured writer backend.
     ///
     /// Uses the currently injected save strategy (see `set_save_strategy()`),
-    /// which defaults to `linearize_document_save_strategy` (full rewrite).
+    /// which defaults to `consolidate_document_save_strategy` (full rewrite).
     ///
     /// @throws logic_exception if no writer or serializer is available.
     void save();

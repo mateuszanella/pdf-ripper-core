@@ -1,8 +1,8 @@
 #include "ripper/io/core/reader/file_reader.hpp"
 #include "ripper/io/core/writer/file_writer.hpp"
 #include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document_save_strategy/consolidate_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/incremental_document_save_strategy.hpp"
-#include "ripper/pdf/core/document_save_strategy/linearize_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/raw_document_save_strategy.hpp"
 #include "test_fixture.hpp"
 
@@ -13,10 +13,10 @@
 
 namespace ripper::pdf::core
 {
-TEST_CASE("linearize save strategy writes and re-opens a created PDF",
-          "[document][e2e][save][linearize]")
+TEST_CASE("consolidate save strategy writes and re-opens a created PDF",
+          "[document][e2e][save][consolidate]")
 {
-    test_fixture::scoped_temp_file output{"pdf_ripper_core_linearize_save_test.pdf"};
+    test_fixture::scoped_temp_file output{"pdf_ripper_core_consolidate_save_test.pdf"};
 
     auto doc = document::create(output.path());
 
@@ -24,7 +24,7 @@ TEST_CASE("linearize save strategy writes and re-opens a created PDF",
     (void)pages.add_page();
     (void)pages.add_page();
 
-    linearize_document_save_strategy strategy;
+    consolidate_document_save_strategy strategy;
     REQUIRE_NOTHROW(strategy.save(doc));
     REQUIRE(std::filesystem::exists(output.path()));
 
@@ -60,7 +60,7 @@ TEST_CASE("save with save_strategy_type enum selects built-in strategy",
     auto pages = doc.catalog().pages();
     (void)pages.add_page();
 
-    REQUIRE_NOTHROW(doc.save(save_strategy_type::linearize));
+    REQUIRE_NOTHROW(doc.save(save_strategy_type::consolidate));
     REQUIRE(std::filesystem::exists(output.path()));
 
     auto read_back = document::open(output.path());
@@ -78,7 +78,7 @@ TEST_CASE("set_save_strategy injects a custom strategy", "[document][e2e][save][
     (void)pages.add_page();
     (void)pages.add_page();
 
-    doc.set_save_strategy(std::make_unique<linearize_document_save_strategy>());
+    doc.set_save_strategy(std::make_unique<consolidate_document_save_strategy>());
     REQUIRE_NOTHROW(doc.save());
     REQUIRE(std::filesystem::exists(output.path()));
 
@@ -95,7 +95,7 @@ TEST_CASE("set_save_strategy with nullptr resets to default", "[document][e2e][s
     auto pages = doc.catalog().pages();
     (void)pages.add_page();
 
-    doc.set_save_strategy(std::make_unique<linearize_document_save_strategy>());
+    doc.set_save_strategy(std::make_unique<consolidate_document_save_strategy>());
     doc.set_save_strategy(nullptr);
     REQUIRE_NOTHROW(doc.save());
 
@@ -114,7 +114,7 @@ TEST_CASE("save with enum ignores injected strategy", "[document][e2e][save][enu
     (void)pages.add_page();
 
     doc.set_save_strategy(std::make_unique<raw_document_save_strategy>());
-    REQUIRE_NOTHROW(doc.save(save_strategy_type::linearize));
+    REQUIRE_NOTHROW(doc.save(save_strategy_type::consolidate));
     REQUIRE(std::filesystem::exists(output.path()));
 
     auto read_back = document::open(output.path());
@@ -140,9 +140,9 @@ TEST_CASE("raw save preserves existing PDF", "[document][e2e][save][raw]")
     REQUIRE(read_back.catalog().pages().count() == 3);
 }
 
-TEST_CASE("linearize save preserves existing PDF", "[document][e2e][save][linearize]")
+TEST_CASE("consolidate save preserves existing PDF", "[document][e2e][save][consolidate]")
 {
-    test_fixture::scoped_temp_file output{"pdf_ripper_core_linearize_edit_test.pdf"};
+    test_fixture::scoped_temp_file output{"pdf_ripper_core_consolidate_edit_test.pdf"};
 
     const auto input_path = test_fixture::fixture_pdf_path();
     REQUIRE(std::filesystem::exists(input_path));
@@ -151,7 +151,7 @@ TEST_CASE("linearize save preserves existing PDF", "[document][e2e][save][linear
     auto writer = std::make_unique<ripper::io::core::file_writer>(output.path());
     document doc{std::move(reader), std::move(writer)};
 
-    linearize_document_save_strategy strategy;
+    consolidate_document_save_strategy strategy;
     REQUIRE_NOTHROW(strategy.save(doc));
     REQUIRE(std::filesystem::exists(output.path()));
 
@@ -167,11 +167,11 @@ TEST_CASE("raw save throws without writer", "[document][save][error]")
     REQUIRE_THROWS_AS(strategy.save(doc), logic_exception);
 }
 
-TEST_CASE("linearize save throws without writer", "[document][save][error]")
+TEST_CASE("consolidate save throws without writer", "[document][save][error]")
 {
     auto doc = document::open(test_fixture::fixture_pdf_path());
 
-    linearize_document_save_strategy strategy;
+    consolidate_document_save_strategy strategy;
     REQUIRE_THROWS_AS(strategy.save(doc), logic_exception);
 }
 

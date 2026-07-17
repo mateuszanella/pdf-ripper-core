@@ -10,12 +10,13 @@ namespace ripper::pdf::core
 /// `document::set_save_strategy()`.
 enum class save_strategy_type
 {
-    /// Linearize strategy (full rewrite).
+    /// Consolidate strategy (full rewrite).
     ///
     /// Squashes incremental update history, resolves all in-use entries from
     /// the document, then serialises every active object, cross-reference table,
-    /// and trailer in a single pass. Produces a clean, linearised PDF.
-    linearize,
+    /// and trailer in a single pass. Produces a clean PDF.
+    /// This is the default save strategy.
+    consolidate,
 
     /// Raw resolve-and-dump strategy.
     ///

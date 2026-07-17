@@ -9,7 +9,7 @@ class document;
 ///
 /// Implement this interface to customise how a `document` is serialised
 /// to its writer backend.  The library ships one built-in
-/// implementation (`linearize_document_save_strategy`) which performs a full
+/// implementation (`consolidate_document_save_strategy`) which performs a full
 /// rewrite of all objects, the cross-reference table, and the trailer.
 ///
 /// # Usage
