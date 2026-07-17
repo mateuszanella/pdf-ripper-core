@@ -76,7 +76,7 @@ compressed_cross_reference_table_serializer::serialize(const cross_reference_sec
         dict.remove("Index");
     }
 
-    auto compressed = filter_manager::encode(dictionary{}, entries_data);
+    auto compressed = filter_manager::encode(dict, entries_data);
     dict.set("Length", object{static_cast<std::int64_t>(compressed.size())});
 
     if (object_serializer_ == nullptr)
