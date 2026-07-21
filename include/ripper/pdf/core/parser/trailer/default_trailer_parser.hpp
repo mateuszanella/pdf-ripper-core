@@ -19,6 +19,6 @@ public:
     [[nodiscard]] trailer parse(std::string_view content) override;
 
 private:
-    [[nodiscard]] static trailer parse_dictionary(std::string_view content);
+    [[nodiscard]] static trailer parse_trailer_dict(std::string_view content);
 };
 } // namespace ripper::pdf::core
