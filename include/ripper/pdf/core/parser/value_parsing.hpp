@@ -31,4 +31,15 @@ namespace ripper::pdf::core
 ///
 /// Assumes the opening `<<` token has already been consumed.
 [[nodiscard]] dictionary parse_dictionary(pdf_lexer& lexer);
+
+/// Extract the PDF value content from an indirect object's text representation.
+///
+/// Uses a lexer to locate the `obj` and `endobj` keyword tokens, avoiding
+/// false matches on raw byte patterns that appear inside literal strings,
+/// hex strings, or other tokenised regions.
+///
+/// @param content Raw text of an indirect object ("N G obj ... endobj").
+/// @return The content between the `obj` and `endobj` keywords.
+/// @throws parse_exception if `obj` or `endobj` keywords are not found.
+[[nodiscard]] std::string_view extract_object_body(std::string_view content);
 } // namespace ripper::pdf::core

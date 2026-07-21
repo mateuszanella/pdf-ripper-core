@@ -28,7 +28,7 @@ TEST_CASE("default_object_parser parses integer object", "[parser][object]")
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(doc, ref(1), "1 0 obj\n42\nendobj\n");
+    const auto result = parser.parse(doc, ref(1), "\n42\n");
 
     REQUIRE(result.identity().reference().object_number() == 1);
     REQUIRE(result.content().is_integer());
@@ -41,7 +41,7 @@ TEST_CASE("default_object_parser parses dictionary object", "[parser][object]")
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(doc, ref(2), "2 0 obj\n<< /Type /Page /Count 3 >>\nendobj\n");
+    const auto result = parser.parse(doc, ref(2), "\n<< /Type /Page /Count 3 >>\n");
 
     REQUIRE(result.identity().reference().object_number() == 2);
     REQUIRE(result.content().is_dictionary());
@@ -63,8 +63,7 @@ TEST_CASE("default_object_parser parses stream object", "[parser][object]")
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result =
-        parser.parse(doc, ref(3), "3 0 obj\n<< /Length 5 >>\nstream\nhello\nendstream\nendobj\n");
+    const auto result = parser.parse(doc, ref(3), "\n<< /Length 5 >>\nstream\nhello\nendstream\n");
 
     REQUIRE(result.identity().reference().object_number() == 3);
     REQUIRE(result.content().is_stream());
@@ -87,7 +86,7 @@ TEST_CASE("default_object_parser parses array object", "[parser][object]")
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(doc, ref(4), "4 0 obj\n[1 2 3]\nendobj\n");
+    const auto result = parser.parse(doc, ref(4), "\n[1 2 3]\n");
 
     REQUIRE(result.identity().reference().object_number() == 4);
     REQUIRE(result.content().is_array());
@@ -105,7 +104,7 @@ TEST_CASE("default_object_parser parses string object", "[parser][object]")
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(doc, ref(5), "5 0 obj\n(Hello World)\nendobj\n");
+    const auto result = parser.parse(doc, ref(5), "\n(Hello World)\n");
 
     REQUIRE(result.content().is_string());
     REQUIRE(*result.content().as_string() == "Hello World");
@@ -116,7 +115,7 @@ TEST_CASE("default_object_parser parses boolean object", "[parser][object]")
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(doc, ref(6), "6 0 obj\ntrue\nendobj\n");
+    const auto result = parser.parse(doc, ref(6), "\ntrue\n");
 
     REQUIRE(result.content().is_bool());
     REQUIRE(*result.content().as_bool() == true);
@@ -127,7 +126,7 @@ TEST_CASE("default_object_parser parses null object", "[parser][object]")
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(doc, ref(7), "7 0 obj\nnull\nendobj\n");
+    const auto result = parser.parse(doc, ref(7), "\nnull\n");
 
     REQUIRE(result.content().is_null());
 }
@@ -137,7 +136,7 @@ TEST_CASE("default_object_parser parses indirect reference in content", "[parser
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(doc, ref(8), "8 0 obj\n<< /Parent 1 0 R >>\nendobj\n");
+    const auto result = parser.parse(doc, ref(8), "\n<< /Parent 1 0 R >>\n");
 
     REQUIRE(result.content().is_dictionary());
     const auto* dict = result.content().as_dictionary();
@@ -154,8 +153,7 @@ TEST_CASE("default_object_parser parses nested dictionary", "[parser][object]")
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result =
-        parser.parse(doc, ref(9), "9 0 obj\n<< /Outer << /Inner 42 >> >>\nendobj\n");
+    const auto result = parser.parse(doc, ref(9), "\n<< /Outer << /Inner 42 >> >>\n");
 
     REQUIRE(result.content().is_dictionary());
     const auto* dict = result.content().as_dictionary();
@@ -173,8 +171,8 @@ TEST_CASE("default_object_parser skips embedded endstream text", "[parser][objec
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(
-        doc, ref(10), "10 0 obj\n<< /Length 15 >>\nstream\nhello endstream\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(10), "\n<< /Length 15 >>\nstream\nhello endstream\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -189,8 +187,8 @@ TEST_CASE("default_object_parser parses stream with CRLF line ending", "[parser]
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(
-        doc, ref(11), "11 0 obj\n<< /Length 4 >>\nstream\r\ntest\r\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(11), "\n<< /Length 4 >>\nstream\r\ntest\r\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -205,8 +203,8 @@ TEST_CASE("default_object_parser handles stream with missing Length", "[parser][
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(
-        doc, ref(12), "12 0 obj\n<< /Type /XObject >>\nstream\npayload\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(12), "\n<< /Type /XObject >>\nstream\npayload\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -219,8 +217,8 @@ TEST_CASE("default_object_parser handles stream with negative Length", "[parser]
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(
-        doc, ref(13), "13 0 obj\n<< /Length -1 >>\nstream\nworld\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(13), "\n<< /Length -1 >>\nstream\nworld\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -234,8 +232,7 @@ TEST_CASE("default_object_parser handles stream with Length too small", "[parser
     default_object_parser parser;
 
     // Length=3 but actual content "hello" is 5 bytes before endstream
-    const auto result =
-        parser.parse(doc, ref(14), "14 0 obj\n<< /Length 3 >>\nstream\nhello\nendstream\nendobj\n");
+    const auto result = parser.parse(doc, ref(14), "\n<< /Length 3 >>\nstream\nhello\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -249,8 +246,8 @@ TEST_CASE("default_object_parser handles stream with Length too large", "[parser
     default_object_parser parser;
 
     // Length=999 but actual content is only 4 bytes
-    const auto result = parser.parse(
-        doc, ref(15), "15 0 obj\n<< /Length 999 >>\nstream\nxray\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(15), "\n<< /Length 999 >>\nstream\nxray\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -264,8 +261,7 @@ TEST_CASE("default_object_parser handles stream with zero Length and empty conte
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result =
-        parser.parse(doc, ref(16), "16 0 obj\n<< /Length 0 >>\nstream\nendstream\nendobj\n");
+    const auto result = parser.parse(doc, ref(16), "\n<< /Length 0 >>\nstream\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -280,8 +276,8 @@ TEST_CASE("default_object_parser handles stream with zero Length but content exi
     default_object_parser parser;
 
     // Length=0, but there is real content — cross-validation fails, falls back to endstream
-    const auto result = parser.parse(
-        doc, ref(17), "17 0 obj\n<< /Length 0 >>\nstream\nhidden\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(17), "\n<< /Length 0 >>\nstream\nhidden\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -295,8 +291,8 @@ TEST_CASE("default_object_parser handles stream where Length is a string",
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(
-        doc, ref(18), "18 0 obj\n<< /Length (five) >>\nstream\nchunk\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(18), "\n<< /Length (five) >>\nstream\nchunk\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -309,8 +305,8 @@ TEST_CASE("default_object_parser handles stream where Length is a real", "[parse
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result = parser.parse(
-        doc, ref(19), "19 0 obj\n<< /Length 2.5 >>\nstream\ntest\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(19), "\n<< /Length 2.5 >>\nstream\ntest\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -327,12 +323,12 @@ TEST_CASE("default_object_parser handles stream with no endstream keyword",
     default_object_parser parser;
 
     // No endstream at all — entire remainder becomes the stream
-    const auto result = parser.parse(doc, ref(20), "20 0 obj\n<< >>\nstream\nabc\nendobj\n");
+    const auto result = parser.parse(doc, ref(20), "\n<< >>\nstream\nabc\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
     REQUIRE(obj_stream != nullptr);
-    REQUIRE(obj_stream->stream().size() == 11); // "abc\nendobj\n"
+    REQUIRE(obj_stream->stream().size() == 4); // "abc\n"
 }
 
 TEST_CASE("default_object_parser handles stream with multiple endstream keywords",
@@ -342,8 +338,7 @@ TEST_CASE("default_object_parser handles stream with multiple endstream keywords
     default_object_parser parser;
 
     // Two endstream keywords — rfind uses the last one
-    const auto result =
-        parser.parse(doc, ref(21), "21 0 obj\n<< >>\nstream\nfirst_endstream\nendstream\nendobj\n");
+    const auto result = parser.parse(doc, ref(21), "\n<< >>\nstream\nfirst_endstream\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -358,8 +353,8 @@ TEST_CASE("default_object_parser handles stream with whitespace before endstream
     default_object_parser parser;
 
     // Extra whitespace between content and endstream — stripped correctly
-    const auto result = parser.parse(
-        doc, ref(22), "22 0 obj\n<< /Length 10 >>\nstream\ndatablock\n  \nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(22), "\n<< /Length 10 >>\nstream\ndatablock\n  \nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -374,8 +369,8 @@ TEST_CASE("default_object_parser handles stream with CR-only line ending",
     default_object_parser parser;
 
     // CR-only after stream — classic Mac line ending
-    const auto result = parser.parse(
-        doc, ref(23), "23 0 obj\n<< /Length 6 >>\nstream\rfoobar\rendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(23), "\n<< /Length 6 >>\nstream\rfoobar\rendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -390,8 +385,7 @@ TEST_CASE("default_object_parser handles stream with no line ending after stream
     default_object_parser parser;
 
     // No \r or \n after "stream" — byte after keyword becomes stream content
-    const auto result =
-        parser.parse(doc, ref(24), "24 0 obj\n<< /Length 4 >>\nstream rawendstream\nendobj\n");
+    const auto result = parser.parse(doc, ref(24), "\n<< /Length 4 >>\nstream rawendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -406,8 +400,8 @@ TEST_CASE("default_object_parser handles stream with Length matching after white
     default_object_parser parser;
 
     // Length=6, content "123456" followed by whitespace then endstream
-    const auto result = parser.parse(
-        doc, ref(25), "25 0 obj\n<< /Length 6 >>\nstream\n123456\nendstream\nendobj\n");
+    const auto result =
+        parser.parse(doc, ref(25), "\n<< /Length 6 >>\nstream\n123456\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -421,8 +415,7 @@ TEST_CASE("default_object_parser preserves stream Length value when authoritativ
     auto doc = make_document();
     default_object_parser parser;
 
-    const auto result =
-        parser.parse(doc, ref(26), "26 0 obj\n<< /Length 4 >>\nstream\nword\nendstream\nendobj\n");
+    const auto result = parser.parse(doc, ref(26), "\n<< /Length 4 >>\nstream\nword\nendstream\n");
 
     REQUIRE(result.content().is_stream());
     const auto* obj_stream = result.content().as_stream();
@@ -441,7 +434,7 @@ TEST_CASE("default_object_parser treats non-dictionary content without stream as
     default_object_parser parser;
 
     // An integer object — not a dictionary, so stream detection is skipped
-    const auto result = parser.parse(doc, ref(27), "27 0 obj\n42\nendobj\n");
+    const auto result = parser.parse(doc, ref(27), "\n42\n");
 
     REQUIRE(result.content().is_integer());
     REQUIRE(*result.content().as_integer() == 42);
@@ -454,7 +447,7 @@ TEST_CASE("default_object_parser dictionary without stream keyword returns plain
     default_object_parser parser;
 
     // Dictionary but no stream keyword follows
-    const auto result = parser.parse(doc, ref(28), "28 0 obj\n<< /Key value >>\nendobj\n");
+    const auto result = parser.parse(doc, ref(28), "\n<< /Key value >>\n");
 
     REQUIRE(result.content().is_dictionary());
     REQUIRE_FALSE(result.content().is_stream());

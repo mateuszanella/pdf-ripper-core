@@ -87,8 +87,6 @@ TEST_CASE("indirect_object_resolver resolves existing object", "[parser][resolve
     const auto raw = resolver.resolve(indirect_reference{1, 0});
 
     REQUIRE_FALSE(raw.empty());
-    REQUIRE(raw.find("1 0 obj") != std::string::npos);
-    REQUIRE(raw.find("endobj") != std::string::npos);
     REQUIRE(raw.find("/Catalog") != std::string::npos);
 }
 
@@ -104,7 +102,6 @@ TEST_CASE("indirect_object_resolver resolves second object", "[parser][resolver]
     const auto raw = resolver.resolve(indirect_reference{2, 0});
 
     REQUIRE_FALSE(raw.empty());
-    REQUIRE(raw.find("2 0 obj") != std::string::npos);
     REQUIRE(raw.find("/Pages") != std::string::npos);
 }
 
@@ -144,10 +141,8 @@ TEST_CASE("indirect_object_resolver resolves stream object", "[parser][resolver]
     // Object 4 is the first content stream in the fixture.
     const auto raw = resolver.resolve(indirect_reference{4, 0});
 
-    REQUIRE(raw.find("4 0 obj") != std::string::npos);
     REQUIRE(raw.find("stream") != std::string::npos);
     REQUIRE(raw.find("endstream") != std::string::npos);
-    REQUIRE(raw.find("endobj") != std::string::npos);
 }
 
 TEST_CASE("indirect_object_resolver bounds read to next object offset",
@@ -174,8 +169,7 @@ TEST_CASE("indirect_object_resolver uses xref table offset as bound for last obj
     // upper bound so that xref and trailer bytes do not leak in.
     const auto raw = resolver.resolve(indirect_reference{8, 0});
 
-    REQUIRE(raw.find("8 0 obj") != std::string::npos);
-    REQUIRE(raw.find("endobj") != std::string::npos);
+    REQUIRE_FALSE(raw.empty());
     REQUIRE(raw.find("xref") == std::string::npos);
     REQUIRE(raw.find("trailer") == std::string::npos);
 }

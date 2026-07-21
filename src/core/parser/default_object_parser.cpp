@@ -18,13 +18,6 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
 {
     pdf_lexer lexer{content_sv};
 
-    // Skip the `N G obj` header. The reference is already known from the xref.
-    for (int i = 0; i < 3; ++i)
-    {
-        (void)lexer.next();
-    }
-
-    // Parse the content stream as a PDF direct value (primitive value, listed on object.hpp).
     auto content = parse_value(lexer);
 
     // After parsing the actual content and obtaining the proper object type, we must
