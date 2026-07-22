@@ -1,9 +1,11 @@
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/object/stream.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/serializer/object/default_object_serializer.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <limits>
 
 namespace ripper::pdf::core
 {
@@ -91,12 +93,13 @@ TEST_CASE("default_object_serializer serializes positive real", "[serializer][ob
     REQUIRE(bytes_to_string(result) == "3.14");
 }
 
-TEST_CASE("default_object_serializer serializes zero real", "[serializer][object]")
+TEST_CASE("default_object_serializer serializes zero real with decimal point",
+          "[serializer][object]")
 {
     default_object_serializer ser;
     const auto result = ser.serialize(object{0.0});
 
-    REQUIRE(bytes_to_string(result) == "0");
+    REQUIRE(bytes_to_string(result) == "0.0");
 }
 
 TEST_CASE("default_object_serializer serializes negative real", "[serializer][object]")
@@ -105,6 +108,80 @@ TEST_CASE("default_object_serializer serializes negative real", "[serializer][ob
     const auto result = ser.serialize(object{-2.5});
 
     REQUIRE(bytes_to_string(result) == "-2.5");
+}
+
+TEST_CASE("default_object_serializer serializes integer-valued real with decimal point",
+          "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{42.0});
+
+    REQUIRE(bytes_to_string(result) == "42.0");
+}
+
+TEST_CASE("default_object_serializer serializes negative integer-valued real with decimal point",
+          "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{-7.0});
+
+    REQUIRE(bytes_to_string(result) == "-7.0");
+}
+
+TEST_CASE("default_object_serializer uses period as decimal separator always",
+          "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{3.141592653589793});
+
+    const auto s = bytes_to_string(result);
+    REQUIRE(s.find('.') != std::string::npos);
+    REQUIRE(s.find(',') == std::string::npos);
+}
+
+TEST_CASE("default_object_serializer serializes real in scientific notation",
+          "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{1e20});
+
+    const auto s = bytes_to_string(result);
+    REQUIRE(s.find('e') != std::string::npos);
+    REQUIRE(s.find('.') != std::string::npos);
+    REQUIRE(s.find("1.0e") != std::string::npos);
+}
+
+TEST_CASE("default_object_serializer rejects NaN at construction", "[serializer][object]")
+{
+    const auto value = std::numeric_limits<double>::quiet_NaN();
+
+    REQUIRE_THROWS_AS(object{value}, parse_exception);
+}
+
+TEST_CASE("default_object_serializer rejects positive infinity at construction",
+          "[serializer][object]")
+{
+    const auto value = std::numeric_limits<double>::infinity();
+
+    REQUIRE_THROWS_AS(object{value}, parse_exception);
+}
+
+TEST_CASE("default_object_serializer rejects negative infinity at construction",
+          "[serializer][object]")
+{
+    const auto value = -std::numeric_limits<double>::infinity();
+
+    REQUIRE_THROWS_AS(object{value}, parse_exception);
+}
+
+TEST_CASE("default_object_serializer accepts finite real values at construction",
+          "[serializer][object]")
+{
+    REQUIRE_NOTHROW(object{0.0});
+    REQUIRE_NOTHROW(object{-1.0});
+    REQUIRE_NOTHROW(object{std::numeric_limits<double>::max()});
+    REQUIRE_NOTHROW(object{std::numeric_limits<double>::min()});
+    REQUIRE_NOTHROW(object{std::numeric_limits<double>::lowest()});
 }
 
 // ── string ────────────────────────────────────────────────────────────────────

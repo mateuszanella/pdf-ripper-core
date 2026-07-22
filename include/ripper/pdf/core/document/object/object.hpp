@@ -91,7 +91,8 @@ public:
     explicit object(std::int64_t value) noexcept;
 
     /// Construct a real PDF object.
-    explicit object(double value) noexcept;
+    /// @throws parse_exception if value is NaN or infinite.
+    explicit object(double value);
 
     /// Construct a string PDF object.
     explicit object(std::string value) noexcept;

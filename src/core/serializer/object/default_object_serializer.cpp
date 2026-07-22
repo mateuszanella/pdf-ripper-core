@@ -2,12 +2,15 @@
 
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/filter/filter_manager.hpp"
 #include "ripper/pdf/core/util/byte.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
+#include <array>
+#include <charconv>
+#include <cmath>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -73,9 +76,28 @@ std::vector<std::byte> default_object_serializer::serialize_integer(std::int64_t
 
 std::vector<std::byte> default_object_serializer::serialize_real(double value) const
 {
-    std::ostringstream ss;
-    ss << value;
-    return byte::to_bytes(ss.str());
+    if (!std::isfinite(value))
+        throw logic_exception{"Cannot serialize non-finite real value"};
+
+    std::array<char, 64> buf{};
+
+    /// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    auto [ptr, ec] = std::to_chars(buf.data(), buf.data() + buf.size(), value);
+
+    if (ec != std::errc{})
+        throw logic_exception{"Failed to serialize real number"};
+
+    std::string s(buf.data(), ptr - buf.data());
+    if (s.find('.') == std::string::npos)
+    {
+        const auto epos = s.find('e');
+        if (epos == std::string::npos)
+            s += ".0";
+        else
+            s.insert(epos, ".0");
+    }
+
+    return byte::to_bytes(s);
 }
 
 std::vector<std::byte> default_object_serializer::serialize_string(const std::string& value) const

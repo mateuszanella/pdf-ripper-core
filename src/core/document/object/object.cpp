@@ -1,7 +1,10 @@
 #include "ripper/pdf/core/document/object/object.hpp"
 
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
+#include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/filter/filter_manager.hpp"
+
+#include <cmath>
 
 namespace ripper::pdf::core
 {
@@ -13,7 +16,11 @@ object::object(bool value) noexcept : value_(value) {}
 
 object::object(std::int64_t value) noexcept : value_(value) {}
 
-object::object(double value) noexcept : value_(value) {}
+object::object(double value) : value_(value)
+{
+    if (!std::isfinite(value))
+        throw parse_exception{"Non-finite double values (NaN/Inf) are not valid PDF reals"};
+}
 
 object::object(std::string value) noexcept : value_(std::move(value)) {}
 
