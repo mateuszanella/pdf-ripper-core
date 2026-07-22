@@ -77,7 +77,7 @@ dictionary parse_dictionary(pdf_lexer& lexer)
         const auto key = lexer.next();
         auto val = parse_value(lexer);
 
-        dict.set(std::string{key.lexeme}, std::move(val));
+        dict.set(text::unescape_name(key.lexeme), std::move(val));
     }
     return dict;
 }
@@ -125,10 +125,16 @@ object parse_value(pdf_lexer& lexer)
     if (p.type == lexer_token_type::name)
     {
         const auto tok = lexer.next();
-        return object{name{std::string{tok.lexeme}}};
+        return object{name{text::unescape_name(tok.lexeme)}};
     }
 
-    if (p.type == lexer_token_type::literal_string || p.type == lexer_token_type::hex_string)
+    if (p.type == lexer_token_type::literal_string)
+    {
+        const auto tok = lexer.next();
+        return object{text::unescape_literal_string(tok.lexeme)};
+    }
+
+    if (p.type == lexer_token_type::hex_string)
     {
         const auto tok = lexer.next();
         return object{std::string{tok.lexeme}};

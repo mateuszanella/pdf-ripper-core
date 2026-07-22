@@ -92,7 +92,7 @@ std::vector<std::byte> default_object_serializer::serialize_string(const std::st
 
 std::vector<std::byte> default_object_serializer::serialize_name(const name& value) const
 {
-    const auto escaped = text::escape_literal_string(value.value);
+    const auto escaped = text::escape_name(value.value);
 
     std::vector<std::byte> out;
     byte::append_bytes(out, '/');

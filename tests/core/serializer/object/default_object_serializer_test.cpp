@@ -181,8 +181,80 @@ TEST_CASE("default_object_serializer serializes name with special characters",
     default_object_serializer ser;
     const auto result = ser.serialize(object{name{"A(B)C"}});
 
-    // Names use escape_literal_string too, so parens are escaped
-    REQUIRE(bytes_to_string(result) == R"(/A\(B\)C)");
+    REQUIRE(bytes_to_string(result) == R"(/A#28B#29C)");
+}
+
+TEST_CASE("default_object_serializer serializes name with hash character", "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"Version#1"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/Version#231)");
+}
+
+TEST_CASE("default_object_serializer serializes name with spaces", "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"Foo Bar"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/Foo#20Bar)");
+}
+
+TEST_CASE("default_object_serializer serializes name with slash", "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"A/B"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/A#2FB)");
+}
+
+TEST_CASE("default_object_serializer serializes name with non-ASCII bytes", "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"caf\xC3\xA9"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/caf#C3#A9)");
+}
+
+TEST_CASE("default_object_serializer serializes name with angle brackets", "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"A<B>C"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/A#3CB#3EC)");
+}
+
+TEST_CASE("default_object_serializer serializes name with brackets and braces",
+          "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"[A]{B}"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/#5BA#5D#7BB#7D)");
+}
+
+TEST_CASE("default_object_serializer serializes name with percent", "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"50%Done"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/50#25Done)");
+}
+
+TEST_CASE("default_object_serializer serializes name with tab and newline", "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"A\t\nB"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/A#09#0AB)");
+}
+
+TEST_CASE("default_object_serializer serializes name with multiple escapes", "[serializer][object]")
+{
+    default_object_serializer ser;
+    const auto result = ser.serialize(object{name{"<key> / value%"}});
+
+    REQUIRE(bytes_to_string(result) == R"(/#3Ckey#3E#20#2F#20value#25)");
 }
 
 // ── indirect reference ────────────────────────────────────────────────────────
