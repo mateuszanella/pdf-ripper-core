@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <cctype>
 #include <charconv>
 #include <cstddef>
@@ -8,7 +7,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <vector>
 
 namespace ripper::pdf::core::text
 {
@@ -70,7 +68,10 @@ namespace ripper::pdf::core::text
     }
 
     std::size_t object = 0;
+
     const char* begin = s.data();
+
+    /// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     const char* end = s.data() + s.size();
 
     auto [ptr, ec] = std::from_chars(begin, end, object);
@@ -85,8 +86,12 @@ namespace ripper::pdf::core::text
 [[nodiscard]] inline std::optional<std::uint32_t> parse_u32(std::string_view text) noexcept
 {
     std::uint32_t object{};
+
     const char* first = text.data();
+
+    /// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     const char* last = text.data() + text.size();
+
     auto [ptr, ec] = std::from_chars(first, last, object);
 
     if (ec != std::errc{} || ptr != last)
@@ -148,5 +153,163 @@ namespace ripper::pdf::core::text
     }
 
     return escaped;
+}
+[[nodiscard]] inline std::string unescape_literal_string(std::string_view value)
+{
+    std::string unescaped;
+    unescaped.reserve(value.size());
+
+    for (std::size_t i = 0; i < value.size(); ++i)
+    {
+        if (value[i] != '\\' || i + 1 >= value.size())
+        {
+            unescaped += value[i];
+            continue;
+        }
+
+        ++i;
+        switch (value[i])
+        {
+            case 'n':
+                unescaped += '\n';
+                break;
+            case 'r':
+                unescaped += '\r';
+                break;
+            case 't':
+                unescaped += '\t';
+                break;
+            case 'b':
+                unescaped += '\b';
+                break;
+            case 'f':
+                unescaped += '\f';
+                break;
+            case '(':
+                unescaped += '(';
+                break;
+            case ')':
+                unescaped += ')';
+                break;
+            case '\\':
+                unescaped += '\\';
+                break;
+            case '\n':
+                break;
+            case '\r':
+                if (i + 1 < value.size() && value[i + 1] == '\n')
+                    ++i;
+                break;
+            default:
+            {
+                if (value[i] >= '0' && value[i] <= '7')
+                {
+                    int octal = value[i] - '0';
+                    int count = 1;
+                    while (count < 3 && i + 1 < value.size() && value[i + 1] >= '0' &&
+                           value[i + 1] <= '7')
+                    {
+                        octal = octal * 8 + (value[++i] - '0');
+                        ++count;
+                    }
+                    if (octal <= 255)
+                        unescaped += static_cast<char>(octal);
+                }
+                else
+                {
+                    unescaped += value[i];
+                }
+                break;
+            }
+        }
+    }
+
+    return unescaped;
+}
+
+[[nodiscard]] inline bool name_byte_needs_escape(unsigned char c) noexcept
+{
+    if (c < 0x21 || c > 0x7E)
+        return true;
+
+    switch (c)
+    {
+        case '#': // 0x23
+        case '%': // 0x25
+        case '(': // 0x28
+        case ')': // 0x29
+        case '/': // 0x2F
+        case '<': // 0x3C
+        case '>': // 0x3E
+        case '[': // 0x5B
+        case ']': // 0x5D
+        case '{': // 0x7B
+        case '}': // 0x7D
+            return true;
+        default:
+            return false;
+    }
+}
+
+[[nodiscard]] inline std::string escape_name(std::string_view value)
+{
+    constexpr auto hex_char = [](unsigned int nibble) noexcept -> char
+    {
+        return nibble < 10 ? static_cast<char>('0' + nibble) : static_cast<char>('A' + nibble - 10);
+    };
+
+    std::string escaped;
+    escaped.reserve(value.size() + 8);
+
+    for (const unsigned char ch : value)
+    {
+        if (name_byte_needs_escape(ch))
+        {
+            escaped += '#';
+            escaped += hex_char((ch >> 4) & 0xF);
+            escaped += hex_char(ch & 0xF);
+        }
+        else
+        {
+            escaped += static_cast<char>(ch);
+        }
+    }
+
+    return escaped;
+}
+
+[[nodiscard]] inline std::string unescape_name(std::string_view value)
+{
+    constexpr auto hex_digit = [](unsigned char c) noexcept -> int
+    {
+        if (c >= '0' && c <= '9')
+            return c - '0';
+        if (c >= 'A' && c <= 'F')
+            return c - 'A' + 10;
+        if (c >= 'a' && c <= 'f')
+            return c - 'a' + 10;
+        return -1;
+    };
+
+    std::string unescaped;
+    unescaped.reserve(value.size());
+
+    for (std::size_t i = 0; i < value.size(); ++i)
+    {
+        if (value[i] == '#' && i + 2 < value.size())
+        {
+            const int hi = hex_digit(static_cast<unsigned char>(value[i + 1]));
+            const int lo = hex_digit(static_cast<unsigned char>(value[i + 2]));
+            if (hi >= 0 && lo >= 0)
+            {
+                unescaped += static_cast<char>(static_cast<unsigned char>((hi << 4) | lo));
+                i += 2;
+                continue;
+            }
+        }
+        unescaped += value[i];
+    }
+
+    return unescaped;
 }
 } // namespace ripper::pdf::core::text

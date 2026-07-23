@@ -69,8 +69,10 @@ cross_reference_section cross_reference_stream_parser::parse(const object_stream
                     break;
                 }
                 default:
-                    throw parse_exception{"Unknown xref stream entry type: " +
-                                          std::to_string(type_raw)};
+                    section.add_entry(cross_reference_entry::make_free(
+                        indirect_reference{obj_num, 0}, static_cast<std::uint32_t>(field1),
+                        static_cast<std::uint16_t>(field2)));
+                    break;
             }
 
             byte_offset += entry_size;

@@ -10,18 +10,16 @@
 
 namespace ripper::pdf::core
 {
-cross_reference_manager::cross_reference_manager(
-    std::vector<cross_reference_section> sections) noexcept
-    : sections_{std::move(sections)}
+cross_reference_manager::cross_reference_manager(std::vector<revision>& revisions) noexcept
+    : revisions_{&revisions}
 {
 }
 
 cross_reference_entry* cross_reference_manager::find(std::uint32_t object_number) noexcept
 {
-    // Scan newest-to-oldest (back-to-front in chronological storage).
-    for (auto it = sections_.rbegin(); it != sections_.rend(); ++it)
+    for (auto it = revisions_->rbegin(); it != revisions_->rend(); ++it)
     {
-        if (auto* e = it->find(object_number))
+        if (auto* e = it->section().find(object_number))
             return e;
     }
 
@@ -31,9 +29,9 @@ cross_reference_entry* cross_reference_manager::find(std::uint32_t object_number
 const cross_reference_entry*
 cross_reference_manager::find(std::uint32_t object_number) const noexcept
 {
-    for (auto it = sections_.rbegin(); it != sections_.rend(); ++it)
+    for (auto it = revisions_->rbegin(); it != revisions_->rend(); ++it)
     {
-        if (const auto* e = it->find(object_number))
+        if (const auto* e = it->section().find(object_number))
             return e;
     }
 
@@ -42,9 +40,9 @@ cross_reference_manager::find(std::uint32_t object_number) const noexcept
 
 cross_reference_entry* cross_reference_manager::find(const indirect_reference& ref) noexcept
 {
-    for (auto it = sections_.rbegin(); it != sections_.rend(); ++it)
+    for (auto it = revisions_->rbegin(); it != revisions_->rend(); ++it)
     {
-        if (auto* e = it->find(ref))
+        if (auto* e = it->section().find(ref))
             return e;
     }
 
@@ -54,9 +52,9 @@ cross_reference_entry* cross_reference_manager::find(const indirect_reference& r
 const cross_reference_entry*
 cross_reference_manager::find(const indirect_reference& ref) const noexcept
 {
-    for (auto it = sections_.rbegin(); it != sections_.rend(); ++it)
+    for (auto it = revisions_->rbegin(); it != revisions_->rend(); ++it)
     {
-        if (const auto* e = it->find(ref))
+        if (const auto* e = it->section().find(ref))
             return e;
     }
 
@@ -102,10 +100,9 @@ indirect_reference cross_reference_manager::allocate(std::unique_ptr<class indir
 std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::entries()
 {
     std::map<std::uint32_t, cross_reference_entry*> result;
-    // Iterate oldest-to-newest so that newer entries overwrite older ones.
-    for (auto& section : sections_)
+    for (auto& rev : *revisions_)
     {
-        for (auto& [num, ptr] : section.entries())
+        for (auto& [num, ptr] : rev.section().entries())
             result.insert_or_assign(num, ptr);
     }
 
@@ -128,8 +125,8 @@ std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::active_
 std::size_t cross_reference_manager::size() const noexcept
 {
     std::size_t total = 0;
-    for (const auto& section : sections_)
-        total += section.size();
+    for (const auto& rev : *revisions_)
+        total += rev.section().size();
 
     return total;
 }
@@ -137,57 +134,14 @@ std::size_t cross_reference_manager::size() const noexcept
 std::uint32_t cross_reference_manager::next_object_number() const noexcept
 {
     std::uint32_t result = 1;
-    for (const auto& section : sections_)
-        result = std::max(result, section.next_object_number());
+    for (const auto& rev : *revisions_)
+        result = std::max(result, rev.section().next_object_number());
 
     return result;
 }
 
-const std::vector<cross_reference_section>& cross_reference_manager::sections() const noexcept
-{
-    return sections_;
-}
-
-std::vector<cross_reference_section>& cross_reference_manager::sections() noexcept
-{
-    return sections_;
-}
-
 cross_reference_section& cross_reference_manager::active_section()
 {
-    if (sections_.empty())
-        sections_.emplace_back(std::vector<cross_reference_subsection>{});
-
-    return sections_.back();
-}
-
-cross_reference_section& cross_reference_manager::push_section()
-{
-    // Build object 0 — the mandatory free-list head (generation 65535, not in use).
-    cross_reference_subsection::entry_map entries;
-    entries.emplace(0, cross_reference_entry{indirect_reference{0, 65535}, 0, false});
-
-    std::vector<cross_reference_subsection> subsections;
-    subsections.emplace_back(0, std::move(entries));
-
-    sections_.emplace_back(std::move(subsections));
-
-    return sections_.back();
-}
-
-void cross_reference_manager::squash()
-{
-    auto active = active_entries();
-
-    cross_reference_section consolidated{{}};
-
-    // Move canonical entries in object-number order so add_entry's consecutive-grouping
-    // logic produces a single compact subsection with no unnecessary gaps.
-    for (auto& [num, ptr] : active)
-        consolidated.add_entry(std::move(*ptr));
-
-    // The old sections now hold only moved-from shells. Discard them.
-    sections_.clear();
-    sections_.push_back(std::move(consolidated));
+    return revisions_->back().section();
 }
 } // namespace ripper::pdf::core

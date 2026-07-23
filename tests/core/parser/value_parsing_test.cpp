@@ -59,4 +59,90 @@ TEST_CASE("parse_indirect_reference validates malformed values", "[parser][value
     pdf_lexer out_of_range{"4294967296 0 R"};
     REQUIRE_THROWS_AS((void)parse_indirect_reference(out_of_range), parse_exception);
 }
+
+TEST_CASE("parse_value unescapes hex in names", "[parser][value][name]")
+{
+    pdf_lexer lexer{"/A#28B#29C"};
+
+    const auto value = parse_value(lexer);
+
+    REQUIRE(value.is_name());
+    const auto* n = value.as_name();
+    REQUIRE(n != nullptr);
+    REQUIRE(n->value == "A(B)C");
+}
+
+TEST_CASE("parse_value unescapes space in names", "[parser][value][name]")
+{
+    pdf_lexer lexer{"/Foo#20Bar"};
+
+    const auto value = parse_value(lexer);
+
+    REQUIRE(value.is_name());
+    REQUIRE(value.as_name()->value == "Foo Bar");
+}
+
+TEST_CASE("parse_value unescapes hash in names", "[parser][value][name]")
+{
+    pdf_lexer lexer{"/Version#231"};
+
+    const auto value = parse_value(lexer);
+
+    REQUIRE(value.is_name());
+    REQUIRE(value.as_name()->value == "Version#1");
+}
+
+TEST_CASE("parse_value unescapes non-ASCII in names", "[parser][value][name]")
+{
+    pdf_lexer lexer{"/caf#C3#A9"};
+
+    const auto value = parse_value(lexer);
+
+    REQUIRE(value.is_name());
+    REQUIRE(value.as_name()->value == "caf\xC3\xA9");
+}
+
+TEST_CASE("parse_value preserves literal hash when not followed by hex", "[parser][value][name]")
+{
+    pdf_lexer lexer{"/ab#ZZ"};
+
+    const auto value = parse_value(lexer);
+
+    REQUIRE(value.is_name());
+    REQUIRE(value.as_name()->value == "ab#ZZ");
+}
+
+TEST_CASE("parse_value parses dictionary with escaped name keys", "[parser][value][name]")
+{
+    pdf_lexer lexer{"<< /A#20Key /Value >>"};
+
+    const auto value = parse_value(lexer);
+
+    REQUIRE(value.is_dictionary());
+    const auto* dict = value.as_dictionary();
+    REQUIRE(dict != nullptr);
+    REQUIRE(dict->contains("A Key"));
+    const auto* v = dict->get_name("A Key");
+    REQUIRE(v != nullptr);
+    REQUIRE(v->value == "Value");
+}
+
+TEST_CASE("parse_value roundtrips escaped names through serializer", "[parser][value][name]")
+{
+    pdf_lexer lexer{"<< /Key#28parens#29 /#3C#3E /Percent#25 /Slash#2F >>"};
+
+    const auto value = parse_value(lexer);
+
+    REQUIRE(value.is_dictionary());
+    const auto* dict = value.as_dictionary();
+    REQUIRE(dict != nullptr);
+
+    const auto* parens_key = dict->get_name("Key(parens)");
+    REQUIRE(parens_key != nullptr);
+    REQUIRE(parens_key->value == "<>");
+
+    const auto* percent_key = dict->get_name("Percent%");
+    REQUIRE(percent_key != nullptr);
+    REQUIRE(percent_key->value == "Slash/");
+}
 } // namespace ripper::pdf::core

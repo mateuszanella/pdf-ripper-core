@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/serializer/cross_reference_table/cross_reference_table_serializer.hpp"
 
 #include <cstdint>
@@ -15,17 +16,27 @@ namespace ripper::pdf::core
 /// dictionary and stream serialization to an injected `object_serializer`,
 /// following the same DI pattern as `trailer_serializer`.
 ///
-/// The xref stream is not a real document object — it encodes the xref table
-/// itself. The `N 0 obj` / `endobj` envelope is added directly without
-/// constructing a synthetic `indirect_object`.
+/// The xref stream is a real indirect object whose number is stored on the
+/// section via `set_xref_stream_object_number()`. The serializer uses that
+/// number for the `N 0 obj` / `endobj` envelope rather than a synthetic `0 0
+/// obj`, mirroring the parser's 1:1 correspondence with the file layout.
+///
+/// Trailer dictionary entries (Root, Info, ID, Encrypt, Prev) are merged into
+/// the xref stream dictionary, since the compressed xref stream replaces both
+/// the traditional `xref` keyword block and the `trailer` dictionary per
+/// PDF spec §7.5.8. Xref-specific keys (Type, Size, W, Index, Filter, Length)
+/// are computed from the section and take precedence over any trailer values.
 ///
 /// @see PDF spec §7.5.8
 class compressed_cross_reference_table_serializer : public cross_reference_table_serializer
 {
 public:
     /// Serialize a cross-reference section as an xref stream indirect object.
-    [[nodiscard]] std::vector<std::byte>
-    serialize(const cross_reference_section& section) const override;
+    ///
+    /// `trailer` carries the trailer dictionary entries that are merged into
+    /// the xref stream dictionary.
+    [[nodiscard]] std::vector<std::byte> serialize(const cross_reference_section& section,
+                                                   const trailer& trailer) const override;
 
     /// Inject the object serializer used to serialize the stream dictionary.
     void set_object_serializer(class object_serializer& serializer);

@@ -77,7 +77,7 @@ dictionary parse_dictionary(pdf_lexer& lexer)
         const auto key = lexer.next();
         auto val = parse_value(lexer);
 
-        dict.set(std::string{key.lexeme}, std::move(val));
+        dict.set(text::unescape_name(key.lexeme), std::move(val));
     }
     return dict;
 }
@@ -125,10 +125,16 @@ object parse_value(pdf_lexer& lexer)
     if (p.type == lexer_token_type::name)
     {
         const auto tok = lexer.next();
-        return object{name{std::string{tok.lexeme}}};
+        return object{name{text::unescape_name(tok.lexeme)}};
     }
 
-    if (p.type == lexer_token_type::literal_string || p.type == lexer_token_type::hex_string)
+    if (p.type == lexer_token_type::literal_string)
+    {
+        const auto tok = lexer.next();
+        return object{text::unescape_literal_string(tok.lexeme)};
+    }
+
+    if (p.type == lexer_token_type::hex_string)
     {
         const auto tok = lexer.next();
         return object{std::string{tok.lexeme}};
@@ -166,5 +172,36 @@ object parse_value(pdf_lexer& lexer)
     lexer.skip_value();
 
     return object{};
+}
+
+std::string_view extract_object_body(std::string_view content)
+{
+    pdf_lexer lexer{content};
+
+    // Find the 'obj' keyword token
+    lexer_token obj_token;
+    while (true)
+    {
+        auto token = lexer.next();
+        if (token.type == lexer_token_type::eof)
+            throw parse_exception{"Missing obj keyword in indirect object content"};
+
+        if (token.type == lexer_token_type::keyword && token.lexeme == "obj")
+        {
+            obj_token = token;
+            break;
+        }
+    }
+
+    /// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    const auto value_start = static_cast<std::size_t>(obj_token.lexeme.data() +
+                                                      obj_token.lexeme.size() - content.data());
+    /// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+    const auto endobj_pos = content.rfind("endobj");
+    if (endobj_pos == std::string_view::npos)
+        throw parse_exception{"Missing endobj keyword"};
+
+    return content.substr(value_start, endobj_pos - value_start);
 }
 } // namespace ripper::pdf::core

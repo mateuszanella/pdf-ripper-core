@@ -118,7 +118,7 @@ trailer
     REQUIRE(id->current().value() == "current");
 }
 
-TEST_CASE("default_trailer_parser skips unknown keys", "[parser][trailer]")
+TEST_CASE("default_trailer_parser preserves unknown keys", "[parser][trailer]")
 {
     default_trailer_parser parser;
 
@@ -127,8 +127,9 @@ trailer
 <<
 /Unknown /SomeName
 /Size 2
-/AnotherUnknown 123 456 false
+/AnotherUnknown 123
 /Root 1 0 R
+/XRefStm 500
 >>
 )");
 
@@ -137,6 +138,13 @@ trailer
     const auto root = result.root();
     REQUIRE(root.has_value());
     REQUIRE(root->object_number() == 1);
+
+    const auto& dict = result.dictionary();
+    REQUIRE(dict.get_name("Unknown") != nullptr);
+    REQUIRE(dict.get_integer("AnotherUnknown") != nullptr);
+    REQUIRE(*dict.get_integer("AnotherUnknown") == 123);
+    REQUIRE(dict.get_integer("XRefStm") != nullptr);
+    REQUIRE(*dict.get_integer("XRefStm") == 500);
 }
 
 TEST_CASE("default_trailer_parser throws on missing trailer keyword",
@@ -162,49 +170,52 @@ TEST_CASE("default_trailer_parser throws on unterminated dictionary",
     default_trailer_parser parser;
 
     REQUIRE_THROWS_WITH(parser.parse("trailer\n<<\n/Size 8\n/Root 1 0 R\n"),
-                        Catch::Matchers::ContainsSubstring("trailer"));
+                        Catch::Matchers::ContainsSubstring("Unexpected EOF"));
 }
 
-TEST_CASE("default_trailer_parser throws on invalid ID original string",
+TEST_CASE("default_trailer_parser throws when ID first element is not a string",
           "[parser][trailer][corrupted]")
 {
     default_trailer_parser parser;
 
-    REQUIRE_THROWS_WITH(
-        parser.parse(R"(
+    const auto result = parser.parse(R"(
 trailer
 <<
 /Size 1
 /Root 1 0 R
 /ID [123 456]
 >>
-)"),
-        Catch::Matchers::ContainsSubstring("Trailer ID original object must be a string"));
+)");
+
+    REQUIRE_THROWS_WITH(result.id(), Catch::Matchers::ContainsSubstring(
+                                         "Trailer /ID first element is not a string"));
 }
 
-TEST_CASE("default_trailer_parser throws on invalid ID current string",
+TEST_CASE("default_trailer_parser silently drops non-string second ID element",
           "[parser][trailer][corrupted]")
 {
     default_trailer_parser parser;
 
-    REQUIRE_THROWS_WITH(
-        parser.parse(R"(
+    const auto result = parser.parse(R"(
 trailer
 <<
 /Size 1
 /Root 1 0 R
 /ID [<ABC> 123]
 >>
-)"),
-        Catch::Matchers::ContainsSubstring("Trailer ID current object must be a string"));
+)");
+
+    const auto id = result.id();
+    REQUIRE(id.has_value());
+    REQUIRE(id->original() == "ABC");
+    REQUIRE_FALSE(id->current().has_value());
 }
 
 TEST_CASE("default_trailer_parser throws on unterminated ID array", "[parser][trailer][corrupted]")
 {
     default_trailer_parser parser;
 
-    REQUIRE_THROWS_WITH(
-        parser.parse(R"(
+    REQUIRE_THROWS_WITH(parser.parse(R"(
 trailer
 <<
 /Size 1
@@ -212,7 +223,7 @@ trailer
 /ID [<ABC> <DEF> % unterminated
 >>
 )"),
-        Catch::Matchers::ContainsSubstring("Trailer ID array is not properly terminated"));
+                        Catch::Matchers::ContainsSubstring("Expected a value but got an invalid"));
 }
 
 TEST_CASE("default_trailer_parser handles null Prev gracefully", "[parser][trailer]")

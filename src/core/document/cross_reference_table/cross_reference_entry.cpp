@@ -8,7 +8,8 @@ namespace ripper::pdf::core
 cross_reference_entry::cross_reference_entry(indirect_reference ref, std::uint64_t offset,
                                              bool in_use) noexcept
     : reference_{ref}, type_{in_use ? xref_entry_type::uncompressed : xref_entry_type::free},
-      field1_{offset}, field2_{0}, is_new_{false}, object_{nullptr}
+      field1_{offset}, field2_{in_use ? 0U : static_cast<std::uint32_t>(ref.generation())},
+      is_new_{false}, object_{nullptr}
 {
 }
 

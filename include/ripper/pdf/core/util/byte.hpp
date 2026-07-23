@@ -60,8 +60,8 @@ inline void append_bytes(std::vector<std::byte>& out, const std::vector<std::byt
 }
 
 /// Advance `pos` past consecutive whitespace bytes within [0, limit).
-[[nodiscard]] inline std::size_t skip_whitespace(std::span<const std::byte> data,
-                                                  std::size_t pos, std::size_t limit) noexcept
+[[nodiscard]] inline std::size_t skip_whitespace(std::span<const std::byte> data, std::size_t pos,
+                                                 std::size_t limit) noexcept
 {
     while (pos < limit && is_whitespace(data[pos]))
         ++pos;
@@ -70,7 +70,7 @@ inline void append_bytes(std::vector<std::byte>& out, const std::vector<std::byt
 
 /// Advance `pos` past consecutive non-whitespace bytes within [0, limit).
 [[nodiscard]] inline std::size_t skip_non_whitespace(std::span<const std::byte> data,
-                                                      std::size_t pos, std::size_t limit) noexcept
+                                                     std::size_t pos, std::size_t limit) noexcept
 {
     while (pos < limit && !is_whitespace(data[pos]))
         ++pos;

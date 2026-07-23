@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
+#include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/serializer/cross_reference_table/cross_reference_table_serializer.hpp"
 
 #include <cstddef>
@@ -22,7 +23,7 @@ public:
     ~default_cross_reference_table_serializer() override = default;
 
     /// Serialize a single cross-reference section to a byte buffer.
-    [[nodiscard]] std::vector<std::byte>
-    serialize(const cross_reference_section& section) const override;
+    [[nodiscard]] std::vector<std::byte> serialize(const cross_reference_section& section,
+                                                   const trailer& trailer) const override;
 };
 } // namespace ripper::pdf::core

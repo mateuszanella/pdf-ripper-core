@@ -6,9 +6,9 @@
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/document/objstm.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
-#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -66,8 +66,9 @@ std::string indirect_object_resolver::resolve_uncompressed(indirect_reference re
     // Determine the byte range occupied by this object on disk
     std::optional<std::uint64_t> next_offset;
 
-    for (auto& section : xref.sections())
+    for (auto& rev : document_.revisions().all())
     {
+        auto& section = rev.section();
         for (const auto& entry_pair : section.entries())
         {
             const auto& off = entry_pair.second->offset();
@@ -114,38 +115,36 @@ std::string indirect_object_resolver::resolve_uncompressed(indirect_reference re
     for (std::size_t i = 0; i < bytes_read; ++i)
         source[i] = static_cast<char>(bytes[i]);
 
-    const auto obj_kw = source.find(" obj");
-    if (obj_kw == std::string::npos)
-        throw parse_exception{"Missing obj marker for indirect object"};
+    pdf_lexer lexer{source};
 
-    std::size_t header_start = obj_kw;
-    while (header_start > 0 && source[header_start - 1] != '\n' && source[header_start - 1] != '\r')
-        --header_start;
+    auto n_token = lexer.next();
+    if (n_token.type != lexer_token_type::integer)
+        throw parse_exception{"Expected object number in indirect object header"};
 
-    std::size_t num_end = header_start;
-    while (num_end < source.size() && std::isdigit(static_cast<unsigned char>(source[num_end])))
-        ++num_end;
-
-    const auto parsed_obj = text::parse_u32(source.substr(header_start, num_end - header_start));
-
-    std::size_t gen_start = num_end;
-    while (gen_start < source.size() && source[gen_start] == ' ')
-        ++gen_start;
-
-    std::size_t gen_end = gen_start;
-    while (gen_end < source.size() && std::isdigit(static_cast<unsigned char>(source[gen_end])))
-        ++gen_end;
-
-    const auto parsed_gen = text::parse_u16(source.substr(gen_start, gen_end - gen_start));
-
+    const auto parsed_obj = text::parse_u32(n_token.lexeme);
     if (!parsed_obj || *parsed_obj != ref.object_number())
         throw parse_exception{"Object number mismatch in indirect object header"};
+
+    auto g_token = lexer.next();
+    if (g_token.type != lexer_token_type::integer)
+        throw parse_exception{"Expected generation number in indirect object header"};
+
+    const auto parsed_gen = text::parse_u16(g_token.lexeme);
 
     if (!parsed_gen.has_value() && ref.generation() != 0)
         throw parse_exception{"Generation number mismatch in indirect object header"};
 
     if (parsed_gen.has_value() && *parsed_gen != ref.generation())
         throw parse_exception{"Generation number mismatch in indirect object header"};
+
+    auto obj_token = lexer.next();
+    if (obj_token.type != lexer_token_type::keyword || obj_token.lexeme != "obj")
+        throw parse_exception{"Missing obj marker for indirect object"};
+
+    /// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    const auto value_start =
+        static_cast<std::size_t>(obj_token.lexeme.data() + obj_token.lexeme.size() - source.data());
+    /// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
     const auto endobj_pos = source.rfind("endobj");
     if (endobj_pos == std::string::npos)
@@ -154,7 +153,7 @@ std::string indirect_object_resolver::resolve_uncompressed(indirect_reference re
                               std::to_string(target_offset) + ", bound " +
                               std::to_string(read_end) + ")"};
 
-    return source.substr(header_start, endobj_pos - header_start + 6);
+    return source.substr(value_start, endobj_pos - value_start);
 }
 
 std::string indirect_object_resolver::resolve_compressed(indirect_reference ref,

@@ -4,9 +4,10 @@
 #include "ripper/io/core/writer/writer.hpp"
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "ripper/pdf/core/document/document_structure.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object_manager.hpp"
+#include "ripper/pdf/core/document/revision.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/document_save_strategy/document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/save_strategy_type.hpp"
@@ -15,7 +16,6 @@
 
 #include <filesystem>
 #include <memory>
-#include <optional>
 
 namespace ripper::pdf::core
 {
@@ -67,7 +67,7 @@ public:
     /// Save the document to the configured writer backend.
     ///
     /// Uses the currently injected save strategy (see `set_save_strategy()`),
-    /// which defaults to `linearize_document_save_strategy` (full rewrite).
+    /// which defaults to `consolidate_document_save_strategy` (full rewrite).
     ///
     /// @throws logic_exception if no writer or serializer is available.
     void save();
@@ -129,13 +129,24 @@ public:
     [[nodiscard]] class header& header();
 
     /// Parse and return the cross-reference manager (cached).
-    /// Changes made to the returned manager are reflected in the document on save.
+    ///
+    /// The cross-reference manager is a compiled view over all revisions with
+    /// newest-wins lookup semantics for duplicate object numbers. Changes made
+    /// to the returned manager are reflected in the document on save.
     [[nodiscard]] class cross_reference_manager& cross_reference_table();
 
     /// Parse and return the trailer manager (cached).
+    ///
     /// Use `trailer().compiled()` for the merged view, or `trailer().active_trailer()`
     /// to modify the current revision's trailer.
     [[nodiscard]] class trailer_manager& trailer();
+
+    /// Return the revision manager (cached).
+    ///
+    /// Provides direct access to the ordered list of revisions, the active revision,
+    /// and the view-managers (xref, trailer). Use `revisions()` to enumerate all
+    /// revisions for save strategies or introspection.
+    [[nodiscard]] class revision_manager& revisions();
 
     /// Return a view over the document catalog.
     ///
@@ -164,41 +175,46 @@ public:
     /// @throws logic_exception if the object is not found or no active section exists.
     class indirect_object& resolve_object_to_active_revision(indirect_reference ref);
 
-    /// Create a new revision (xref section + trailer) for incremental updates.
+    /// Create a new revision for incremental updates.
     ///
-    /// Appends a new cross-reference section with object 0 (free-list head) and
-    /// a matching trailer with `/Size` set and `/Prev` pointing to the previous
-    /// section's `startxref_offset()` (if one exists).
+    /// Appends a new revision with a cross-reference section (pre-populated with object 0,
+    /// the free-list head) and a matching trailer with `/Size` set and `/Prev` pointing to
+    /// the previous revision's section `startxref_offset()` (if one exists).
     ///
     /// After calling this method, existing objects can be cloned into the new
     /// revision using `resolve_object_to_active_revision()` or by calling
     /// `rebind_to_active_revision()` on any instance of `object_view`. New
-    /// objects can be added via `reserve()` / `allocate()` on the returned section.
+    /// objects can be added via `reserve()` / `allocate()` on the active section.
     ///
     /// Convenience wrappers (e.g. `pages::add_page()`) automatically rebind
     /// themselves to the active revision, so most users only need to call
     /// `create_new_revision()` before making changes and saving incrementally.
     ///
-    /// For full manual control, use `add_entry_from()` on the returned section
-    /// to deep-copy individual entries into the new revision.
-    ///
-    /// @return A mutable reference to the newly created section.
-    cross_reference_section& create_new_revision();
+    /// @return A mutable reference to the newly created revision.
+    class revision& create_new_revision();
 
 private:
-    /// Parse and return the assembled document structure (xref + trailer + histories) (cached).
-    [[nodiscard]] class document_structure& structure();
+    /// Lazy-initialize and return the revision manager — the entrypoint through which
+    /// all parsed document state (xref entries, trailers, revisions) is accessed.
+    [[nodiscard]] class revision_manager& initialize_revision_manager();
 
+    /// The underlying reader for the PDF file.
     std::unique_ptr<ripper::io::core::reader> reader_;
+    /// The parser for the PDF file. Always present when a reader is available.
     std::unique_ptr<class parser> parser_;
 
+    /// The underlying writer for the PDF file.
     std::unique_ptr<ripper::io::core::writer> writer_;
+    /// The serializer for the PDF file. Always present when a writer is available.
     std::unique_ptr<class serializer> serializer_;
 
+    /// The current save strategy implementation.
     std::unique_ptr<class document_save_strategy> save_strategy_;
 
+    /// The parsed header of the PDF file.
     std::optional<class header> header_;
 
-    std::optional<class document_structure> structure_;
+    /// The lazily-initialized revision manager (xrefs + trailers).
+    std::unique_ptr<class revision_manager> revision_manager_;
 };
 } // namespace ripper::pdf::core

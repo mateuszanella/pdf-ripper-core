@@ -1,16 +1,17 @@
 #pragma once
 
+#include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/parser/cross_reference_table/cross_reference_table_parser.hpp"
+#include "ripper/pdf/core/parser/header/header_parser.hpp"
+#include "ripper/pdf/core/parser/indirect_object_resolver.hpp"
+#include "ripper/pdf/core/parser/object_parser.hpp"
+#include "ripper/pdf/core/parser/revision_history/revision_history_parser.hpp"
+#include "ripper/pdf/core/parser/trailer/trailer_parser.hpp"
+
 #include <memory>
 
 namespace ripper::pdf::core
 {
-class document;
-class header_parser;
-class cross_reference_table_parser;
-class trailer_parser;
-class object_parser;
-class document_structure_parser;
-class indirect_object_resolver;
 
 /// Owns and exposes the parser subcomponents used to process a `document`.
 ///
@@ -23,10 +24,7 @@ public:
     /// Construct a manager bound to `doc`.
     ///
     /// The manager stores a reference and does not take ownership of the document.
-    explicit parser_manager(document& doc);
-
-    /// Destroy the manager and all owned parser components.
-    ~parser_manager();
+    explicit parser_manager(class document& doc);
 
     /// Replace the header parser implementation.
     void set_header_parser(std::unique_ptr<class header_parser> object);
@@ -38,8 +36,8 @@ public:
     /// Replace the trailer parser implementation.
     void set_trailer_parser(std::unique_ptr<class trailer_parser> object);
 
-    /// Replace the document-structure parser implementation.
-    void set_document_structure_parser(std::unique_ptr<class document_structure_parser> object);
+    /// Replace the revision-history parser implementation.
+    void set_revision_history_parser(std::unique_ptr<class revision_history_parser> object);
 
     /// Replace the indirect-indirect_object resolver implementation.
     void set_indirect_object_resolver(std::unique_ptr<class indirect_object_resolver> object);
@@ -56,8 +54,8 @@ public:
     /// Access the configured trailer parser.
     [[nodiscard]] class trailer_parser& trailer_parser();
 
-    /// Access the configured document-structure parser.
-    [[nodiscard]] class document_structure_parser& document_structure_parser();
+    /// Access the configured revision-history parser.
+    [[nodiscard]] class revision_history_parser& revision_history_parser();
 
     /// Access the configured indirect-indirect_object resolver.
     [[nodiscard]] class indirect_object_resolver& object_resolver();
@@ -66,12 +64,12 @@ public:
     [[nodiscard]] class object_parser& object_parser();
 
 private:
-    document& document_;
+    document* document_;
 
     std::unique_ptr<class header_parser> header_parser_;
     std::unique_ptr<class cross_reference_table_parser> xref_parser_;
     std::unique_ptr<class trailer_parser> trailer_parser_;
-    std::unique_ptr<class document_structure_parser> structure_parser_;
+    std::unique_ptr<class revision_history_parser> revision_parser_;
     std::unique_ptr<class indirect_object_resolver> object_resolver_;
     std::unique_ptr<class object_parser> object_parser_;
 };

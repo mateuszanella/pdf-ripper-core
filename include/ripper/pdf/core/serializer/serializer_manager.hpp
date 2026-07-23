@@ -5,12 +5,15 @@
 #include "ripper/pdf/core/serializer/header/header_serializer.hpp"
 #include "ripper/pdf/core/serializer/indirect_object/indirect_object_serializer.hpp"
 #include "ripper/pdf/core/serializer/object/object_serializer.hpp"
+#include "ripper/pdf/core/serializer/revision_serializer.hpp"
 #include "ripper/pdf/core/serializer/trailer/trailer_serializer.hpp"
 
 #include <memory>
 
 namespace ripper::pdf::core
 {
+class revision_serializer;
+
 /// Owns and exposes the serializer subcomponents used to process a `document`.
 ///
 /// This type centralizes serializer dependencies and enables runtime injection
@@ -29,13 +32,18 @@ public:
 
     /// Replace the object value serializer.
     ///
-    /// Also propagates to the indirect_object_serializer so both stay in sync.
+    /// Also propagates to the indirect_object_serializer, the trailer_serializer,
+    /// and any injected `compressed_cross_reference_table_serializer` so all stay in sync.
     void set_object_serializer(std::unique_ptr<class object_serializer> object);
 
     /// Replace the indirect-object serializer implementation.
     void set_indirect_object_serializer(std::unique_ptr<class indirect_object_serializer> object);
 
     /// Replace the cross-reference table serializer implementation.
+    ///
+    /// When the injected serializer is a `compressed_cross_reference_table_serializer`,
+    /// the currently-configured object serializer (if any) is automatically propagated
+    /// to it so its dictionary serialization has the dependencies it needs.
     void set_cross_reference_table_serializer(
         std::unique_ptr<class cross_reference_table_serializer> object);
 
@@ -63,13 +71,21 @@ public:
     /// Access the configured trailer serializer.
     [[nodiscard]] class trailer_serializer& trailer_serializer();
 
+    /// Access the revision serializer.
+    ///
+    /// The revision serializer is created lazily on first access using the currently
+    /// configured cross-reference-table and trailer serializers. It orchestrates the
+    /// serialization of a single PDF revision (compressed or traditional).
+    [[nodiscard]] class revision_serializer& revision_serializer();
+
 private:
-    const document& document_;
+    const document* document_;
 
     std::unique_ptr<class header_serializer> header_serializer_;
     std::unique_ptr<class object_serializer> object_serializer_;
     std::unique_ptr<class indirect_object_serializer> indirect_object_serializer_;
     std::unique_ptr<class cross_reference_table_serializer> cross_reference_table_serializer_;
     std::unique_ptr<class trailer_serializer> trailer_serializer_;
+    std::unique_ptr<class revision_serializer> revision_serializer_;
 };
 } // namespace ripper::pdf::core

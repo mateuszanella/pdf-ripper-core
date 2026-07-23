@@ -142,6 +142,27 @@ public:
     /// serializer after writing the section to record its final offset.
     void set_startxref_offset(std::uint64_t offset) noexcept;
 
+    /// Returns `true` if this section is a compressed cross-reference stream (PDF 1.5+).
+    ///
+    /// A compressed xref section serializes as an indirect object (the xref stream) rather
+    /// than as a traditional `xref` keyword + `trailer` block. The object number of the xref
+    /// stream is available via `xref_stream_object_number()`.
+    [[nodiscard]] bool is_compressed() const noexcept;
+
+    /// Returns the object number of the cross-reference stream indirect object for this section.
+    ///
+    /// Only meaningful when `is_compressed()` is `true`; returns `std::nullopt` for
+    /// traditional cross-reference table sections.
+    [[nodiscard]] std::optional<std::uint32_t> xref_stream_object_number() const noexcept;
+
+    /// Set the object number of the cross-reference stream indirect object for this section.
+    ///
+    /// Called by the parser when it encounters a compressed xref stream, or by the save
+    /// strategy when it reserves an object number for the xref stream. Setting this to a
+    /// value makes `is_compressed()` return `true`; clearing it (passing `std::nullopt`)
+    /// makes the section a traditional xref table section again.
+    void set_xref_stream_object_number(std::optional<std::uint32_t> object_number) noexcept;
+
     /// Append a new entry to this section, grouping it into a subsection automatically.
     ///
     /// If the entry's object number is exactly one greater than the last object number in
@@ -163,5 +184,6 @@ public:
 private:
     std::vector<cross_reference_subsection> subsections_;
     std::optional<std::uint64_t> startxref_offset_;
+    std::optional<std::uint32_t> xref_stream_object_number_;
 };
 } // namespace ripper::pdf::core

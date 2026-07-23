@@ -1,9 +1,8 @@
 #pragma once
 
 #include "ripper/io/core/reader/reader.hpp"
-#include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/parser/cross_reference_table/cross_reference_table_parser.hpp"
-#include "ripper/pdf/core/parser/document_structure/document_structure_parser.hpp"
+#include "ripper/pdf/core/parser/revision_history/revision_history_parser.hpp"
 #include "ripper/pdf/core/parser/trailer/trailer_parser.hpp"
 
 #include <memory>
@@ -11,16 +10,19 @@
 
 namespace ripper::pdf::core
 {
-class default_document_structure_parser : public document_structure_parser
+class document;
+class trailer;
+
+class default_revision_history_parser : public revision_history_parser
 {
 public:
-    explicit default_document_structure_parser(document& document);
+    explicit default_revision_history_parser(document& document);
 
-    default_document_structure_parser(
-        document& document, std::unique_ptr<class cross_reference_table_parser> xref_parser,
-        std::unique_ptr<class trailer_parser> trailer_parser);
+    default_revision_history_parser(document& document,
+                                    std::unique_ptr<class cross_reference_table_parser> xref_parser,
+                                    std::unique_ptr<class trailer_parser> trailer_parser);
 
-    [[nodiscard]] document_structure parse();
+    [[nodiscard]] std::unique_ptr<revision_manager> parse() override;
 
 private:
     document& _document;

@@ -4,17 +4,15 @@
 #include "ripper/io/core/writer/writer.hpp"
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
-#include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
-#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
-#include "ripper/pdf/core/document/header.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
+#include "ripper/pdf/core/document/revision.hpp"
+#include "ripper/pdf/core/document/revision_manager.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
-#include "ripper/pdf/core/document/trailer/trailer_manager.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/serializer/serializer.hpp"
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -34,18 +32,16 @@ void incremental_document_save_strategy::save(document& doc)
     if (!doc.has_serializer())
         throw logic_exception{"No serializer available"};
 
-    auto& sections = doc.cross_reference_table().sections();
-    auto& trailers = doc.trailer().trailers();
+    auto& revisions = doc.revisions().all();
 
-    if (sections.empty())
-        throw logic_exception{"No cross-reference sections available"};
+    if (revisions.empty())
+        throw logic_exception{"No revisions available"};
 
     auto& r = *doc.reader();
     auto& w = *doc.writer();
     auto& s = *doc.serializer();
 
-    // Step 1: Write the original file bytes verbatim from reader to writer.
-    constexpr std::size_t k_copy_buf_size = 1u << 20; // 1 MiB
+    constexpr std::size_t k_copy_buf_size = 1u << 20;
     r.seek(0);
 
     std::array<std::byte, k_copy_buf_size> copy_buf{};
@@ -59,29 +55,25 @@ void incremental_document_save_strategy::save(document& doc)
         (void)w.write(std::span{copy_buf.data(), bytes_read});
     }
 
-    // Step 2: Determine the /Prev chain start (the last original section's xref offset).
     std::optional<std::uint64_t> prev_xref_start;
 
-    // Walk sections newest-to-oldest to find the last one that was written to disk.
-    for (auto it = sections.rbegin(); it != sections.rend(); ++it)
+    for (auto it = revisions.rbegin(); it != revisions.rend(); ++it)
     {
-        if (it->startxref_offset().has_value())
+        if (it->section().startxref_offset().has_value())
         {
-            prev_xref_start = it->startxref_offset();
+            prev_xref_start = it->section().startxref_offset();
             break;
         }
     }
 
-    // Step 3: Write each in-memory section (no startxref_offset set) as a new revision.
-    for (std::size_t i = 0; i < sections.size(); ++i)
+    for (std::size_t i = 0; i < revisions.size(); ++i)
     {
-        auto& section = sections[i];
+        auto& rev = revisions[i];
 
-        if (section.startxref_offset().has_value())
-            continue; // A section that was already written to disk.
+        if (rev.section().startxref_offset().has_value())
+            continue;
 
-        // Resolve every unresolved in-use entry so its indirect_object is in memory.
-        for (auto [number, entry_ptr] : section.entries())
+        for (auto [number, entry_ptr] : rev.section().entries())
         {
             auto& entry = *entry_ptr;
 
@@ -92,8 +84,7 @@ void incremental_document_save_strategy::save(document& doc)
                 doc.resolve_object(entry.reference());
         }
 
-        // Serialize and write all in-use objects.
-        for (auto [number, entry_ptr] : section.entries())
+        for (auto [number, entry_ptr] : rev.section().entries())
         {
             auto& entry = *entry_ptr;
 
@@ -111,21 +102,30 @@ void incremental_document_save_strategy::save(document& doc)
 
         auto xref_start = static_cast<std::uint64_t>(w.tell());
 
-        (void)w.write(s.serialize_cross_reference_section(section));
-        section.set_startxref_offset(xref_start);
+        if (prev_xref_start.has_value())
+            rev.trailer().dictionary().set("Prev",
+                                           object{static_cast<std::int64_t>(*prev_xref_start)});
+        else
+            rev.trailer().dictionary().remove("Prev");
 
-        // Write the corresponding trailer, fixing up /Prev.
-        if (i < trailers.size())
+        const auto* prev_id_arr =
+            (i > 0) ? revisions[i - 1].trailer().dictionary().get_array("ID") : nullptr;
+
+        if (prev_id_arr != nullptr && !prev_id_arr->empty())
         {
-            auto& t = trailers[i];
+            array new_id;
+            new_id.push_back((*prev_id_arr)[0]);
 
-            if (prev_xref_start.has_value())
-                t.dictionary().set("Prev", object{static_cast<std::int64_t>(*prev_xref_start)});
-            else
-                t.dictionary().remove("Prev");
+            auto new_current =
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
 
-            (void)w.write(s.serialize_trailer(t, xref_start));
+            new_id.push_back(object{std::move(new_current)});
+
+            rev.trailer().dictionary().set("ID", object{std::move(new_id)});
         }
+
+        (void)w.write(s.serialize_revision(rev, xref_start));
+        rev.section().set_startxref_offset(xref_start);
 
         prev_xref_start = xref_start;
     }

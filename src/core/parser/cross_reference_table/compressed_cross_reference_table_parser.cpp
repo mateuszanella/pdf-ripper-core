@@ -7,6 +7,7 @@
 #include "ripper/pdf/core/parser/object_parser.hpp"
 #include "ripper/pdf/core/parser/parser.hpp"
 #include "ripper/pdf/core/parser/parser_manager.hpp"
+#include "ripper/pdf/core/parser/value_parsing.hpp"
 
 namespace ripper::pdf::core
 {
@@ -18,6 +19,8 @@ compressed_cross_reference_table_parser::parse(document& doc, std::string_view c
     auto* parser = doc.parser();
     if (parser == nullptr)
         throw logic_exception{"No parser available to parse xref stream"};
+
+    content = extract_object_body(content);
 
     auto parsed_obj = parser->manager().object_parser().parse(doc, temp_ref, content);
 

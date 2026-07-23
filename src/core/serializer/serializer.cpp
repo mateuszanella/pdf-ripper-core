@@ -1,10 +1,10 @@
 #include "ripper/pdf/core/serializer/serializer.hpp"
 
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/header.hpp"
 #include "ripper/pdf/core/document/object/indirect_object.hpp"
-#include "ripper/pdf/core/document/trailer/trailer.hpp"
+#include "ripper/pdf/core/document/revision.hpp"
+#include "ripper/pdf/core/serializer/revision_serializer.hpp"
 #include "ripper/pdf/core/serializer/serializer_manager.hpp"
 
 #include <cstdint>
@@ -47,13 +47,20 @@ std::vector<std::byte> serializer::serialize_indirect_object(const indirect_obje
 }
 
 std::vector<std::byte>
-serializer::serialize_cross_reference_section(const cross_reference_section& section)
+serializer::serialize_cross_reference_section(const cross_reference_section& section,
+                                              const trailer& trailer)
 {
-    return manager().cross_reference_table_serializer().serialize(section);
+    return manager().cross_reference_table_serializer().serialize(section, trailer);
 }
 
 std::vector<std::byte> serializer::serialize_trailer(const trailer& t, std::uint64_t xref_offset)
 {
     return manager().trailer_serializer().serialize(t, xref_offset);
+}
+
+std::vector<std::byte> serializer::serialize_revision(const revision& rev,
+                                                      std::uint64_t xref_offset)
+{
+    return manager().revision_serializer().serialize(rev, xref_offset);
 }
 } // namespace ripper::pdf::core

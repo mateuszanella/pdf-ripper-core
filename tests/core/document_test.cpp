@@ -66,6 +66,31 @@ TEST_CASE("document writes and re-opens a created PDF", "[document][e2e][write]"
     REQUIRE(read_back_doc.catalog().pages().count() == 3);
 }
 
+TEST_CASE("add_page updates /Count on the pages node", "[document][e2e][write]")
+{
+    test_fixture::scoped_temp_file output{"pdf_ripper_core_document_add_count_test.pdf"};
+
+    auto writer_doc = document::create(output.path());
+
+    auto pages = writer_doc.catalog().pages();
+    REQUIRE(pages.count() == 0);
+
+    (void)pages.add_page();
+    REQUIRE(pages.count() == 1);
+
+    (void)pages.add_page();
+    REQUIRE(pages.count() == 2);
+
+    (void)pages.add_page();
+    REQUIRE(pages.count() == 3);
+
+    REQUIRE_NOTHROW(writer_doc.save());
+    REQUIRE(std::filesystem::exists(output.path()));
+
+    auto read_back_doc = document::open(output.path());
+    REQUIRE(read_back_doc.catalog().pages().count() == 3);
+}
+
 TEST_CASE("document edits an already existing PDF", "[document][e2e][write]")
 {
     test_fixture::scoped_temp_file output_file{"pdf_ripper_core_document_edit_test.pdf"};
