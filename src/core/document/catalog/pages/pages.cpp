@@ -150,6 +150,33 @@ class page pages::add_page()
 
     d->set("Count", object{static_cast<std::int64_t>(count + 1)});
 
+    auto node = page_tree_node{obj()};
+    while (true)
+    {
+        node.rebind_to_active_revision();
+
+        auto up = node.parent();
+        if (!up)
+            break;
+
+        up->rebind_to_active_revision();
+
+        auto* pd = up->obj().dictionary();
+        if (pd == nullptr)
+            break;
+
+        auto* pc = pd->get_integer("Count");
+        if (pc == nullptr)
+            break;
+
+        pd->set("Count", object{*pc + 1});
+
+        if (up->is_root())
+            break;
+
+        node = *up;
+    }
+
     return ripper::pdf::core::page{*raw_page};
 }
 

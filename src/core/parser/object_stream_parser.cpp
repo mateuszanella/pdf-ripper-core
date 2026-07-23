@@ -17,6 +17,11 @@ std::vector<indirect_object> object_stream_parser::parse(document& doc,
                                                          const object_stream& stream_obj)
 {
     const auto& dict = stream_obj.dictionary();
+
+    const auto* type = dict.get_name("Type");
+    if (type == nullptr || type->value != "ObjStm")
+        throw parse_exception{"Object stream must have /Type /ObjStm"};
+
     const auto content = stream_obj.raw();
 
     const auto* n_ptr = dict.get_integer("N");
@@ -109,6 +114,10 @@ std::vector<indirect_object> object_stream_parser::parse(document& doc,
         // Parse the object value
         pdf_lexer lexer{obj_sv};
         auto obj_value = parse_value(lexer);
+
+        if (obj_value.is_stream())
+            throw parse_exception{
+                "Object stream shall not contain stream objects (ISO 32000-1 §7.6.3)"};
 
         // Create indirect_object with identity
         const indirect_reference ref{obj_num, 0};

@@ -12,6 +12,7 @@
 #include "ripper/pdf/core/serializer/serializer.hpp"
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -106,6 +107,22 @@ void incremental_document_save_strategy::save(document& doc)
                                            object{static_cast<std::int64_t>(*prev_xref_start)});
         else
             rev.trailer().dictionary().remove("Prev");
+
+        const auto* prev_id_arr =
+            (i > 0) ? revisions[i - 1].trailer().dictionary().get_array("ID") : nullptr;
+
+        if (prev_id_arr != nullptr && !prev_id_arr->empty())
+        {
+            array new_id;
+            new_id.push_back((*prev_id_arr)[0]);
+
+            auto new_current =
+                std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+
+            new_id.push_back(object{std::move(new_current)});
+
+            rev.trailer().dictionary().set("ID", object{std::move(new_id)});
+        }
 
         (void)w.write(s.serialize_revision(rev, xref_start));
         rev.section().set_startxref_offset(xref_start);

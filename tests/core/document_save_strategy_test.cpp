@@ -1,6 +1,7 @@
 #include "ripper/io/core/reader/file_reader.hpp"
 #include "ripper/io/core/writer/file_writer.hpp"
 #include "ripper/pdf/core/document.hpp"
+#include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document_save_strategy/consolidate_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/incremental_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/raw_document_save_strategy.hpp"
@@ -377,5 +378,36 @@ TEST_CASE("incremental save with multiple new sections", "[document][e2e][save][
     auto read_back = document::open(output.path());
     REQUIRE(read_back.revisions().all().size() == 3);
     REQUIRE(read_back.catalog().pages().count() == 3);
+}
+
+TEST_CASE("incremental save preserves first /ID element and generates new second",
+          "[document][e2e][save][incremental]")
+{
+    test_fixture::scoped_temp_file output{"pdf_ripper_core_inc_id_test.pdf"};
+
+    const auto input_path = test_fixture::fixture_pdf_path();
+    REQUIRE(std::filesystem::exists(input_path));
+
+    auto reader = std::make_unique<ripper::io::core::file_reader>(input_path);
+    auto writer = std::make_unique<ripper::io::core::file_writer>(output.path());
+    document doc{std::move(reader), std::move(writer)};
+
+    {
+        array id_arr;
+        id_arr.push_back(object{std::string{"original-id-hash"}});
+        auto& first_trailer = doc.revisions().all()[0].trailer();
+        first_trailer.dictionary().set("ID", object{std::move(id_arr)});
+    }
+
+    doc.create_new_revision();
+
+    REQUIRE_NOTHROW(doc.save(save_strategy_type::incremental));
+    REQUIRE(std::filesystem::exists(output.path()));
+
+    auto read_back = document::open(output.path());
+    auto id = read_back.trailer().compiled().id();
+    REQUIRE(id.has_value());
+    REQUIRE(id->original() == "original-id-hash");
+    REQUIRE(id->current().has_value());
 }
 } // namespace ripper::pdf::core
