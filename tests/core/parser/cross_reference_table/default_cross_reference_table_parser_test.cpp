@@ -92,6 +92,7 @@ trailer
     auto* entry = section.find(0);
     REQUIRE(entry != nullptr);
     REQUIRE(entry->reference().generation() == 65535);
+    REQUIRE(entry->reuse_generation() == 65535);
     REQUIRE_FALSE(entry->in_use());
 }
 

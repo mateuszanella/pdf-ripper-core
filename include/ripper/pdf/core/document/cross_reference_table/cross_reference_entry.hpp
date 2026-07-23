@@ -23,8 +23,9 @@ enum class xref_entry_type : std::uint8_t
 /// Uses flat storage aligned with the PDF xref stream binary format:
 /// - `field1_` holds the type-interpreted value (byte offset, object stream number,
 ///   or next-free-object number).
-/// - `field2_` holds the index within an object stream for compressed entries.
-///   For uncompressed and free entries, generation is stored in `reference_`.
+/// - `field2_` holds the type-interpreted value (reuse generation for free entries,
+///   index within object stream for compressed entries).
+///   For in-use uncompressed entries, generation is stored in `reference_`.
 ///
 /// An entry can be in one of four meaningful states:
 ///
