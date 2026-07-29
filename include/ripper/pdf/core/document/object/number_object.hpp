@@ -1,7 +1,9 @@
 #pragma once
 
+#include "ripper/pdf/core/exceptions/exception.hpp"
+
+#include <cmath>
 #include <cstdint>
-#include <string>
 #include <variant>
 
 namespace ripper::pdf::core
@@ -9,57 +11,36 @@ namespace ripper::pdf::core
 
 /// Represents a PDF numeric object — either an integer or a real.
 ///
-/// Preserves both the parsed value and the original lexeme from the source
-/// file, enabling lossless round-trip serialization (e.g. `1.50` stays
-/// `1.50`, not `1.5`).
-///
-/// When constructed programmatically (without a lexeme), the serializer
-/// falls back to standard numeric formatting.
+/// The `std::variant` discriminator replaces the need for a separate kind
+/// field: `std::holds_alternative<std::int64_t>` means integer,
+/// `std::holds_alternative<double>` means real.
 class number_object
 {
 public:
-    /// Discriminator indicating whether the value was parsed as an integer or real.
-    enum class kind : std::uint8_t
-    {
-        integer,
-        real
-    };
-
     /// Construct a default integer zero.
-    number_object() noexcept : kind_(kind::integer), value_(std::int64_t{0}) {}
+    number_object() noexcept : value_(std::int64_t{0}) {}
 
-    /// Construct an integer.  No original lexeme is stored; serialization
-    /// will use standard integer formatting.
-    explicit number_object(std::int64_t v) noexcept : kind_(kind::integer), value_(v) {}
+    /// Construct an integer.
+    explicit number_object(std::int64_t v) noexcept : value_(v) {}
 
-    /// Construct a real.  No original lexeme is stored; serialization will
-    /// use standard real formatting.
-    explicit number_object(double v) : kind_(kind::real), value_(v) {}
-
-    /// Construct an integer from parsed value + original source lexeme
-    /// for round-trip fidelity.
-    number_object(std::int64_t v, std::string lexeme) noexcept
-        : kind_(kind::integer), value_(v), original_lexeme_(std::move(lexeme))
+    /// Construct a real.
+    /// @throws parse_exception if value is NaN or infinite.
+    explicit number_object(double v) : value_(v)
     {
+        if (!std::isfinite(v))
+            throw parse_exception{"Non-finite double values (NaN/Inf) are not valid PDF reals"};
     }
 
-    /// Construct a real from parsed value + original source lexeme for
-    /// round-trip fidelity.
-    number_object(double v, std::string lexeme)
-        : kind_(kind::real), value_(v), original_lexeme_(std::move(lexeme))
-    {
-    }
-
-    /// Returns `true` if this number originated from an integer token.
+    /// Returns `true` if this number holds an integer.
     [[nodiscard]] bool is_integer() const noexcept
     {
-        return kind_ == kind::integer;
+        return std::holds_alternative<std::int64_t>(value_);
     }
 
-    /// Returns `true` if this number originated from a real token.
+    /// Returns `true` if this number holds a real.
     [[nodiscard]] bool is_real() const noexcept
     {
-        return kind_ == kind::real;
+        return std::holds_alternative<double>(value_);
     }
 
     /// Returns the value as `std::int64_t`, truncating if the value was
@@ -77,18 +58,8 @@ public:
                          : static_cast<double>(std::get<std::int64_t>(value_));
     }
 
-    /// The original lexeme from the source file, if this number was
-    /// constructed with provenance (parser path).  Empty for
-    /// programmatically constructed numbers.
-    [[nodiscard]] const std::string& original_lexeme() const noexcept
-    {
-        return original_lexeme_;
-    }
-
 private:
-    kind kind_;
     std::variant<std::int64_t, double> value_;
-    std::string original_lexeme_;
 };
 
 } // namespace ripper::pdf::core

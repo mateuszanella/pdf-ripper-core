@@ -5,8 +5,6 @@
 #include "ripper/pdf/core/document/object/stream_object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 
-#include <cmath>
-
 namespace ripper::pdf::core
 {
 /// Object implementation
@@ -19,11 +17,7 @@ object::object(boolean_object value) noexcept : value_(std::move(value)) {}
 
 object::object(std::int64_t value) noexcept : value_(number_object{value}) {}
 
-object::object(double value) : value_(number_object{value})
-{
-    if (!std::isfinite(value))
-        throw parse_exception{"Non-finite double values (NaN/Inf) are not valid PDF reals"};
-}
+object::object(double value) : value_(number_object{value}) {}
 
 object::object(number_object value) noexcept : value_(std::move(value)) {}
 
