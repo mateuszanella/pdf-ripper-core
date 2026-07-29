@@ -141,10 +141,10 @@ trailer
 
     const auto& dict = result.dictionary();
     REQUIRE(dict.get_name("Unknown") != nullptr);
-    REQUIRE(dict.get_integer("AnotherUnknown") != nullptr);
-    REQUIRE(*dict.get_integer("AnotherUnknown") == 123);
-    REQUIRE(dict.get_integer("XRefStm") != nullptr);
-    REQUIRE(*dict.get_integer("XRefStm") == 500);
+    REQUIRE(dict.get_number("AnotherUnknown") != nullptr);
+    REQUIRE(dict.get_number("AnotherUnknown")->as_integer() == 123);
+    REQUIRE(dict.get_number("XRefStm") != nullptr);
+    REQUIRE(dict.get_number("XRefStm")->as_integer() == 500);
 }
 
 TEST_CASE("default_trailer_parser throws on missing trailer keyword",
@@ -160,8 +160,9 @@ TEST_CASE("default_trailer_parser throws on missing dictionary", "[parser][trail
 {
     default_trailer_parser parser;
 
-    REQUIRE_THROWS_WITH(parser.parse("trailer /Size 8 /Root 1 0 R"),
-                        Catch::Matchers::ContainsSubstring("Trailer dictionary was not found"));
+    REQUIRE_THROWS_WITH(
+        parser.parse("trailer /Size 8 /Root 1 0 R"),
+        Catch::Matchers::ContainsSubstring("Trailer dictionary_object was not found"));
 }
 
 TEST_CASE("default_trailer_parser throws on unterminated dictionary",

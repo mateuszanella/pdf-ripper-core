@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 
 #include <cstdint>
@@ -29,7 +29,7 @@ public:
     ///
     /// @throws parse_exception if required keys are missing or data is malformed.
     [[nodiscard]] static std::vector<indirect_object> parse(document& doc,
-                                                            const object_stream& stream_obj);
+                                                            const stream_object& stream_obj);
 };
 
 } // namespace ripper::pdf::core

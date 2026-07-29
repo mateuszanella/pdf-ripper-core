@@ -13,7 +13,7 @@ namespace ripper::pdf::core
 /// Serializes a cross-reference section as a compressed xref stream (PDF 1.5+).
 ///
 /// Implements the `cross_reference_table_serializer` interface. Delegates
-/// dictionary and stream serialization to an injected `object_serializer`,
+/// dictionary_object and stream serialization to an injected `object_serializer`,
 /// following the same DI pattern as `trailer_serializer`.
 ///
 /// The xref stream is a real indirect object whose number is stored on the
@@ -21,9 +21,9 @@ namespace ripper::pdf::core
 /// number for the `N 0 obj` / `endobj` envelope rather than a synthetic `0 0
 /// obj`, mirroring the parser's 1:1 correspondence with the file layout.
 ///
-/// Trailer dictionary entries (Root, Info, ID, Encrypt, Prev) are merged into
+/// Trailer dictionary_object entries (Root, Info, ID, Encrypt, Prev) are merged into
 /// the xref stream dictionary, since the compressed xref stream replaces both
-/// the traditional `xref` keyword block and the `trailer` dictionary per
+/// the traditional `xref` keyword block and the `trailer` dictionary_object per
 /// PDF spec §7.5.8. Xref-specific keys (Type, Size, W, Index, Filter, Length)
 /// are computed from the section and take precedence over any trailer values.
 ///
@@ -33,7 +33,7 @@ class compressed_cross_reference_table_serializer : public cross_reference_table
 public:
     /// Serialize a cross-reference section as an xref stream indirect object.
     ///
-    /// `trailer` carries the trailer dictionary entries that are merged into
+    /// `trailer` carries the trailer dictionary_object entries that are merged into
     /// the xref stream dictionary.
     [[nodiscard]] std::vector<std::byte> serialize(const cross_reference_section& section,
                                                    const trailer& trailer) const override;

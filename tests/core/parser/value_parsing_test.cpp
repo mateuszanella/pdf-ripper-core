@@ -36,9 +36,9 @@ TEST_CASE("parse_value parses nested dictionaries and arrays", "[parser][value]"
     const auto* dict = value.as_dictionary();
     REQUIRE(dict != nullptr);
 
-    const auto* count = dict->get_integer("Count");
+    const auto* count = dict->get_number("Count");
     REQUIRE(count != nullptr);
-    REQUIRE(*count == 2);
+    REQUIRE(count->as_integer() == 2);
 
     const auto* kids = dict->get_array("Kids");
     REQUIRE(kids != nullptr);
@@ -112,7 +112,7 @@ TEST_CASE("parse_value preserves literal hash when not followed by hex", "[parse
     REQUIRE(value.as_name()->value == "ab#ZZ");
 }
 
-TEST_CASE("parse_value parses dictionary with escaped name keys", "[parser][value][name]")
+TEST_CASE("parse_value parses dictionary_object with escaped name keys", "[parser][value][name]")
 {
     pdf_lexer lexer{"<< /A#20Key /Value >>"};
 

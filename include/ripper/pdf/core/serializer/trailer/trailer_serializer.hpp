@@ -15,8 +15,8 @@ namespace ripper::pdf::core
 ///
 /// Produces the `trailer\n<<...>>\nstartxref\n<offset>\n%%EOF\n` block for
 /// traditional revisions, or just `startxref\n<offset>\n%%EOF\n` for
-/// compressed xref stream revisions (where the trailer dictionary is merged
-/// into the xref stream dictionary).
+/// compressed xref stream revisions (where the trailer dictionary_object is merged
+/// into the xref stream dictionary_object).
 class trailer_serializer
 {
 public:
@@ -31,7 +31,7 @@ public:
     /// Serialize only the trailing `startxref\n<offset>\n%%EOF\n` block.
     ///
     /// Used by `revision_serializer` for compressed xref stream revisions, where
-    /// the trailer dictionary is merged into the xref stream dictionary and no
+    /// the trailer dictionary_object is merged into the xref stream dictionary_object and no
     /// separate `trailer` keyword is emitted. The default implementation produces
     /// `startxref\n<xref_offset>\n%%EOF\n` using `line_break_character_`.
     [[nodiscard]] virtual std::vector<std::byte>

@@ -1,7 +1,7 @@
 #include "ripper/pdf/core/document/objstm.hpp"
 
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/object_stream_parser.hpp"
@@ -22,11 +22,11 @@ std::uint32_t objstm::count() const
     if (d == nullptr)
         throw parse_exception{"Object Stream has no dictionary"};
 
-    const auto* n = d->get_integer("N");
+    const auto* n = d->get_number("N");
     if (n == nullptr)
         throw parse_exception{"Object Stream missing required /N"};
 
-    return static_cast<std::uint32_t>(*n);
+    return static_cast<std::uint32_t>(n->as_integer());
 }
 
 std::uint32_t objstm::first_offset() const
@@ -35,11 +35,11 @@ std::uint32_t objstm::first_offset() const
     if (d == nullptr)
         throw parse_exception{"Object Stream has no dictionary"};
 
-    const auto* first = d->get_integer("First");
+    const auto* first = d->get_number("First");
     if (first == nullptr)
         throw parse_exception{"Object Stream missing required /First"};
 
-    return static_cast<std::uint32_t>(*first);
+    return static_cast<std::uint32_t>(first->as_integer());
 }
 
 std::optional<class objstm> objstm::extension()

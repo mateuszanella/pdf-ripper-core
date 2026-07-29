@@ -3,7 +3,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_manager.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
 #include "ripper/pdf/core/document/revision_manager.hpp"
@@ -16,7 +16,7 @@ namespace ripper::pdf::core
 
 indirect_object make_obj(document& doc, std::uint32_t num, std::string value)
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Data", object{std::move(value)});
     return indirect_object{object_identity{&doc, indirect_reference{num, 0}},
                            object{std::move(dict)}};
@@ -49,7 +49,7 @@ TEST_CASE("add_entry_from copies a resolved entry into a section",
     REQUIRE(target_entry->is_resolved());
     REQUIRE(*target_entry->indirect_object()->dictionary()->get_string("Data") == "source");
 
-    source_entry->indirect_object()->dictionary()->set("Data", object{std::string{"modified"}});
+    source_entry->indirect_object()->dictionary()->set("Data", object{string_object{"modified"}});
     REQUIRE(*target_entry->indirect_object()->dictionary()->get_string("Data") == "source");
 }
 
@@ -82,7 +82,7 @@ TEST_CASE("push_revision creates revision_history with object 0",
     subsections.emplace_back(0, std::move(entries));
 
     cross_reference_section section{std::move(subsections)};
-    trailer t{dictionary{}};
+    trailer t{dictionary_object{}};
 
     std::vector<revision> revisions;
     revisions.emplace_back(std::move(section), std::move(t));
@@ -109,7 +109,7 @@ TEST_CASE("create_new_revision creates section and trailer with /Prev",
     subsections.emplace_back(1, std::move(entries));
 
     auto existing_section = cross_reference_section{std::move(subsections), 42};
-    trailer existing_trailer{dictionary{}};
+    trailer existing_trailer{dictionary_object{}};
 
     std::vector<revision> revisions;
     revisions.emplace_back(std::move(existing_section), std::move(existing_trailer));
@@ -142,7 +142,7 @@ TEST_CASE("create_new_revision on document creates section and trailer",
 
     REQUIRE(doc.trailer().size() == 2);
     REQUIRE(doc.trailer().active_trailer().dictionary().contains("Size"));
-    REQUIRE(*doc.trailer().active_trailer().dictionary().get_integer("Size") >= 6);
+    REQUIRE(doc.trailer().active_trailer().dictionary().get_number("Size")->as_integer() >= 6);
     REQUIRE_FALSE(doc.trailer().active_trailer().dictionary().contains("Prev"));
 }
 
@@ -169,7 +169,7 @@ TEST_CASE("create_new_revision + add_entry_from for incremental setup",
     REQUIRE(copied->is_resolved());
     REQUIRE(*copied->indirect_object()->dictionary()->get_string("Data") == "original");
 
-    old_entry->indirect_object()->dictionary()->set("Data", object{std::string{"modified"}});
+    old_entry->indirect_object()->dictionary()->set("Data", object{string_object{"modified"}});
     REQUIRE(*copied->indirect_object()->dictionary()->get_string("Data") == "original");
 }
 } // namespace ripper::pdf::core

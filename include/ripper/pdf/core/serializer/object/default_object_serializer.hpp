@@ -31,12 +31,12 @@ private:
     [[nodiscard]] std::vector<std::byte> serialize_integer(std::int64_t value) const;
     [[nodiscard]] std::vector<std::byte> serialize_real(double value) const;
     [[nodiscard]] std::vector<std::byte> serialize_string(const std::string& value) const;
-    [[nodiscard]] std::vector<std::byte> serialize_name(const name& value) const;
+    [[nodiscard]] std::vector<std::byte> serialize_name(const name_object& value) const;
     [[nodiscard]] std::vector<std::byte>
     serialize_indirect_reference(const indirect_reference& value) const;
-    [[nodiscard]] std::vector<std::byte> serialize_array(const array& value) const;
-    [[nodiscard]] std::vector<std::byte> serialize_dictionary(const dictionary& value) const;
+    [[nodiscard]] std::vector<std::byte> serialize_array(const array_object& value) const;
+    [[nodiscard]] std::vector<std::byte> serialize_dictionary(const dictionary_object& value) const;
     [[nodiscard]] std::vector<std::byte>
-    serialize_stream_object(const object_stream& stream_obj) const;
+    serialize_stream_object(const stream_object& stream_obj) const;
 };
 } // namespace ripper::pdf::core

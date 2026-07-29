@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ripper/pdf/core/document/catalog/pages/pages.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 
 namespace ripper::pdf::core
 {
@@ -23,7 +23,7 @@ public:
 
     /// Returns the indirect reference to the root /Pages object in this catalog.
     ///
-    /// This is the value of the /Pages entry in the catalog dictionary and
+    /// This is the value of the /Pages entry in the catalog dictionary_object and
     /// identifies the root of the document's page tree.
     [[nodiscard]] indirect_reference root_pages_indirect_reference();
 };

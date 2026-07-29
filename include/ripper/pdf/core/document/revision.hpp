@@ -9,7 +9,7 @@ namespace ripper::pdf::core
 ///
 /// A PDF file with incremental updates contains one revision per update. Each
 /// revision carries the xref section that records the objects written in that
-/// update and the trailer dictionary that provides document-level metadata
+/// update and the trailer dictionary_object that provides document-level metadata
 /// (Root, Size, Prev, ID, etc.).
 ///
 /// Objects belonging to this revision live inside the cross-reference section's

@@ -62,7 +62,7 @@ public:
 
     /// Skip a single PDF value, including compound structures (arrays, dictionaries).
     ///
-    /// If the next token is a dictionary or array begin, the entire nested
+    /// If the next token is a dictionary_object or array begin, the entire nested
     /// structure is skipped recursively. Indirect references (`obj gen R`) are
     /// also handled.
     ///
@@ -78,7 +78,7 @@ private:
     /// Advance the position past all whitespace characters and `%`-style comments.
     void skip_whitespace_and_comments();
 
-    /// Skip a compound structure (array or dictionary) given its begin/end token types.
+    /// Skip a compound structure (array or dictionary_object) given its begin/end token types.
     ///
     /// Assumes the opening token has already been consumed.
     /// Returns `unexpected(err)` if the stream ends before the structure is closed.

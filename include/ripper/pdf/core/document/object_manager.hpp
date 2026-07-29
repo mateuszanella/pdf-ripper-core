@@ -52,7 +52,7 @@ public:
 
     /// Allocate a new catalog into the xref and set the trailer /Root.
     ///
-    /// Reserves an object reference, constructs a catalog dictionary with /Type /Catalog,
+    /// Reserves an object reference, constructs a catalog dictionary_object with /Type /Catalog,
     /// commits it to the xref, and wires the trailer /Root to point to it.
     ///
     /// @throws logic_exception if the xref or trailer operations fail.

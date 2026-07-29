@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
-#include "ripper/pdf/core/document/object/object_view.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/object_view.hpp"
 
 #include <optional>
 

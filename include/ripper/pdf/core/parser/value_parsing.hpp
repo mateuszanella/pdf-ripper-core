@@ -25,12 +25,12 @@ namespace ripper::pdf::core
 /// Parse a `[ ... ]` array from `lexer`.
 ///
 /// Assumes the opening `[` token has already been consumed.
-[[nodiscard]] array parse_array(pdf_lexer& lexer);
+[[nodiscard]] array_object parse_array(pdf_lexer& lexer);
 
-/// Parse a `<< ... >>` dictionary from `lexer`.
+/// Parse a `<< ... >>` dictionary_object from `lexer`.
 ///
 /// Assumes the opening `<<` token has already been consumed.
-[[nodiscard]] dictionary parse_dictionary(pdf_lexer& lexer);
+[[nodiscard]] dictionary_object parse_dictionary(pdf_lexer& lexer);
 
 /// Extract the PDF value content from an indirect object's text representation.
 ///

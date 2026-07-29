@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ripper/pdf/core/document/object/object_view.hpp"
+#include "ripper/pdf/core/document/object/helpers/object_view.hpp"
 
 #include <cstdint>
 #include <optional>

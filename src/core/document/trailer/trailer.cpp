@@ -5,15 +5,15 @@
 
 namespace ripper::pdf::core
 {
-trailer::trailer(class dictionary dict) : dict_{std::move(dict)} {}
+trailer::trailer(class dictionary_object dict) : dict_{std::move(dict)} {}
 
 std::uint64_t trailer::size() const
 {
-    const auto* v = dict_.get_integer("Size");
+    const auto* v = dict_.get_number("Size");
     if (v == nullptr)
         throw parse_exception{"Trailer missing /Size entry"};
 
-    return static_cast<std::uint64_t>(*v);
+    return static_cast<std::uint64_t>(v->as_integer());
 }
 
 void trailer::set_size(std::uint64_t n)
@@ -36,11 +36,11 @@ std::optional<indirect_reference> trailer::root() const
 
 std::optional<std::uint64_t> trailer::prev() const
 {
-    const auto* v = dict_.get_integer("Prev");
+    const auto* v = dict_.get_number("Prev");
     if (v == nullptr)
         return std::nullopt;
 
-    return static_cast<std::uint64_t>(*v);
+    return static_cast<std::uint64_t>(v->as_integer());
 }
 
 std::optional<identifier> trailer::id() const
@@ -58,18 +58,18 @@ std::optional<identifier> trailer::id() const
     {
         const auto* curr = arr[1].as_string();
         if (curr != nullptr)
-            return identifier{*orig, *curr};
+            return identifier{orig->as_string(), curr->as_string()};
     }
 
-    return identifier{*orig};
+    return identifier{orig->as_string()};
 }
 
-const dictionary& trailer::dictionary() const
+const dictionary_object& trailer::dictionary() const
 {
     return dict_;
 }
 
-dictionary& trailer::dictionary()
+dictionary_object& trailer::dictionary()
 {
     return dict_;
 }

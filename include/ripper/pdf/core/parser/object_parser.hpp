@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 
 #include <string_view>
@@ -14,7 +14,7 @@ class document;
 /// The `content` passed to `parse()` is the raw byte slice starting at the
 /// xref-resolved byte offset for `ref`, i.e. it begins with `N G obj`.
 ///
-/// The returned `indirect_object` holds the fully parsed dictionary and, when present,
+/// The returned `indirect_object` holds the fully parsed dictionary_object and, when present,
 /// the raw content stream bytes. The caller is responsible for casting the
 /// result to the appropriate typed subclass (catalog, pages, etc.).
 class object_parser

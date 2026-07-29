@@ -1,9 +1,9 @@
 #include "ripper/pdf/core/parser/default_object_parser.hpp"
 
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/stream.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/document/object/stream.hpp"
 #include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
 #include "ripper/pdf/core/parser/value_parsing.hpp"
 
@@ -57,10 +57,10 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
             // to searching for "endstream" when they disagree (malformed /Length).
             std::size_t end_of_stream = std::string_view::npos;
 
-            const std::int64_t* length_ptr = dict->get_integer("Length");
-            if (length_ptr != nullptr && *length_ptr >= 0)
+            const auto* length_ptr = dict->get_number("Length");
+            if (length_ptr != nullptr && length_ptr->as_integer() >= 0)
             {
-                const auto length = static_cast<std::size_t>(*length_ptr);
+                const auto length = static_cast<std::size_t>(length_ptr->as_integer());
                 const auto length_end = stream_bytes_start_offset + length;
 
                 std::size_t check = length_end;
@@ -104,7 +104,7 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
 
             return indirect_object{
                 object_identity{&doc, ref},
-                object{object_stream{std::move(*dict), std::move(parsed_stream)}}};
+                object{stream_object{std::move(*dict), std::move(parsed_stream)}}};
         }
     }
 

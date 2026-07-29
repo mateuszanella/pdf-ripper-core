@@ -2,8 +2,8 @@
 
 #include "ripper/pdf/core/document/catalog/pages/page/page.hpp"
 #include "ripper/pdf/core/document/catalog/pages/pages.hpp"
+#include "ripper/pdf/core/document/object/helpers/object_view.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
-#include "ripper/pdf/core/document/object/object_view.hpp"
 
 #include <cstdint>
 #include <optional>

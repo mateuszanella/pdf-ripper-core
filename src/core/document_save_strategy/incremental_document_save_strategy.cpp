@@ -113,7 +113,7 @@ void incremental_document_save_strategy::save(document& doc)
 
         if (prev_id_arr != nullptr && !prev_id_arr->empty())
         {
-            array new_id;
+            array_object new_id;
             new_id.push_back((*prev_id_arr)[0]);
 
             auto new_current =

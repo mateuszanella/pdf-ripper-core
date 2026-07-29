@@ -7,16 +7,16 @@
 namespace ripper::pdf::core
 {
 
-cross_reference_section cross_reference_stream_parser::parse(const object_stream& stream_obj)
+cross_reference_section cross_reference_stream_parser::parse(const stream_object& stream_obj)
 {
     const auto& dict = stream_obj.dictionary();
     const auto content = stream_obj.raw();
 
-    const auto* size_ptr = dict.get_integer("Size");
-    if (size_ptr == nullptr || *size_ptr <= 0)
+    const auto* size_ptr = dict.get_number("Size");
+    if (size_ptr == nullptr || size_ptr->as_integer() <= 0)
         throw parse_exception{"Xref stream missing required /Size"};
 
-    const auto size = static_cast<std::uint32_t>(*size_ptr);
+    const auto size = static_cast<std::uint32_t>(size_ptr->as_integer());
     const auto widths = parse_w(stream_obj);
     const auto ranges = parse_index(stream_obj, size);
 
@@ -83,29 +83,29 @@ cross_reference_section cross_reference_stream_parser::parse(const object_stream
 }
 
 cross_reference_stream_parser::column_widths
-cross_reference_stream_parser::parse_w(const object_stream& stream_obj)
+cross_reference_stream_parser::parse_w(const stream_object& stream_obj)
 {
     const auto* w = stream_obj.dictionary().get_array("W");
     if (w == nullptr || w->size() < 3)
         throw parse_exception{"Xref stream missing or invalid /W array"};
 
     column_widths result;
-    const auto w0 = w->at(0).as_integer();
-    const auto w1 = w->at(1).as_integer();
-    const auto w2 = w->at(2).as_integer();
+    const auto* w0 = w->at(0).as_number();
+    const auto* w1 = w->at(1).as_number();
+    const auto* w2 = w->at(2).as_number();
 
     if (w0 == nullptr || w1 == nullptr || w2 == nullptr)
         throw parse_exception{"/W array entries must be integers"};
 
-    result.w0 = static_cast<std::uint32_t>(*w0);
-    result.w1 = static_cast<std::uint32_t>(*w1);
-    result.w2 = static_cast<std::uint32_t>(*w2);
+    result.w0 = static_cast<std::uint32_t>(w0->as_integer());
+    result.w1 = static_cast<std::uint32_t>(w1->as_integer());
+    result.w2 = static_cast<std::uint32_t>(w2->as_integer());
 
     return result;
 }
 
 std::vector<cross_reference_stream_parser::subsection_range>
-cross_reference_stream_parser::parse_index(const object_stream& stream_obj, std::uint32_t size)
+cross_reference_stream_parser::parse_index(const stream_object& stream_obj, std::uint32_t size)
 {
     const auto* index = stream_obj.dictionary().get_array("Index");
 
@@ -120,13 +120,14 @@ cross_reference_stream_parser::parse_index(const object_stream& stream_obj, std:
     std::vector<subsection_range> ranges;
     for (std::size_t i = 0; i < index->size(); i += 2)
     {
-        const auto* first = index->at(i).as_integer();
-        const auto* count = index->at(i + 1).as_integer();
+        const auto* first = index->at(i).as_number();
+        const auto* count = index->at(i + 1).as_number();
 
         if (first == nullptr || count == nullptr)
             throw parse_exception{"/Index array entries must be integers"};
 
-        ranges.push_back({static_cast<std::uint32_t>(*first), static_cast<std::uint32_t>(*count)});
+        ranges.push_back({static_cast<std::uint32_t>(first->as_integer()),
+                          static_cast<std::uint32_t>(count->as_integer())});
     }
 
     return ranges;

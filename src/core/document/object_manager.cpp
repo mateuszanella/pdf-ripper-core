@@ -5,7 +5,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
 #include "ripper/pdf/core/document/header.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
 #include "ripper/pdf/core/document/revision_manager.hpp"
@@ -36,9 +36,9 @@ catalog object_manager::create_catalog(document& doc)
     auto catalog_ref = xref.reserve();
     auto pages_ref = xref.reserve();
 
-    dictionary pages_dict;
-    pages_dict.set("Type", object{name{"Pages"}});
-    pages_dict.set("Kids", object{array{}});
+    dictionary_object pages_dict;
+    pages_dict.set("Type", object{name_object{"Pages"}});
+    pages_dict.set("Kids", object{array_object{}});
     pages_dict.set("Count", object{std::int64_t{0}});
 
     auto pages_obj = std::make_unique<indirect_object>(object_identity{&doc, pages_ref},
@@ -48,8 +48,8 @@ catalog object_manager::create_catalog(document& doc)
     if (raw_pages == nullptr)
         throw logic_exception{"Failed to commit root Pages object to cross-reference table"};
 
-    dictionary catalog_dict;
-    catalog_dict.set("Type", object{name{"Catalog"}});
+    dictionary_object catalog_dict;
+    catalog_dict.set("Type", object{name_object{"Catalog"}});
     catalog_dict.set("Pages", object{pages_ref});
 
     auto catalog_obj = std::make_unique<indirect_object>(object_identity{&doc, catalog_ref},
@@ -82,7 +82,7 @@ std::unique_ptr<revision_manager> object_manager::create_revision_history()
 
     cross_reference_section section{std::move(subsections)};
 
-    trailer t{dictionary{}};
+    trailer t{dictionary_object{}};
 
     std::vector<revision> revisions;
     revisions.emplace_back(std::move(section), std::move(t));

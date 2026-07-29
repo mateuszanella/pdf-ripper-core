@@ -19,15 +19,15 @@ namespace ripper::pdf::core
 /// traditional xref table, the serialized output differs:
 ///
 ///   - **Traditional**: `xref` block + `trailer` dictionary + `startxref\n<offset>\n%%EOF`
-///   - **Compressed**:  xref stream indirect object (the trailer dictionary is merged
-///     into the xref stream dictionary) + `startxref\n<offset>\n%%EOF`
+///   - **Compressed**:  xref stream indirect object (the trailer dictionary_object is merged
+///     into the xref stream dictionary_object) + `startxref\n<offset>\n%%EOF`
 ///
 /// The revision serializer delegates to the polymorphic `cross_reference_table_serializer`
 /// (which dispatches to the default or compressed implementation based on the active
 /// serializer) and to `trailer_serializer`. For compressed sections, the trailer
 /// serializer is still invoked to emit the trailing `startxref` / `%%EOF` block, but
-/// the trailer dictionary itself is emitted by the compressed xref serializer as part
-/// of the stream dictionary, so the trailer serializer's dictionary output is not
+/// the trailer dictionary_object itself is emitted by the compressed xref serializer as part
+/// of the stream dictionary, so the trailer serializer's dictionary_object output is not
 /// appended.
 ///
 /// `xref_offset` is the byte offset in the file at which the serialized xref block (or
@@ -47,8 +47,8 @@ public:
 
     /// Serialize one revision to a byte buffer.
     ///
-    /// When `rev.section().is_compressed()` is true, the trailer dictionary is merged
-    /// into the xref stream dictionary by the compressed serializer, so only the
+    /// When `rev.section().is_compressed()` is true, the trailer dictionary_object is merged
+    /// into the xref stream dictionary_object by the compressed serializer, so only the
     /// trailing `startxref\n<offset>\n%%EOF` block is appended from the trailer
     /// serializer's `serialize_startxref()` output. Otherwise, the full trailer block
     /// (`trailer\n<<dict>>\nstartxref\n<offset>\n%%EOF`) is emitted.

@@ -28,7 +28,7 @@ revision make_revision_from_entries(std::vector<cross_reference_entry> entries,
     subsections.push_back(std::move(subsection));
 
     cross_reference_section section{std::move(subsections), startxref};
-    trailer t{dictionary{}};
+    trailer t{dictionary_object{}};
     return revision{std::move(section), std::move(t)};
 }
 } // namespace
@@ -80,7 +80,7 @@ TEST_CASE("cross_reference_manager reserve appends pending entry", "[xref][manag
     subsections.emplace_back(0, std::move(entries));
 
     cross_reference_section section{std::move(subsections)};
-    trailer t{dictionary{}};
+    trailer t{dictionary_object{}};
 
     std::vector<revision> revisions;
     revisions.emplace_back(std::move(section), std::move(t));

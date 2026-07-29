@@ -1,7 +1,7 @@
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/stream.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/document/object/stream.hpp"
 #include "ripper/pdf/core/serializer/indirect_object/default_indirect_object_serializer.hpp"
 #include "ripper/pdf/core/serializer/object/default_object_serializer.hpp"
 
@@ -49,22 +49,22 @@ TEST_CASE("default_indirect_object_serializer serializes string indirect object"
     default_object_serializer obj_ser;
     default_indirect_object_serializer ser{obj_ser};
 
-    auto obj = indirect_object{object_identity{&doc, {5, 0}}, object{std::string{"Hello"}}};
+    auto obj = indirect_object{object_identity{&doc, {5, 0}}, object{string_object{"Hello"}}};
 
     const auto result = ser.serialize(obj);
 
     REQUIRE(bytes_to_string(result) == "5 0 obj\n(Hello)\nendobj\n");
 }
 
-TEST_CASE("default_indirect_object_serializer serializes dictionary indirect object",
+TEST_CASE("default_indirect_object_serializer serializes dictionary_object indirect object",
           "[serializer][indirect_object]")
 {
     auto doc = make_document();
     default_object_serializer obj_ser;
     default_indirect_object_serializer ser{obj_ser};
 
-    dictionary dict;
-    dict.set("Type", object{name{"Catalog"}});
+    dictionary_object dict;
+    dict.set("Type", object{name_object{"Catalog"}});
 
     auto obj = indirect_object{object_identity{&doc, {10, 0}}, object{std::move(dict)}};
 
@@ -80,7 +80,7 @@ TEST_CASE("default_indirect_object_serializer serializes boolean indirect object
     default_object_serializer obj_ser;
     default_indirect_object_serializer ser{obj_ser};
 
-    auto obj = indirect_object{object_identity{&doc, {3, 0}}, object{false}};
+    auto obj = indirect_object{object_identity{&doc, {3, 0}}, object{boolean_object{false}}};
 
     const auto result = ser.serialize(obj);
 
@@ -94,12 +94,12 @@ TEST_CASE("default_indirect_object_serializer serializes stream indirect object"
     default_object_serializer obj_ser;
     default_indirect_object_serializer ser{obj_ser};
 
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Length", object{static_cast<std::int64_t>(5)});
 
     std::vector<std::byte> data = {std::byte{'h'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'},
                                    std::byte{'o'}};
-    object_stream obj_stream{std::move(dict), stream{std::move(data)}};
+    stream_object obj_stream{std::move(dict), stream{std::move(data)}};
 
     auto obj = indirect_object{object_identity{&doc, {2, 0}}, object{std::move(obj_stream)}};
 
@@ -116,7 +116,7 @@ TEST_CASE("default_indirect_object_serializer serializes array indirect object",
     default_object_serializer obj_ser;
     default_indirect_object_serializer ser{obj_ser};
 
-    array arr;
+    array_object arr;
     arr.push_back(object{static_cast<std::int64_t>(1)});
     arr.push_back(object{static_cast<std::int64_t>(2)});
     arr.push_back(object{static_cast<std::int64_t>(3)});
@@ -152,14 +152,14 @@ TEST_CASE("default_indirect_object_serializer propagates object break character"
     default_indirect_object_serializer ser{obj_ser};
     ser.set_object_break_character('\r');
 
-    dictionary dict;
-    dict.set("Type", object{name{"Page"}});
+    dictionary_object dict;
+    dict.set("Type", object{name_object{"Page"}});
 
     auto obj = indirect_object{object_identity{&doc, {7, 0}}, object{std::move(dict)}};
 
     const auto result = ser.serialize(obj);
 
-    // object_break_character affects dictionary formatting inside the object serializer
+    // object_break_character affects dictionary_object formatting inside the object serializer
     // line_break_character (still \n in this test) affects the indirect object envelope
     REQUIRE(bytes_to_string(result) == "7 0 obj\n<<\r/Type /Page\r>>\nendobj\n");
 }

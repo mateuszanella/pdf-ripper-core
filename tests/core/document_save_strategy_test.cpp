@@ -393,8 +393,8 @@ TEST_CASE("incremental save preserves first /ID element and generates new second
     document doc{std::move(reader), std::move(writer)};
 
     {
-        array id_arr;
-        id_arr.push_back(object{std::string{"original-id-hash"}});
+        array_object id_arr;
+        id_arr.push_back(object{string_object{"original-id-hash"}});
         auto& first_trailer = doc.revisions().all()[0].trailer();
         first_trailer.dictionary().set("ID", object{std::move(id_arr)});
     }

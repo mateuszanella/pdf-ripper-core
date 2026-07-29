@@ -1,8 +1,8 @@
 #include "ripper/pdf/core/serializer/indirect_object/default_indirect_object_serializer.hpp"
 
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/object_identity.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
-#include "ripper/pdf/core/document/object/object_identity.hpp"
 #include "ripper/pdf/core/util/byte.hpp"
 
 #include <string>

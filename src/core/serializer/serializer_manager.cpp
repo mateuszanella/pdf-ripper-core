@@ -28,7 +28,7 @@ void serializer_manager::set_object_serializer(std::unique_ptr<class object_seri
     trailer_serializer().set_object_serializer(object_serializer());
 
     // If a compressed cross-reference serializer has been injected, also
-    // propagate the object serializer so its dictionary serialization works.
+    // propagate the object serializer so its dictionary_object serialization works.
     if (cross_reference_table_serializer_ != nullptr)
     {
         auto* compressed = dynamic_cast<class compressed_cross_reference_table_serializer*>(
@@ -50,7 +50,7 @@ void serializer_manager::set_cross_reference_table_serializer(
     cross_reference_table_serializer_ = std::move(object);
 
     // If a compressed serializer was injected and an object serializer is
-    // already configured, wire it up so dictionary serialization is available.
+    // already configured, wire it up so dictionary_object serialization is available.
     auto* compressed = dynamic_cast<class compressed_cross_reference_table_serializer*>(
         cross_reference_table_serializer_.get());
     if (compressed != nullptr && object_serializer_ != nullptr)

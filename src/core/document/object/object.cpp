@@ -1,38 +1,54 @@
 #include "ripper/pdf/core/document/object/object.hpp"
 
+#include "ripper/pdf/core/document/object/dictionary_object.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
+#include "ripper/pdf/core/document/object/stream_object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
-#include "ripper/pdf/core/filter/filter_manager.hpp"
 
 #include <cmath>
 
 namespace ripper::pdf::core
 {
-/// Value implementation
+/// Object implementation
 
-object::object() noexcept : value_(null{}) {}
+object::object() noexcept : value_(null_object{}) {}
 
-object::object(bool value) noexcept : value_(value) {}
+object::object(bool value) noexcept : value_(boolean_object{value}) {}
 
-object::object(std::int64_t value) noexcept : value_(value) {}
+object::object(boolean_object value) noexcept : value_(std::move(value)) {}
 
-object::object(double value) : value_(value)
+object::object(std::int64_t value) noexcept : value_(number_object{value}) {}
+
+object::object(double value) : value_(number_object{value})
 {
     if (!std::isfinite(value))
         throw parse_exception{"Non-finite double values (NaN/Inf) are not valid PDF reals"};
 }
 
-object::object(std::string value) noexcept : value_(std::move(value)) {}
+object::object(number_object value) noexcept : value_(std::move(value)) {}
 
-object::object(name value) noexcept : value_(std::move(value)) {}
+object::object(std::string value) noexcept : value_(string_object{std::move(value)}) {}
 
-object::object(array value) noexcept : value_(std::move(value)) {}
+object::object(string_object value) noexcept : value_(std::move(value)) {}
 
-object::object(dictionary value) : value_(std::make_unique<dictionary>(std::move(value))) {}
+object::object(name_object value) noexcept : value_(std::move(value)) {}
 
-object::object(object_stream value) : value_(std::make_unique<object_stream>(std::move(value))) {}
+object::object(array_object value) noexcept : value_(std::move(value)) {}
+
+object::object(dictionary_object value)
+    : value_(std::make_unique<dictionary_object>(std::move(value)))
+{
+}
+
+object::object(stream_object value) : value_(std::make_unique<stream_object>(std::move(value))) {}
 
 object::object(indirect_reference value) noexcept : value_(std::move(value)) {}
+
+object::~object() = default;
+
+object::object(object&& other) noexcept = default;
+
+object& object::operator=(object&& other) noexcept = default;
 
 object::object(const object& other)
     : value_(std::visit(
@@ -40,10 +56,18 @@ object::object(const object& other)
           {
               using T = std::decay_t<decltype(v)>;
 
-              if constexpr (std::is_same_v<T, std::unique_ptr<dictionary>>)
-                  return std::make_unique<dictionary>(*v);
-              else if constexpr (std::is_same_v<T, std::unique_ptr<object_stream>>)
-                  return std::make_unique<object_stream>(*v);
+              if constexpr (std::is_same_v<T, std::unique_ptr<dictionary_object>>)
+              {
+                  if (!v)
+                      return std::unique_ptr<dictionary_object>{};
+                  return std::make_unique<dictionary_object>(*v);
+              }
+              else if constexpr (std::is_same_v<T, std::unique_ptr<stream_object>>)
+              {
+                  if (!v)
+                      return std::unique_ptr<stream_object>{};
+                  return std::make_unique<stream_object>(*v);
+              }
               else
                   return v;
           },
@@ -65,47 +89,54 @@ object object::clone() const
 
 bool object::is_null() const noexcept
 {
-    return std::holds_alternative<null>(value_);
+    return std::holds_alternative<null_object>(value_);
 }
 
-bool object::is_bool() const noexcept
+bool object::is_boolean() const noexcept
 {
-    return std::holds_alternative<bool>(value_);
+    return std::holds_alternative<boolean_object>(value_);
+}
+
+bool object::is_number() const noexcept
+{
+    return std::holds_alternative<number_object>(value_);
 }
 
 bool object::is_integer() const noexcept
 {
-    return std::holds_alternative<std::int64_t>(value_);
+    const auto* num = std::get_if<number_object>(&value_);
+    return num != nullptr && num->is_integer();
 }
 
 bool object::is_real() const noexcept
 {
-    return std::holds_alternative<double>(value_);
+    const auto* num = std::get_if<number_object>(&value_);
+    return num != nullptr && num->is_real();
 }
 
 bool object::is_string() const noexcept
 {
-    return std::holds_alternative<std::string>(value_);
+    return std::holds_alternative<string_object>(value_);
 }
 
 bool object::is_name() const noexcept
 {
-    return std::holds_alternative<name>(value_);
+    return std::holds_alternative<name_object>(value_);
 }
 
 bool object::is_array() const noexcept
 {
-    return std::holds_alternative<array>(value_);
+    return std::holds_alternative<array_object>(value_);
 }
 
 bool object::is_dictionary() const noexcept
 {
-    return std::holds_alternative<std::unique_ptr<dictionary>>(value_);
+    return std::holds_alternative<std::unique_ptr<dictionary_object>>(value_);
 }
 
 bool object::is_stream() const noexcept
 {
-    return std::holds_alternative<std::unique_ptr<object_stream>>(value_);
+    return std::holds_alternative<std::unique_ptr<stream_object>>(value_);
 }
 
 bool object::is_indirect_reference() const noexcept
@@ -113,103 +144,93 @@ bool object::is_indirect_reference() const noexcept
     return std::holds_alternative<indirect_reference>(value_);
 }
 
-const bool* object::as_bool() const noexcept
+const boolean_object* object::as_boolean() const noexcept
 {
-    return std::get_if<bool>(&value_);
+    return std::get_if<boolean_object>(&value_);
 }
 
-bool* object::as_bool() noexcept
+boolean_object* object::as_boolean() noexcept
 {
-    return std::get_if<bool>(&value_);
+    return std::get_if<boolean_object>(&value_);
 }
 
-const std::int64_t* object::as_integer() const noexcept
+const number_object* object::as_number() const noexcept
 {
-    return std::get_if<std::int64_t>(&value_);
+    return std::get_if<number_object>(&value_);
 }
 
-std::int64_t* object::as_integer() noexcept
+number_object* object::as_number() noexcept
 {
-    return std::get_if<std::int64_t>(&value_);
+    return std::get_if<number_object>(&value_);
 }
 
-const double* object::as_real() const noexcept
+const string_object* object::as_string() const noexcept
 {
-    return std::get_if<double>(&value_);
+    return std::get_if<string_object>(&value_);
 }
 
-double* object::as_real() noexcept
+string_object* object::as_string() noexcept
 {
-    return std::get_if<double>(&value_);
+    return std::get_if<string_object>(&value_);
 }
 
-const std::string* object::as_string() const noexcept
+const name_object* object::as_name() const noexcept
 {
-    return std::get_if<std::string>(&value_);
+    return std::get_if<name_object>(&value_);
 }
 
-std::string* object::as_string() noexcept
+name_object* object::as_name() noexcept
 {
-    return std::get_if<std::string>(&value_);
+    return std::get_if<name_object>(&value_);
 }
 
-const name* object::as_name() const noexcept
+const array_object* object::as_array() const noexcept
 {
-    return std::get_if<name>(&value_);
+    return std::get_if<array_object>(&value_);
 }
 
-name* object::as_name() noexcept
+array_object* object::as_array() noexcept
 {
-    return std::get_if<name>(&value_);
+    return std::get_if<array_object>(&value_);
 }
 
-const array* object::as_array() const noexcept
+const dictionary_object* object::as_dictionary() const noexcept
 {
-    return std::get_if<array>(&value_);
-}
-
-array* object::as_array() noexcept
-{
-    return std::get_if<array>(&value_);
-}
-
-const dictionary* object::as_dictionary() const noexcept
-{
-    const auto* ptr = std::get_if<std::unique_ptr<dictionary>>(&value_);
+    const auto* ptr = std::get_if<std::unique_ptr<dictionary_object>>(&value_);
 
     if (ptr != nullptr)
         return ptr->get();
 
-    const auto* stream_ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
+    const auto* stream_ptr = std::get_if<std::unique_ptr<stream_object>>(&value_);
     if (stream_ptr == nullptr)
         return nullptr;
 
     return stream_ptr->get() != nullptr ? &stream_ptr->get()->dictionary() : nullptr;
 }
 
-dictionary* object::as_dictionary() noexcept
+dictionary_object* object::as_dictionary() noexcept
 {
-    auto* ptr = std::get_if<std::unique_ptr<dictionary>>(&value_);
+    auto* ptr = std::get_if<std::unique_ptr<dictionary_object>>(&value_);
 
     if (ptr != nullptr)
         return ptr->get();
 
-    auto* stream_ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
+    auto* stream_ptr = std::get_if<std::unique_ptr<stream_object>>(&value_);
     if (stream_ptr == nullptr)
         return nullptr;
 
     return stream_ptr->get() != nullptr ? &stream_ptr->get()->dictionary() : nullptr;
 }
 
-const object_stream* object::as_stream() const noexcept
+const stream_object* object::as_stream() const noexcept
 {
-    const auto* ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
+    const auto* ptr = std::get_if<std::unique_ptr<stream_object>>(&value_);
     return ptr != nullptr ? ptr->get() : nullptr;
 }
 
-object_stream* object::as_stream() noexcept
+stream_object* object::as_stream() noexcept
 {
-    auto* ptr = std::get_if<std::unique_ptr<object_stream>>(&value_);
+    auto* ptr = std::get_if<std::unique_ptr<stream_object>>(&value_);
     return ptr != nullptr ? ptr->get() : nullptr;
 }
 
@@ -233,228 +254,4 @@ object::variant_type& object::variant() noexcept
     return value_;
 }
 
-/// Object stream implementation
-
-object_stream::object_stream(class dictionary dict, class stream stream) noexcept
-    : dict_(std::move(dict)), stream_(std::move(stream))
-{
-}
-
-const dictionary& object_stream::dictionary() const noexcept
-{
-    return dict_;
-}
-
-dictionary& object_stream::dictionary() noexcept
-{
-    return dict_;
-}
-
-const stream& object_stream::stream() const noexcept
-{
-    return stream_;
-}
-
-stream& object_stream::stream() noexcept
-{
-    return stream_;
-}
-
-void object_stream::write(std::span<std::byte> in)
-{
-    stream_.write(in);
-    sync_length();
-}
-
-void object_stream::set_length(std::size_t length)
-{
-    dict_.set("Length", object(static_cast<std::int64_t>(length)));
-}
-
-void object_stream::sync_length()
-{
-    const std::size_t length = stream_.size();
-    dict_.set("Length", object(static_cast<std::int64_t>(length)));
-}
-
-bool object_stream::is_decoded() const noexcept
-{
-    return is_decoded_;
-}
-
-void object_stream::set_decoded(bool state) noexcept
-{
-    is_decoded_ = state;
-}
-
-std::span<const std::byte> object_stream::content()
-{
-    if (is_decoded_)
-        return stream_.data();
-
-    if (!dict_.contains("Filter"))
-    {
-        is_decoded_ = true;
-        return stream_.data();
-    }
-
-    auto decoded = filter_manager::decode(dict_, stream_.data());
-    stream_.data() = std::move(decoded);
-    is_decoded_ = true;
-    return stream_.data();
-}
-
-std::span<const std::byte> object_stream::raw() const noexcept
-{
-    return stream_.data();
-}
-
-/// Dictionary implementation
-
-dictionary::dictionary(dictionary_map_type entries) noexcept : entries_(std::move(entries)) {}
-
-dictionary dictionary::set(std::string key, object value)
-{
-    entries_.insert_or_assign(std::move(key), std::move(value));
-    return *this;
-}
-
-dictionary dictionary::remove(const std::string& key)
-{
-    entries_.erase(key);
-    return *this;
-}
-
-bool dictionary::contains(const std::string& key) const noexcept
-{
-    return entries_.contains(key);
-}
-
-std::size_t dictionary::size() const noexcept
-{
-    return entries_.size();
-}
-
-bool dictionary::empty() const noexcept
-{
-    return entries_.empty();
-}
-
-const object* dictionary::get(const std::string& key) const noexcept
-{
-    const auto it = entries_.find(key);
-    return it != entries_.end() ? &it->second : nullptr;
-}
-
-object* dictionary::get(const std::string& key) noexcept
-{
-    const auto it = entries_.find(key);
-    return it != entries_.end() ? &it->second : nullptr;
-}
-
-const bool* dictionary::get_bool(const std::string& key) const noexcept
-{
-    const auto* object = get(key);
-    return object != nullptr ? object->as_bool() : nullptr;
-}
-
-bool* dictionary::get_bool(const std::string& key) noexcept
-{
-    auto* object = get(key);
-    return object != nullptr ? object->as_bool() : nullptr;
-}
-
-const std::int64_t* dictionary::get_integer(const std::string& key) const noexcept
-{
-    const auto* object = get(key);
-    return object != nullptr ? object->as_integer() : nullptr;
-}
-
-std::int64_t* dictionary::get_integer(const std::string& key) noexcept
-{
-    auto* object = get(key);
-    return object != nullptr ? object->as_integer() : nullptr;
-}
-
-const double* dictionary::get_real(const std::string& key) const noexcept
-{
-    const auto* object = get(key);
-    return object != nullptr ? object->as_real() : nullptr;
-}
-
-double* dictionary::get_real(const std::string& key) noexcept
-{
-    auto* object = get(key);
-    return object != nullptr ? object->as_real() : nullptr;
-}
-
-const std::string* dictionary::get_string(const std::string& key) const noexcept
-{
-    const auto* object = get(key);
-    return object != nullptr ? object->as_string() : nullptr;
-}
-
-std::string* dictionary::get_string(const std::string& key) noexcept
-{
-    auto* object = get(key);
-    return object != nullptr ? object->as_string() : nullptr;
-}
-
-const name* dictionary::get_name(const std::string& key) const noexcept
-{
-    const auto* object = get(key);
-    return object != nullptr ? object->as_name() : nullptr;
-}
-
-name* dictionary::get_name(const std::string& key) noexcept
-{
-    auto* object = get(key);
-    return object != nullptr ? object->as_name() : nullptr;
-}
-
-const array* dictionary::get_array(const std::string& key) const noexcept
-{
-    const auto* object = get(key);
-    return object != nullptr ? object->as_array() : nullptr;
-}
-
-array* dictionary::get_array(const std::string& key) noexcept
-{
-    auto* object = get(key);
-    return object != nullptr ? object->as_array() : nullptr;
-}
-
-const dictionary* dictionary::get_dictionary(const std::string& key) const noexcept
-{
-    const auto* object = get(key);
-    return object != nullptr ? object->as_dictionary() : nullptr;
-}
-
-dictionary* dictionary::get_dictionary(const std::string& key) noexcept
-{
-    auto* object = get(key);
-    return object != nullptr ? object->as_dictionary() : nullptr;
-}
-
-const indirect_reference* dictionary::get_indirect_reference(const std::string& key) const noexcept
-{
-    const auto* object = get(key);
-    return object != nullptr ? object->as_indirect_reference() : nullptr;
-}
-
-indirect_reference* dictionary::get_indirect_reference(const std::string& key) noexcept
-{
-    auto* object = get(key);
-    return object != nullptr ? object->as_indirect_reference() : nullptr;
-}
-
-const dictionary::dictionary_map_type& dictionary::entries() const noexcept
-{
-    return entries_;
-}
-
-dictionary::dictionary_map_type& dictionary::entries() noexcept
-{
-    return entries_;
-}
 } // namespace ripper::pdf::core

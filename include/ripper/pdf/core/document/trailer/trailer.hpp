@@ -19,7 +19,7 @@ class trailer
 {
 public:
     /// Construct a trailer from a parsed PDF dictionary.
-    explicit trailer(dictionary dict);
+    explicit trailer(dictionary_object dict);
 
     /// /Size — total number of objects in the cross-reference table.
     [[nodiscard]] std::uint64_t size() const;
@@ -36,13 +36,13 @@ public:
     /// /ID — document identifier pair.
     [[nodiscard]] std::optional<identifier> id() const;
 
-    /// Access the const reference to the underlying dictionary directly.
-    [[nodiscard]] const class dictionary& dictionary() const;
+    /// Access the const reference to the underlying dictionary_object directly.
+    [[nodiscard]] const class dictionary_object& dictionary() const;
 
-    /// Access the mutable reference to the underlying dictionary directly.
-    [[nodiscard]] class dictionary& dictionary();
+    /// Access the mutable reference to the underlying dictionary_object directly.
+    [[nodiscard]] class dictionary_object& dictionary();
 
 private:
-    class dictionary dict_;
+    class dictionary_object dict_;
 };
 } // namespace ripper::pdf::core

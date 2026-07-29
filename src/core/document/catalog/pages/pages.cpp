@@ -3,7 +3,7 @@
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/catalog/pages/page/page.hpp"
 #include "ripper/pdf/core/document/catalog/pages/page_tree_node.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 
@@ -23,11 +23,11 @@ std::uint64_t pages::count() const
     if (d == nullptr)
         throw logic_exception{"Pages content is not a dictionary"};
 
-    auto count = d->get_integer("Count");
+    auto count = d->get_number("Count");
     if (count == nullptr)
         throw logic_exception{"Pages indirect_object is missing required /Count entry"};
 
-    return static_cast<std::uint64_t>(*count);
+    return static_cast<std::uint64_t>(count->as_integer());
 }
 
 std::optional<class page> pages::page(std::uint64_t index)
@@ -116,11 +116,14 @@ class page pages::add_page()
     const auto page_ref = xref.reserve();
 
     // This should in fact be a parameter
-    array mediabox{object{std::int64_t{0}}, object{std::int64_t{0}}, object{std::int64_t{612}},
-                   object{std::int64_t{792}}};
+    array_object mediabox;
+    mediabox.push_back(object{std::int64_t{0}});
+    mediabox.push_back(object{std::int64_t{0}});
+    mediabox.push_back(object{std::int64_t{612}});
+    mediabox.push_back(object{std::int64_t{792}});
 
-    ripper::pdf::core::dictionary page_dict;
-    page_dict.set("Type", object{name{"Page"}});
+    ripper::pdf::core::dictionary_object page_dict;
+    page_dict.set("Type", object{name_object{"Page"}});
     page_dict.set("Parent", object{obj().identity().reference()});
     page_dict.set("MediaBox", object{std::move(mediabox)});
 
@@ -137,16 +140,16 @@ class page pages::add_page()
         throw logic_exception{"Pages content is not a dictionary"};
 
     if (d->get_array("Kids") == nullptr)
-        d->set("Kids", object{array{}});
+        d->set("Kids", object{array_object{}});
 
     auto* kids = d->get_array("Kids");
     kids->push_back(object{page_ref});
 
     std::uint64_t count = 0;
 
-    const auto* count_ptr = d->get_integer("Count");
+    const auto* count_ptr = d->get_number("Count");
     if (count_ptr != nullptr)
-        count = static_cast<std::uint64_t>(*count_ptr);
+        count = static_cast<std::uint64_t>(count_ptr->as_integer());
 
     d->set("Count", object{static_cast<std::int64_t>(count + 1)});
 
@@ -165,11 +168,11 @@ class page pages::add_page()
         if (pd == nullptr)
             break;
 
-        auto* pc = pd->get_integer("Count");
+        auto* pc = pd->get_number("Count");
         if (pc == nullptr)
             break;
 
-        pd->set("Count", object{*pc + 1});
+        pd->set("Count", object{pc->as_integer() + 1});
 
         if (up->is_root())
             break;
@@ -208,11 +211,11 @@ void pages::delete_page(std::uint64_t page_index)
         if (d == nullptr)
             break;
 
-        auto* count_ptr = d->get_integer("Count");
-        if (count_ptr == nullptr || *count_ptr <= 0)
+        auto* count_ptr = d->get_number("Count");
+        if (count_ptr == nullptr || count_ptr->as_integer() <= 0)
             break;
 
-        d->set("Count", object{*count_ptr - 1});
+        d->set("Count", object{count_ptr->as_integer() - 1});
 
         if (ancestor.is_root())
             break;
