@@ -30,9 +30,9 @@ indirect_reference parse_indirect_reference(pdf_lexer& lexer)
                               static_cast<std::uint16_t>(*gen_num)};
 }
 
-array parse_array(pdf_lexer& lexer)
+array_object parse_array(pdf_lexer& lexer)
 {
-    array arr;
+    array_object arr;
     while (true)
     {
         auto p = lexer.peek();
@@ -52,9 +52,9 @@ array parse_array(pdf_lexer& lexer)
     return arr;
 }
 
-dictionary parse_dictionary(pdf_lexer& lexer)
+dictionary_object parse_dictionary(pdf_lexer& lexer)
 {
-    dictionary dict;
+    dictionary_object dict;
     while (true)
     {
         auto p = lexer.peek();
@@ -125,7 +125,7 @@ object parse_value(pdf_lexer& lexer)
     if (p.type == lexer_token_type::name)
     {
         const auto tok = lexer.next();
-        return object{name{text::unescape_name(tok.lexeme)}};
+        return object{name_object{text::unescape_name(tok.lexeme)}};
     }
 
     if (p.type == lexer_token_type::literal_string)
@@ -144,10 +144,10 @@ object parse_value(pdf_lexer& lexer)
     {
         const auto tok = lexer.next();
         if (tok.lexeme == "true")
-            return object{true};
+            return object{boolean_object{true}};
 
         if (tok.lexeme == "false")
-            return object{false};
+            return object{boolean_object{false}};
 
         return object{};
     }

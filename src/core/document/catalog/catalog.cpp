@@ -2,7 +2,7 @@
 
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/catalog/pages/pages.hpp"
-#include "ripper/pdf/core/document/object/object_view.hpp"
+#include "ripper/pdf/core/document/object/helpers/object_view.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 
 namespace ripper::pdf::core

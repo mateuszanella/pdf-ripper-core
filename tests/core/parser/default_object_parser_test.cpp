@@ -1,7 +1,7 @@
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/stream.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/document/object/stream.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/default_object_parser.hpp"
 
@@ -32,11 +32,11 @@ TEST_CASE("default_object_parser parses integer object", "[parser][object]")
 
     REQUIRE(result.identity().reference().object_number() == 1);
     REQUIRE(result.content().is_integer());
-    REQUIRE(result.content().as_integer() != nullptr);
-    REQUIRE(*result.content().as_integer() == 42);
+    REQUIRE(result.content().as_number() != nullptr);
+    REQUIRE(result.content().as_number()->as_integer() == 42);
 }
 
-TEST_CASE("default_object_parser parses dictionary object", "[parser][object]")
+TEST_CASE("default_object_parser parses dictionary_object object", "[parser][object]")
 {
     auto doc = make_document();
     default_object_parser parser;
@@ -53,9 +53,9 @@ TEST_CASE("default_object_parser parses dictionary object", "[parser][object]")
     REQUIRE(type != nullptr);
     REQUIRE(type->value == "Page");
 
-    const auto* count = dict->get_integer("Count");
+    const auto* count = dict->get_number("Count");
     REQUIRE(count != nullptr);
-    REQUIRE(*count == 3);
+    REQUIRE(count->as_integer() == 3);
 }
 
 TEST_CASE("default_object_parser parses stream object", "[parser][object]")
@@ -72,9 +72,9 @@ TEST_CASE("default_object_parser parses stream object", "[parser][object]")
     REQUIRE(obj_stream != nullptr);
 
     const auto& dict = obj_stream->dictionary();
-    const auto* length = dict.get_integer("Length");
+    const auto* length = dict.get_number("Length");
     REQUIRE(length != nullptr);
-    REQUIRE(*length == 5);
+    REQUIRE(length->as_integer() == 5);
 
     const auto& strm = obj_stream->stream();
     REQUIRE(strm.size() == 5);
@@ -95,8 +95,8 @@ TEST_CASE("default_object_parser parses array object", "[parser][object]")
     REQUIRE(arr != nullptr);
     REQUIRE(arr->size() == 3);
     REQUIRE((*arr)[0].is_integer());
-    REQUIRE(*((*arr)[0].as_integer()) == 1);
-    REQUIRE(*((*arr)[2].as_integer()) == 3);
+    REQUIRE((*arr)[0].as_number()->as_integer() == 1);
+    REQUIRE((*arr)[2].as_number()->as_integer() == 3);
 }
 
 TEST_CASE("default_object_parser parses string object", "[parser][object]")
@@ -117,8 +117,8 @@ TEST_CASE("default_object_parser parses boolean object", "[parser][object]")
 
     const auto result = parser.parse(doc, ref(6), "\ntrue\n");
 
-    REQUIRE(result.content().is_bool());
-    REQUIRE(*result.content().as_bool() == true);
+    REQUIRE(result.content().is_boolean());
+    REQUIRE(result.content().as_boolean()->value == true);
 }
 
 TEST_CASE("default_object_parser parses null object", "[parser][object]")
@@ -161,9 +161,9 @@ TEST_CASE("default_object_parser parses nested dictionary", "[parser][object]")
 
     const auto* outer = dict->get_dictionary("Outer");
     REQUIRE(outer != nullptr);
-    const auto* inner = outer->get_integer("Inner");
+    const auto* inner = outer->get_number("Inner");
     REQUIRE(inner != nullptr);
-    REQUIRE(*inner == 42);
+    REQUIRE(inner->as_integer() == 42);
 }
 
 TEST_CASE("default_object_parser skips embedded endstream text", "[parser][object]")
@@ -421,14 +421,15 @@ TEST_CASE("default_object_parser preserves stream Length value when authoritativ
     const auto* obj_stream = result.content().as_stream();
     REQUIRE(obj_stream != nullptr);
 
-    const auto* length = obj_stream->dictionary().get_integer("Length");
+    const auto* length = obj_stream->dictionary().get_number("Length");
     REQUIRE(length != nullptr);
-    REQUIRE(*length == 4);
+    REQUIRE(length->as_integer() == 4);
     REQUIRE(obj_stream->stream().size() == 4);
 }
 
-TEST_CASE("default_object_parser treats non-dictionary content without stream as plain object",
-          "[parser][object][stream]")
+TEST_CASE(
+    "default_object_parser treats non-dictionary_object content without stream as plain object",
+    "[parser][object][stream]")
 {
     auto doc = make_document();
     default_object_parser parser;
@@ -437,10 +438,10 @@ TEST_CASE("default_object_parser treats non-dictionary content without stream as
     const auto result = parser.parse(doc, ref(27), "\n42\n");
 
     REQUIRE(result.content().is_integer());
-    REQUIRE(*result.content().as_integer() == 42);
+    REQUIRE(result.content().as_number()->as_integer() == 42);
 }
 
-TEST_CASE("default_object_parser dictionary without stream keyword returns plain dictionary",
+TEST_CASE("default_object_parser dictionary_object without stream keyword returns plain dictionary",
           "[parser][object][stream]")
 {
     auto doc = make_document();

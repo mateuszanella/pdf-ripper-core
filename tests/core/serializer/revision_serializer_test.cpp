@@ -39,7 +39,7 @@ cross_reference_section make_traditional_section()
 
 trailer make_trailer_with_root(std::uint32_t root_obj_number)
 {
-    trailer t{dictionary{}};
+    trailer t{dictionary_object{}};
     t.dictionary().set("Size", object{static_cast<std::int64_t>(2)});
     t.dictionary().set("Root", object{indirect_reference{root_obj_number, 0}});
     return t;

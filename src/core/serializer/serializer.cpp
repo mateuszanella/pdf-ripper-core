@@ -2,7 +2,7 @@
 
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/header.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/revision.hpp"
 #include "ripper/pdf/core/serializer/revision_serializer.hpp"
 #include "ripper/pdf/core/serializer/serializer_manager.hpp"

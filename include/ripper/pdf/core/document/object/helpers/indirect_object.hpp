@@ -1,7 +1,7 @@
 #pragma once
 
+#include "ripper/pdf/core/document/object/helpers/object_identity.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/document/object/object_identity.hpp"
 
 namespace ripper::pdf::core
 {
@@ -56,11 +56,11 @@ public:
     /// dictionary.
     ///
     /// Derived typed classes (catalog, pages, etc.) rely on this being non-null.
-    [[nodiscard]] const class dictionary* dictionary() const noexcept;
+    [[nodiscard]] const class dictionary_object* dictionary() const noexcept;
 
     /// Returns a mutable pointer to the content dictionary, or `nullptr` if the content is not a
     /// dictionary.
-    [[nodiscard]] class dictionary* dictionary() noexcept;
+    [[nodiscard]] class dictionary_object* dictionary() noexcept;
 
     /// Create a deep copy of this indirect object.
     ///

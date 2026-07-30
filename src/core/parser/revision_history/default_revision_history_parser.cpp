@@ -223,10 +223,10 @@ std::unique_ptr<revision_manager> default_revision_history_parser::parse()
 
             revisions.emplace_back(std::move(xref_section), std::move(trailer_result));
 
-            const auto* xrefstm = revisions.back().trailer().dictionary().get_integer("XRefStm");
-            if (xrefstm != nullptr && *xrefstm >= 0)
+            const auto* xrefstm = revisions.back().trailer().dictionary().get_number("XRefStm");
+            if (xrefstm != nullptr && xrefstm->as_integer() >= 0)
             {
-                auto stm_offset = static_cast<std::size_t>(*xrefstm);
+                auto stm_offset = static_cast<std::size_t>(xrefstm->as_integer());
                 if (!visited_offsets.contains(stm_offset))
                 {
                     visited_offsets.insert(stm_offset);

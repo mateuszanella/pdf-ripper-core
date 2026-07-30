@@ -28,7 +28,7 @@ public:
     /// for `section` per PDF spec §7.5.4 (traditional implementation), or a compressed
     /// xref stream indirect object per PDF spec §7.5.8 (compressed implementation).
     ///
-    /// `trailer` carries the trailer dictionary entries that the compressed serializer
+    /// `trailer` carries the trailer dictionary_object entries that the compressed serializer
     /// merges into the xref stream dictionary. The traditional serializer ignores it.
     [[nodiscard]] virtual std::vector<std::byte> serialize(const cross_reference_section& section,
                                                            const trailer& trailer) const = 0;

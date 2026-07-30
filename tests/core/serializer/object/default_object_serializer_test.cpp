@@ -1,5 +1,5 @@
+#include "ripper/pdf/core/document/object/helpers/stream.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/document/object/stream.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/serializer/object/default_object_serializer.hpp"
 
@@ -36,7 +36,7 @@ TEST_CASE("default_object_serializer serializes null", "[serializer][object]")
 TEST_CASE("default_object_serializer serializes true", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{true});
+    const auto result = ser.serialize(object{boolean_object{true}});
 
     REQUIRE(bytes_to_string(result) == "true");
 }
@@ -44,7 +44,7 @@ TEST_CASE("default_object_serializer serializes true", "[serializer][object]")
 TEST_CASE("default_object_serializer serializes false", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{false});
+    const auto result = ser.serialize(object{boolean_object{false}});
 
     REQUIRE(bytes_to_string(result) == "false");
 }
@@ -189,7 +189,7 @@ TEST_CASE("default_object_serializer accepts finite real values at construction"
 TEST_CASE("default_object_serializer serializes plain string", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{std::string{"Hello World"}});
+    const auto result = ser.serialize(object{string_object{"Hello World"}});
 
     REQUIRE(bytes_to_string(result) == "(Hello World)");
 }
@@ -197,7 +197,7 @@ TEST_CASE("default_object_serializer serializes plain string", "[serializer][obj
 TEST_CASE("default_object_serializer serializes empty string", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{std::string{""}});
+    const auto result = ser.serialize(object{string_object{""}});
 
     REQUIRE(bytes_to_string(result) == "()");
 }
@@ -205,7 +205,7 @@ TEST_CASE("default_object_serializer serializes empty string", "[serializer][obj
 TEST_CASE("default_object_serializer escapes parentheses in strings", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{std::string{"a(b)c"}});
+    const auto result = ser.serialize(object{string_object{"a(b)c"}});
 
     REQUIRE(bytes_to_string(result) == "(a\\(b\\)c)");
 }
@@ -213,7 +213,7 @@ TEST_CASE("default_object_serializer escapes parentheses in strings", "[serializ
 TEST_CASE("default_object_serializer escapes backslash in strings", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{std::string{"a\\b"}});
+    const auto result = ser.serialize(object{string_object{"a\\b"}});
 
     REQUIRE(bytes_to_string(result) == "(a\\\\b)");
 }
@@ -221,7 +221,7 @@ TEST_CASE("default_object_serializer escapes backslash in strings", "[serializer
 TEST_CASE("default_object_serializer escapes newline in strings", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{std::string{"a\nb"}});
+    const auto result = ser.serialize(object{string_object{"a\nb"}});
 
     REQUIRE(bytes_to_string(result) == "(a\\nb)");
 }
@@ -229,7 +229,7 @@ TEST_CASE("default_object_serializer escapes newline in strings", "[serializer][
 TEST_CASE("default_object_serializer escapes carriage return in strings", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{std::string{"a\rb"}});
+    const auto result = ser.serialize(object{string_object{"a\rb"}});
 
     REQUIRE(bytes_to_string(result) == "(a\\rb)");
 }
@@ -237,7 +237,7 @@ TEST_CASE("default_object_serializer escapes carriage return in strings", "[seri
 TEST_CASE("default_object_serializer escapes tab in strings", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{std::string{"a\tb"}});
+    const auto result = ser.serialize(object{string_object{"a\tb"}});
 
     REQUIRE(bytes_to_string(result) == "(a\\tb)");
 }
@@ -247,7 +247,7 @@ TEST_CASE("default_object_serializer escapes tab in strings", "[serializer][obje
 TEST_CASE("default_object_serializer serializes simple name", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"Type"}});
+    const auto result = ser.serialize(object{name_object{"Type"}});
 
     REQUIRE(bytes_to_string(result) == "/Type");
 }
@@ -256,7 +256,7 @@ TEST_CASE("default_object_serializer serializes name with special characters",
           "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"A(B)C"}});
+    const auto result = ser.serialize(object{name_object{"A(B)C"}});
 
     REQUIRE(bytes_to_string(result) == R"(/A#28B#29C)");
 }
@@ -264,7 +264,7 @@ TEST_CASE("default_object_serializer serializes name with special characters",
 TEST_CASE("default_object_serializer serializes name with hash character", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"Version#1"}});
+    const auto result = ser.serialize(object{name_object{"Version#1"}});
 
     REQUIRE(bytes_to_string(result) == R"(/Version#231)");
 }
@@ -272,7 +272,7 @@ TEST_CASE("default_object_serializer serializes name with hash character", "[ser
 TEST_CASE("default_object_serializer serializes name with spaces", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"Foo Bar"}});
+    const auto result = ser.serialize(object{name_object{"Foo Bar"}});
 
     REQUIRE(bytes_to_string(result) == R"(/Foo#20Bar)");
 }
@@ -280,7 +280,7 @@ TEST_CASE("default_object_serializer serializes name with spaces", "[serializer]
 TEST_CASE("default_object_serializer serializes name with slash", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"A/B"}});
+    const auto result = ser.serialize(object{name_object{"A/B"}});
 
     REQUIRE(bytes_to_string(result) == R"(/A#2FB)");
 }
@@ -288,7 +288,7 @@ TEST_CASE("default_object_serializer serializes name with slash", "[serializer][
 TEST_CASE("default_object_serializer serializes name with non-ASCII bytes", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"caf\xC3\xA9"}});
+    const auto result = ser.serialize(object{name_object{"caf\xC3\xA9"}});
 
     REQUIRE(bytes_to_string(result) == R"(/caf#C3#A9)");
 }
@@ -296,7 +296,7 @@ TEST_CASE("default_object_serializer serializes name with non-ASCII bytes", "[se
 TEST_CASE("default_object_serializer serializes name with angle brackets", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"A<B>C"}});
+    const auto result = ser.serialize(object{name_object{"A<B>C"}});
 
     REQUIRE(bytes_to_string(result) == R"(/A#3CB#3EC)");
 }
@@ -305,7 +305,7 @@ TEST_CASE("default_object_serializer serializes name with brackets and braces",
           "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"[A]{B}"}});
+    const auto result = ser.serialize(object{name_object{"[A]{B}"}});
 
     REQUIRE(bytes_to_string(result) == R"(/#5BA#5D#7BB#7D)");
 }
@@ -313,7 +313,7 @@ TEST_CASE("default_object_serializer serializes name with brackets and braces",
 TEST_CASE("default_object_serializer serializes name with percent", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"50%Done"}});
+    const auto result = ser.serialize(object{name_object{"50%Done"}});
 
     REQUIRE(bytes_to_string(result) == R"(/50#25Done)");
 }
@@ -321,7 +321,7 @@ TEST_CASE("default_object_serializer serializes name with percent", "[serializer
 TEST_CASE("default_object_serializer serializes name with tab and newline", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"A\t\nB"}});
+    const auto result = ser.serialize(object{name_object{"A\t\nB"}});
 
     REQUIRE(bytes_to_string(result) == R"(/A#09#0AB)");
 }
@@ -329,7 +329,7 @@ TEST_CASE("default_object_serializer serializes name with tab and newline", "[se
 TEST_CASE("default_object_serializer serializes name with multiple escapes", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{name{"<key> / value%"}});
+    const auto result = ser.serialize(object{name_object{"<key> / value%"}});
 
     REQUIRE(bytes_to_string(result) == R"(/#3Ckey#3E#20#2F#20value#25)");
 }
@@ -366,7 +366,7 @@ TEST_CASE("default_object_serializer serializes null indirect reference", "[seri
 TEST_CASE("default_object_serializer serializes empty array", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{array{}});
+    const auto result = ser.serialize(object{array_object{}});
 
     REQUIRE(bytes_to_string(result) == "[]");
 }
@@ -375,7 +375,7 @@ TEST_CASE("default_object_serializer serializes array of integers", "[serializer
 {
     default_object_serializer ser;
 
-    array arr;
+    array_object arr;
     arr.push_back(object{static_cast<std::int64_t>(1)});
     arr.push_back(object{static_cast<std::int64_t>(2)});
     arr.push_back(object{static_cast<std::int64_t>(3)});
@@ -389,10 +389,10 @@ TEST_CASE("default_object_serializer serializes array of mixed types", "[seriali
 {
     default_object_serializer ser;
 
-    array arr;
+    array_object arr;
     arr.push_back(object{static_cast<std::int64_t>(42)});
-    arr.push_back(object{true});
-    arr.push_back(object{name{"Test"}});
+    arr.push_back(object{boolean_object{true}});
+    arr.push_back(object{name_object{"Test"}});
     arr.push_back(object{indirect_reference{5, 0}});
 
     const auto result = ser.serialize(object{std::move(arr)});
@@ -404,11 +404,11 @@ TEST_CASE("default_object_serializer serializes nested arrays", "[serializer][ob
 {
     default_object_serializer ser;
 
-    array inner;
+    array_object inner;
     inner.push_back(object{static_cast<std::int64_t>(1)});
     inner.push_back(object{static_cast<std::int64_t>(2)});
 
-    array outer;
+    array_object outer;
     outer.push_back(object{std::move(inner)});
     outer.push_back(object{static_cast<std::int64_t>(3)});
 
@@ -421,8 +421,8 @@ TEST_CASE("default_object_serializer serializes single-element array", "[seriali
 {
     default_object_serializer ser;
 
-    array arr;
-    arr.push_back(object{name{"Only"}});
+    array_object arr;
+    arr.push_back(object{name_object{"Only"}});
 
     const auto result = ser.serialize(object{std::move(arr)});
 
@@ -434,31 +434,31 @@ TEST_CASE("default_object_serializer serializes single-element array", "[seriali
 TEST_CASE("default_object_serializer serializes empty dictionary", "[serializer][object]")
 {
     default_object_serializer ser;
-    const auto result = ser.serialize(object{dictionary{}});
+    const auto result = ser.serialize(object{dictionary_object{}});
 
     REQUIRE(bytes_to_string(result) == "<<\n>>");
 }
 
-TEST_CASE("default_object_serializer serializes dictionary with single entry",
+TEST_CASE("default_object_serializer serializes dictionary_object with single entry",
           "[serializer][object]")
 {
     default_object_serializer ser;
 
-    dictionary dict;
-    dict.set("Type", object{name{"Page"}});
+    dictionary_object dict;
+    dict.set("Type", object{name_object{"Page"}});
 
     const auto result = ser.serialize(object{std::move(dict)});
 
     REQUIRE(bytes_to_string(result) == "<<\n/Type /Page\n>>");
 }
 
-TEST_CASE("default_object_serializer serializes dictionary with multiple entries",
+TEST_CASE("default_object_serializer serializes dictionary_object with multiple entries",
           "[serializer][object]")
 {
     default_object_serializer ser;
 
-    dictionary dict;
-    dict.set("Type", object{name{"Page"}});
+    dictionary_object dict;
+    dict.set("Type", object{name_object{"Page"}});
     dict.set("Count", object{static_cast<std::int64_t>(42)});
 
     const auto result = ser.serialize(object{std::move(dict)});
@@ -474,10 +474,10 @@ TEST_CASE("default_object_serializer serializes nested dictionary", "[serializer
 {
     default_object_serializer ser;
 
-    dictionary inner;
-    inner.set("InnerKey", object{name{"InnerValue"}});
+    dictionary_object inner;
+    inner.set("InnerKey", object{name_object{"InnerValue"}});
 
-    dictionary outer;
+    dictionary_object outer;
     outer.set("Outer", object{std::move(inner)});
 
     const auto result = ser.serialize(object{std::move(outer)});
@@ -489,12 +489,12 @@ TEST_CASE("default_object_serializer serializes nested dictionary", "[serializer
     REQUIRE(s.find("/InnerKey /InnerValue") != std::string::npos);
 }
 
-TEST_CASE("default_object_serializer serializes dictionary with indirect reference values",
+TEST_CASE("default_object_serializer serializes dictionary_object with indirect reference values",
           "[serializer][object]")
 {
     default_object_serializer ser;
 
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Root", object{indirect_reference{1, 0}});
     dict.set("Pages", object{indirect_reference{2, 0}});
 
@@ -505,14 +505,14 @@ TEST_CASE("default_object_serializer serializes dictionary with indirect referen
     REQUIRE(s.find("/Pages 2 0 R") != std::string::npos);
 }
 
-TEST_CASE("default_object_serializer dictionary uses object break character",
+TEST_CASE("default_object_serializer dictionary_object uses object break character",
           "[serializer][object]")
 {
     default_object_serializer ser;
     ser.set_object_break_character('\r');
 
-    dictionary dict;
-    dict.set("Type", object{name{"Page"}});
+    dictionary_object dict;
+    dict.set("Type", object{name_object{"Page"}});
 
     const auto result = ser.serialize(object{std::move(dict)});
 
@@ -525,12 +525,12 @@ TEST_CASE("default_object_serializer serializes stream object", "[serializer][ob
 {
     default_object_serializer ser;
 
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Length", object{static_cast<std::int64_t>(5)});
 
     std::vector<std::byte> data = {std::byte{'h'}, std::byte{'e'}, std::byte{'l'}, std::byte{'l'},
                                    std::byte{'o'}};
-    object_stream obj_stream{std::move(dict), stream{std::move(data)}};
+    stream_object obj_stream{std::move(dict), stream{std::move(data)}};
 
     const auto result = ser.serialize(object{std::move(obj_stream)});
 
@@ -542,27 +542,27 @@ TEST_CASE("default_object_serializer serializes stream with empty data",
 {
     default_object_serializer ser;
 
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Length", object{static_cast<std::int64_t>(0)});
 
-    object_stream obj_stream{std::move(dict), stream{std::vector<std::byte>{}}};
+    stream_object obj_stream{std::move(dict), stream{std::vector<std::byte>{}}};
 
     const auto result = ser.serialize(object{std::move(obj_stream)});
 
     REQUIRE(bytes_to_string(result) == "<<\n/Length 0\n>>\nstream\n\nendstream");
 }
 
-TEST_CASE("default_object_serializer serializes stream with dictionary other keys",
+TEST_CASE("default_object_serializer serializes stream with dictionary_object other keys",
           "[serializer][object][stream]")
 {
     default_object_serializer ser;
 
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Length", object{static_cast<std::int64_t>(3)});
-    dict.set("Type", object{name{"TestType"}});
+    dict.set("Type", object{name_object{"TestType"}});
 
     std::vector<std::byte> data = {std::byte{'a'}, std::byte{'b'}, std::byte{'c'}};
-    object_stream obj_stream{std::move(dict), stream{std::move(data)}};
+    stream_object obj_stream{std::move(dict), stream{std::move(data)}};
 
     const auto result = ser.serialize(object{std::move(obj_stream)});
     const auto s = bytes_to_string(result);
@@ -581,11 +581,11 @@ TEST_CASE("default_object_serializer uses custom line break for stream",
     default_object_serializer ser;
     ser.set_line_break_character('\r');
 
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Length", object{static_cast<std::int64_t>(4)});
 
     std::vector<std::byte> data = {std::byte{'t'}, std::byte{'e'}, std::byte{'s'}, std::byte{'t'}};
-    object_stream obj_stream{std::move(dict), stream{std::move(data)}};
+    stream_object obj_stream{std::move(dict), stream{std::move(data)}};
 
     const auto result = ser.serialize(object{std::move(obj_stream)});
 

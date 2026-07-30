@@ -13,7 +13,7 @@ class document;
 
 /// Parses a compressed cross-reference stream (PDF 1.5+ /Type /XRef).
 ///
-/// Delegates dictionary parsing to the document's `object_parser`, then extracts
+/// Delegates dictionary_object parsing to the document's `object_parser`, then extracts
 /// the binary xref stream data from the decoded stream payload.
 ///
 /// Returns both the cross-reference section and the trailer, since xref streams
@@ -32,7 +32,7 @@ public:
     /// stream object during parsing (e.g., `indirect_reference{0, 0}`).
     ///
     /// Delegates to `doc.parser()->manager().object_parser()` for proper
-    /// dictionary parsing instead of manual string manipulation.
+    /// dictionary_object parsing instead of manual string manipulation.
     ///
     /// @throws parse_exception if the content is malformed or required keys are missing.
     [[nodiscard]] static std::pair<cross_reference_section, trailer>

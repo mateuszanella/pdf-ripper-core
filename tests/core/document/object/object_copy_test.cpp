@@ -2,7 +2,7 @@
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_section.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -13,7 +13,7 @@ namespace ripper::pdf::core
 
 indirect_object make_indirect_object(document& doc, std::uint32_t obj_num, std::string value)
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Value", object{std::move(value)});
     return indirect_object{object_identity{&doc, indirect_reference{obj_num, 0}},
                            object{std::move(dict)}};
@@ -21,31 +21,31 @@ indirect_object make_indirect_object(document& doc, std::uint32_t obj_num, std::
 
 TEST_CASE("object clone creates independent deep copy of dictionary", "[object][copy][clone]")
 {
-    dictionary dict;
-    dict.set("Name", object{name{"original"}});
+    dictionary_object dict;
+    dict.set("Name", object{name_object{"original"}});
     dict.set("Count", object{std::int64_t{42}});
 
     object original{std::move(dict)};
     object copy = original.clone();
 
     REQUIRE(copy.as_dictionary()->get_name("Name")->value == "original");
-    REQUIRE(*copy.as_dictionary()->get_integer("Count") == 42);
+    REQUIRE(copy.as_dictionary()->get_number("Count")->as_integer() == 42);
 
     // Modify original — copy must be unaffected
-    original.as_dictionary()->set("Name", object{name{"modified"}});
+    original.as_dictionary()->set("Name", object{name_object{"modified"}});
     original.as_dictionary()->set("Count", object{std::int64_t{0}});
 
     REQUIRE(copy.as_dictionary()->get_name("Name")->value == "original");
-    REQUIRE(*copy.as_dictionary()->get_integer("Count") == 42);
+    REQUIRE(copy.as_dictionary()->get_number("Count")->as_integer() == 42);
 }
 
 TEST_CASE("object clone creates independent deep copy of nested dictionary",
           "[object][copy][clone]")
 {
-    dictionary inner;
-    inner.set("InnerKey", object{std::string{"inner"}});
+    dictionary_object inner;
+    inner.set("InnerKey", object{string_object{"inner"}});
 
-    dictionary outer;
+    dictionary_object outer;
     outer.set("Nested", object{std::move(inner)});
 
     object original{std::move(outer)};
@@ -54,7 +54,7 @@ TEST_CASE("object clone creates independent deep copy of nested dictionary",
     REQUIRE(*copy.as_dictionary()->get_dictionary("Nested")->get_string("InnerKey") == "inner");
 
     original.as_dictionary()->get_dictionary("Nested")->set("InnerKey",
-                                                            object{std::string{"changed"}});
+                                                            object{string_object{"changed"}});
     REQUIRE(*copy.as_dictionary()->get_dictionary("Nested")->get_string("InnerKey") == "inner");
 }
 
@@ -62,10 +62,10 @@ TEST_CASE("object clone creates independent deep copy of stream", "[object][copy
 {
     std::vector<std::byte> data = {std::byte{'a'}, std::byte{'b'}, std::byte{'c'}};
     stream str{data};
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Length", object{std::int64_t{3}});
 
-    object_stream os{std::move(dict), std::move(str)};
+    stream_object os{std::move(dict), std::move(str)};
     object original{std::move(os)};
     object copy = original.clone();
 
@@ -76,19 +76,19 @@ TEST_CASE("object clone creates independent deep copy of stream", "[object][copy
 TEST_CASE("object clone creates independent deep copy of array with dictionaries",
           "[object][copy][clone]")
 {
-    dictionary item;
+    dictionary_object item;
     item.set("Id", object{std::int64_t{1}});
 
-    array arr;
+    array_object arr;
     arr.push_back(object{std::move(item)});
 
     object original{std::move(arr)};
     object copy = original.clone();
 
-    REQUIRE(*copy.as_array()->at(0).as_dictionary()->get_integer("Id") == 1);
+    REQUIRE(copy.as_array()->at(0).as_dictionary()->get_number("Id")->as_integer() == 1);
 
     original.as_array()->at(0).as_dictionary()->set("Id", object{std::int64_t{99}});
-    REQUIRE(*copy.as_array()->at(0).as_dictionary()->get_integer("Id") == 1);
+    REQUIRE(copy.as_array()->at(0).as_dictionary()->get_number("Id")->as_integer() == 1);
 }
 
 TEST_CASE("indirect_object clone creates independent deep copy", "[indirect_object][copy][clone]")
@@ -103,7 +103,7 @@ TEST_CASE("indirect_object clone creates independent deep copy", "[indirect_obje
     REQUIRE(cloned.identity().reference().generation() == 0);
     REQUIRE(*cloned.dictionary()->get_string("Value") == "hello");
 
-    original.dictionary()->set("Value", object{std::string{"modified"}});
+    original.dictionary()->set("Value", object{string_object{"modified"}});
     REQUIRE(*cloned.dictionary()->get_string("Value") == "hello");
 }
 
@@ -128,7 +128,7 @@ TEST_CASE("cross_reference_entry copy deep-clones resolved indirect object",
     REQUIRE(*copy.indirect_object()->dictionary()->get_string("Value") == "entry");
 
     // Modify original — copy must be untouched
-    original.indirect_object()->dictionary()->set("Value", object{std::string{"modified"}});
+    original.indirect_object()->dictionary()->set("Value", object{string_object{"modified"}});
     REQUIRE(*copy.indirect_object()->dictionary()->get_string("Value") == "entry");
 }
 

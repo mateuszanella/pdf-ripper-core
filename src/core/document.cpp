@@ -220,7 +220,7 @@ revision& document::create_new_revision()
 
     cross_reference_section new_section{std::move(subsections)};
 
-    class trailer new_trailer{dictionary{}};
+    class trailer new_trailer{dictionary_object{}};
     new_trailer.dictionary().set(
         "Size", object{static_cast<std::int64_t>(cross_reference_table().next_object_number())});
 

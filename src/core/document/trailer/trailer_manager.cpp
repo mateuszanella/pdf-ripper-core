@@ -22,7 +22,7 @@ const trailer& trailer_manager::active_trailer() const noexcept
 
 trailer trailer_manager::compiled() const
 {
-    dictionary merged{};
+    dictionary_object merged{};
 
     for (const auto& rev : *revisions_)
     {

@@ -53,7 +53,7 @@ public:
     /// If /Filter is an array of names, applies each filter in order.
     ///
     /// @throws parse_exception if /Filter is malformed or a filter is unknown.
-    [[nodiscard]] static std::vector<std::byte> decode(const dictionary& dict,
+    [[nodiscard]] static std::vector<std::byte> decode(const dictionary_object& dict,
                                                        std::span<const std::byte> raw);
 
     /// Encode stream bytes using /Filter from the dictionary.
@@ -63,7 +63,7 @@ public:
     /// If /Filter is an array of names, applies each filter in reverse order.
     ///
     /// @throws parse_exception if /Filter is malformed or a filter is unknown.
-    [[nodiscard]] static std::vector<std::byte> encode(const dictionary& dict,
+    [[nodiscard]] static std::vector<std::byte> encode(const dictionary_object& dict,
                                                        std::span<const std::byte> decoded);
 
 private:

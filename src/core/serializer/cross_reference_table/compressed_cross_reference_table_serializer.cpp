@@ -2,8 +2,8 @@
 
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_entry.hpp"
 #include "ripper/pdf/core/document/cross_reference_table/cross_reference_subsection.hpp"
+#include "ripper/pdf/core/document/object/helpers/stream.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/document/object/stream.hpp"
 #include "ripper/pdf/core/document/trailer/trailer.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/filter/filter_manager.hpp"
@@ -42,26 +42,26 @@ compressed_cross_reference_table_serializer::serialize(const cross_reference_sec
             size = last;
     }
 
-    array w_arr;
+    array_object w_arr;
     w_arr.push_back(object{static_cast<std::int64_t>(widths.w0)});
     w_arr.push_back(object{static_cast<std::int64_t>(widths.w1)});
     w_arr.push_back(object{static_cast<std::int64_t>(widths.w2)});
 
-    // Start from the trailer dictionary so trailer-only entries (Root, Info, ID,
-    // Encrypt, Prev) are merged into the xref stream dictionary per PDF spec
+    // Start from the trailer dictionary_object so trailer-only entries (Root, Info, ID,
+    // Encrypt, Prev) are merged into the xref stream dictionary_object per PDF spec
     // §7.5.8. The xref-specific keys (Type, Size, W, Index, Filter, Length)
     // are then set explicitly and take precedence over any trailer values.
-    dictionary dict{trailer.dictionary().entries()};
+    dictionary_object dict{trailer.dictionary().entries()};
 
-    dict.set("Type", object{name{"XRef"}});
+    dict.set("Type", object{name_object{"XRef"}});
     dict.set("Size", object{static_cast<std::int64_t>(size)});
     dict.set("W", object{std::move(w_arr)});
-    dict.set("Filter", object{name{"FlateDecode"}});
+    dict.set("Filter", object{name_object{"FlateDecode"}});
 
     const auto& subs = section.subsections();
     if (subs.size() != 1 || subs.front().first_object_number() != 0)
     {
-        array idx;
+        array_object idx;
         for (const auto& sub : subs)
         {
             idx.push_back(object{static_cast<std::int64_t>(sub.first_object_number())});
@@ -83,7 +83,7 @@ compressed_cross_reference_table_serializer::serialize(const cross_reference_sec
         throw logic_exception{"Compressed xref serializer missing injected object_serializer"};
 
     auto body = object_serializer_->serialize(
-        object{object_stream{std::move(dict), stream{std::move(compressed)}}});
+        object{stream_object{std::move(dict), stream{std::move(compressed)}}});
 
     std::vector<std::byte> out;
     byte::append_bytes(out, std::to_string(xref_obj_num.value()) + " 0 obj\n");

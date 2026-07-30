@@ -30,29 +30,31 @@ std::vector<std::byte> default_object_serializer::serialize(const object& obj) c
         {
             using T = std::decay_t<decltype(value)>;
 
-            if constexpr (std::is_same_v<T, null>)
+            if constexpr (std::is_same_v<T, null_object>)
                 return serialize_null();
-            else if constexpr (std::is_same_v<T, bool>)
-                return serialize_bool(value);
-            else if constexpr (std::is_same_v<T, std::int64_t>)
-                return serialize_integer(value);
-            else if constexpr (std::is_same_v<T, double>)
-                return serialize_real(value);
-            else if constexpr (std::is_same_v<T, std::string>)
-                return serialize_string(value);
-            else if constexpr (std::is_same_v<T, name>)
+            else if constexpr (std::is_same_v<T, boolean_object>)
+                return serialize_bool(value.value);
+            else if constexpr (std::is_same_v<T, number_object>)
+            {
+                if (value.is_real())
+                    return serialize_real(value.as_real());
+                return serialize_integer(value.as_integer());
+            }
+            else if constexpr (std::is_same_v<T, string_object>)
+                return serialize_string(value.as_string());
+            else if constexpr (std::is_same_v<T, name_object>)
                 return serialize_name(value);
             else if constexpr (std::is_same_v<T, indirect_reference>)
                 return serialize_indirect_reference(value);
-            else if constexpr (std::is_same_v<T, array>)
+            else if constexpr (std::is_same_v<T, array_object>)
                 return serialize_array(value);
-            else if constexpr (std::is_same_v<T, std::unique_ptr<dictionary>>)
+            else if constexpr (std::is_same_v<T, std::unique_ptr<dictionary_object>>)
             {
                 if (!value)
                     return {};
                 return serialize_dictionary(*value);
             }
-            else if constexpr (std::is_same_v<T, std::unique_ptr<object_stream>>)
+            else if constexpr (std::is_same_v<T, std::unique_ptr<stream_object>>)
             {
                 if (!value)
                     return {};
@@ -112,7 +114,7 @@ std::vector<std::byte> default_object_serializer::serialize_string(const std::st
     return out;
 }
 
-std::vector<std::byte> default_object_serializer::serialize_name(const name& value) const
+std::vector<std::byte> default_object_serializer::serialize_name(const name_object& value) const
 {
     const auto escaped = text::escape_name(value.value);
 
@@ -136,7 +138,7 @@ default_object_serializer::serialize_indirect_reference(const indirect_reference
     return out;
 }
 
-std::vector<std::byte> default_object_serializer::serialize_array(const array& value) const
+std::vector<std::byte> default_object_serializer::serialize_array(const array_object& value) const
 {
     std::vector<std::byte> out;
     byte::append_bytes(out, '[');
@@ -152,7 +154,7 @@ std::vector<std::byte> default_object_serializer::serialize_array(const array& v
 }
 
 std::vector<std::byte>
-default_object_serializer::serialize_dictionary(const dictionary& value) const
+default_object_serializer::serialize_dictionary(const dictionary_object& value) const
 {
     std::vector<std::byte> out;
     byte::append_bytes(out, '<');
@@ -160,7 +162,7 @@ default_object_serializer::serialize_dictionary(const dictionary& value) const
     byte::append_bytes(out, object_break_character_);
     for (const auto& [key, val] : value.entries())
     {
-        byte::append_bytes(out, serialize_name(name{key}));
+        byte::append_bytes(out, serialize_name(name_object{key}));
         byte::append_bytes(out, ' ');
         byte::append_bytes(out, serialize(val));
         byte::append_bytes(out, object_break_character_);
@@ -172,7 +174,7 @@ default_object_serializer::serialize_dictionary(const dictionary& value) const
 }
 
 std::vector<std::byte>
-default_object_serializer::serialize_stream_object(const object_stream& stream_obj) const
+default_object_serializer::serialize_stream_object(const stream_object& stream_obj) const
 {
     std::vector<std::byte> out;
 
@@ -183,7 +185,7 @@ default_object_serializer::serialize_stream_object(const object_stream& stream_o
     {
         auto encoded = filter_manager::encode(dict, stream.data());
 
-        dictionary encoded_dict = dict;
+        dictionary_object encoded_dict = dict;
         encoded_dict.set("Length", object{static_cast<std::int64_t>(encoded.size())});
 
         byte::append_bytes(out, serialize_dictionary(encoded_dict));

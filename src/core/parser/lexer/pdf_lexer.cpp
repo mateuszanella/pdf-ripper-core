@@ -104,7 +104,7 @@ lexer_token pdf_lexer::read_token()
             return lexer_token{lexer_token_type::dictionary_end, ">>"};
         }
 
-        throw parse_exception{"Invalid dictionary end token"};
+        throw parse_exception{"Invalid dictionary_object end token"};
     }
 
     if (ch == '[')

@@ -1,4 +1,4 @@
-#include "ripper/pdf/core/document/object/stream.hpp"
+#include "ripper/pdf/core/document/object/helpers/stream.hpp"
 
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>

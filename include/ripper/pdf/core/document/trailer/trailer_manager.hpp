@@ -62,7 +62,7 @@ public:
     /// entries so that newer values overwrite older ones. The result is a new
     /// `trailer` object computed on each call; it is not cached.
     ///
-    /// Returns an empty-dictionary trailer if no revisions have been added.
+    /// Returns an empty-dictionary_object trailer if no revisions have been added.
     [[nodiscard]] trailer compiled() const;
 
     /// Returns the number of revisions (each carrying one trailer).

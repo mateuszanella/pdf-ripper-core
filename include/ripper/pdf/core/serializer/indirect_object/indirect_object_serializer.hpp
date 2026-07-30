@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/serializer/object/object_serializer.hpp"
 
 #include <cstddef>

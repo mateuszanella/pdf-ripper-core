@@ -23,7 +23,7 @@ std::string bytes_to_string(const std::vector<std::byte>& bytes)
 
 TEST_CASE("default_trailer_serializer serializes minimal trailer", "[serializer][trailer]")
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Size", object{static_cast<std::int64_t>(3)});
     dict.set("Root", object{indirect_reference{1, 0}});
     trailer t{std::move(dict)};
@@ -40,7 +40,7 @@ TEST_CASE("default_trailer_serializer serializes minimal trailer", "[serializer]
 TEST_CASE("default_trailer_serializer serializes trailer with all standard keys",
           "[serializer][trailer]")
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Size", object{static_cast<std::int64_t>(5)});
     dict.set("Root", object{indirect_reference{10, 0}});
     dict.set("Prev", object{static_cast<std::int64_t>(99)});
@@ -63,13 +63,13 @@ TEST_CASE("default_trailer_serializer serializes trailer with all standard keys"
 
 TEST_CASE("default_trailer_serializer serializes trailer with ID array", "[serializer][trailer]")
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Size", object{static_cast<std::int64_t>(1)});
     dict.set("Root", object{indirect_reference{1, 0}});
 
-    array id_arr;
-    id_arr.push_back(object{std::string{"original"}});
-    id_arr.push_back(object{std::string{"current"}});
+    array_object id_arr;
+    id_arr.push_back(object{string_object{"original"}});
+    id_arr.push_back(object{string_object{"current"}});
     dict.set("ID", object{std::move(id_arr)});
     trailer t{std::move(dict)};
 
@@ -85,10 +85,10 @@ TEST_CASE("default_trailer_serializer serializes trailer with ID array", "[seria
 TEST_CASE("default_trailer_serializer serializes trailer with unknown keys preserved",
           "[serializer][trailer]")
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Size", object{static_cast<std::int64_t>(2)});
     dict.set("Root", object{indirect_reference{1, 0}});
-    dict.set("CustomKey", object{name{"CustomValue"}});
+    dict.set("CustomKey", object{name_object{"CustomValue"}});
     trailer t{std::move(dict)};
 
     default_object_serializer obj_ser;
@@ -102,7 +102,7 @@ TEST_CASE("default_trailer_serializer serializes trailer with unknown keys prese
 
 TEST_CASE("default_trailer_serializer uses custom line break character", "[serializer][trailer]")
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Size", object{static_cast<std::int64_t>(3)});
     dict.set("Root", object{indirect_reference{1, 0}});
     trailer t{std::move(dict)};
@@ -114,7 +114,7 @@ TEST_CASE("default_trailer_serializer uses custom line break character", "[seria
     const auto result = ser.serialize(t, 42);
 
     // set_line_break_character does NOT propagate to the embedded object_serializer
-    // (unlike default_indirect_object_serializer), so dictionary internals use \n.
+    // (unlike default_indirect_object_serializer), so dictionary_object internals use \n.
     const auto s = bytes_to_string(result);
     REQUIRE(s.starts_with("trailer\r<<\n"));
     REQUIRE(s.find("\n/Size 3\n") != std::string::npos);
@@ -124,7 +124,7 @@ TEST_CASE("default_trailer_serializer uses custom line break character", "[seria
 
 TEST_CASE("default_trailer_serializer outputs startxref with zero offset", "[serializer][trailer]")
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Size", object{static_cast<std::int64_t>(1)});
     dict.set("Root", object{indirect_reference{1, 0}});
     trailer t{std::move(dict)};
@@ -139,7 +139,7 @@ TEST_CASE("default_trailer_serializer outputs startxref with zero offset", "[ser
 
 TEST_CASE("default_trailer_serializer outputs startxref with large offset", "[serializer][trailer]")
 {
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Size", object{static_cast<std::int64_t>(1)});
     dict.set("Root", object{indirect_reference{1, 0}});
     trailer t{std::move(dict)};
@@ -152,10 +152,11 @@ TEST_CASE("default_trailer_serializer outputs startxref with large offset", "[se
     REQUIRE(bytes_to_string(result).find("startxref\n999999\n") != std::string::npos);
 }
 
-TEST_CASE("default_trailer_serializer trailer dictionary serialized as-is", "[serializer][trailer]")
+TEST_CASE("default_trailer_serializer trailer dictionary_object serialized as-is",
+          "[serializer][trailer]")
 {
-    // Verify the trailer dictionary is passed through without any filtering
-    dictionary dict;
+    // Verify the trailer dictionary_object is passed through without any filtering
+    dictionary_object dict;
     dict.set("Size", object{static_cast<std::int64_t>(3)});
     dict.set("Root", object{indirect_reference{1, 0}});
     trailer t{std::move(dict)}; // no /Prev or /ID set

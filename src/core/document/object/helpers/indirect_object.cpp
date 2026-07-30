@@ -1,7 +1,7 @@
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 
+#include "ripper/pdf/core/document/object/helpers/stream.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
-#include "ripper/pdf/core/document/object/stream.hpp"
 namespace ripper::pdf::core
 {
 indirect_object::indirect_object(object_identity identity, class object content) noexcept
@@ -29,12 +29,12 @@ object& indirect_object::content() noexcept
     return content_;
 }
 
-const dictionary* indirect_object::dictionary() const noexcept
+const dictionary_object* indirect_object::dictionary() const noexcept
 {
     return content_.as_dictionary();
 }
 
-dictionary* indirect_object::dictionary() noexcept
+dictionary_object* indirect_object::dictionary() noexcept
 {
     return content_.as_dictionary();
 }

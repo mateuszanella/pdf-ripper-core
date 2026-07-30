@@ -43,7 +43,7 @@ public:
     ///
     /// When the injected serializer is a `compressed_cross_reference_table_serializer`,
     /// the currently-configured object serializer (if any) is automatically propagated
-    /// to it so its dictionary serialization has the dependencies it needs.
+    /// to it so its dictionary_object serialization has the dependencies it needs.
     void set_cross_reference_table_serializer(
         std::unique_ptr<class cross_reference_table_serializer> object);
 

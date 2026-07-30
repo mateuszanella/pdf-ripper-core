@@ -137,11 +137,11 @@ TEST_CASE("pdf_lexer throws on unterminated literal string", "[parser][lexer][co
                         Catch::Matchers::ContainsSubstring("Unterminated literal string"));
 }
 
-TEST_CASE("pdf_lexer throws on invalid dictionary end", "[parser][lexer][corrupted]")
+TEST_CASE("pdf_lexer throws on invalid dictionary_object end", "[parser][lexer][corrupted]")
 {
     pdf_lexer lexer{">"};
     REQUIRE_THROWS_WITH((void)lexer.next(),
-                        Catch::Matchers::ContainsSubstring("Invalid dictionary end token"));
+                        Catch::Matchers::ContainsSubstring("Invalid dictionary_object end token"));
 }
 
 TEST_CASE("pdf_lexer throws on unexpected characters", "[parser][lexer][corrupted]")

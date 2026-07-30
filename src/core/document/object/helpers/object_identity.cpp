@@ -1,5 +1,5 @@
 #include "ripper/pdf/core/document.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 
 #include <cassert>

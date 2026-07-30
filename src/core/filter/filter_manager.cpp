@@ -12,7 +12,7 @@ namespace
 
 using filter_chain_t = std::vector<const stream_filter*>;
 
-filter_chain_t build_chain(const dictionary& dict)
+filter_chain_t build_chain(const dictionary_object& dict)
 {
     const auto* filter_entry = dict.get("Filter");
     if (filter_entry == nullptr)
@@ -99,7 +99,7 @@ void filter_manager::forget(std::string_view name)
     filters().erase(std::string{name});
 }
 
-std::vector<std::byte> filter_manager::decode(const dictionary& dict,
+std::vector<std::byte> filter_manager::decode(const dictionary_object& dict,
                                               std::span<const std::byte> raw)
 {
     const auto chain = build_chain(dict);
@@ -116,7 +116,7 @@ std::vector<std::byte> filter_manager::decode(const dictionary& dict,
     return result;
 }
 
-std::vector<std::byte> filter_manager::encode(const dictionary& dict,
+std::vector<std::byte> filter_manager::encode(const dictionary_object& dict,
                                               std::span<const std::byte> decoded)
 {
     const auto chain = build_chain(dict);

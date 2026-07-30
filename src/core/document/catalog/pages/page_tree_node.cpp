@@ -4,7 +4,7 @@
 #include "ripper/pdf/core/document/catalog/catalog.hpp"
 #include "ripper/pdf/core/document/catalog/pages/page/page.hpp"
 #include "ripper/pdf/core/document/catalog/pages/pages.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
@@ -137,10 +137,10 @@ std::uint64_t page_tree_node::subtree_count() const
     if (type != nullptr && type->value == "Page")
         return 1;
 
-    const auto* count = d->get_integer("Count");
+    const auto* count = d->get_number("Count");
     if (count == nullptr)
         throw logic_exception{"Pages node is missing required /Count entry"};
 
-    return static_cast<std::uint64_t>(*count);
+    return static_cast<std::uint64_t>(count->as_integer());
 }
 } // namespace ripper::pdf::core

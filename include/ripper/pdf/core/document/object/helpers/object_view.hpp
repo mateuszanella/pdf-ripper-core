@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 
 #include <functional>
 
@@ -20,10 +20,10 @@ public:
     [[nodiscard]] const indirect_object& obj() const noexcept;
 
     /// Returns a pointer to the content dictionary, or nullptr if not a dictionary.
-    [[nodiscard]] class dictionary* dictionary() noexcept;
+    [[nodiscard]] class dictionary_object* dictionary() noexcept;
 
     /// Returns a const pointer to the content dictionary, or nullptr if not a dictionary.
-    [[nodiscard]] const class dictionary* dictionary() const noexcept;
+    [[nodiscard]] const class dictionary_object* dictionary() const noexcept;
 
     /// Rebind this view to a different indirect_object.
     ///

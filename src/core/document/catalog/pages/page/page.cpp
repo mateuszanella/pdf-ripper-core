@@ -2,7 +2,7 @@
 
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/catalog/pages/pages.hpp"
-#include "ripper/pdf/core/document/object/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 

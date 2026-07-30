@@ -54,7 +54,7 @@ TEST_CASE("filter_manager register and forget", "[filter][manager]")
 
 TEST_CASE("filter_manager decode with no /Filter", "[filter][manager]")
 {
-    dictionary dict;
+    dictionary_object dict;
     auto input = b("hello");
     auto result = filter_manager::decode(dict, input);
     REQUIRE(result == input);
@@ -62,7 +62,7 @@ TEST_CASE("filter_manager decode with no /Filter", "[filter][manager]")
 
 TEST_CASE("filter_manager encode with no /Filter", "[filter][manager]")
 {
-    dictionary dict;
+    dictionary_object dict;
     auto input = b("hello");
     auto result = filter_manager::encode(dict, input);
     REQUIRE(result == input);
@@ -70,8 +70,8 @@ TEST_CASE("filter_manager encode with no /Filter", "[filter][manager]")
 
 TEST_CASE("filter_manager decode with FlateDecode", "[filter][manager][flate]")
 {
-    dictionary dict;
-    dict.set("Filter", object{name{"FlateDecode"}});
+    dictionary_object dict;
+    dict.set("Filter", object{name_object{"FlateDecode"}});
 
     auto input = b("Hello, Filter Manager!");
     auto compressed = filter_manager::encode(dict, input);
@@ -81,8 +81,8 @@ TEST_CASE("filter_manager decode with FlateDecode", "[filter][manager][flate]")
 
 TEST_CASE("filter_manager decode with unknown filter", "[filter][manager][error]")
 {
-    dictionary dict;
-    dict.set("Filter", object{name{"UnknownFilter"}});
+    dictionary_object dict;
+    dict.set("Filter", object{name_object{"UnknownFilter"}});
 
     auto input = b("hello");
     REQUIRE_THROWS_AS(filter_manager::decode(dict, input), parse_exception);
@@ -90,10 +90,10 @@ TEST_CASE("filter_manager decode with unknown filter", "[filter][manager][error]
 
 TEST_CASE("filter_manager decode with filter array", "[filter][manager][flate]")
 {
-    array filters;
-    filters.push_back(object{name{"FlateDecode"}});
+    array_object filters;
+    filters.push_back(object{name_object{"FlateDecode"}});
 
-    dictionary dict;
+    dictionary_object dict;
     dict.set("Filter", object{std::move(filters)});
 
     auto input = b("Array filter test");
@@ -108,8 +108,8 @@ TEST_CASE("filter_manager register custom filter", "[filter][manager]")
 
     REQUIRE(filter_manager::has("TestCustomFilter"));
 
-    dictionary dict;
-    dict.set("Filter", object{name{"TestCustomFilter"}});
+    dictionary_object dict;
+    dict.set("Filter", object{name_object{"TestCustomFilter"}});
 
     auto input = b("Custom filter test");
     auto compressed = filter_manager::encode(dict, input);
