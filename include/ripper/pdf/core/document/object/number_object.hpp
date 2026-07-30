@@ -32,27 +32,27 @@ public:
     }
 
     /// Returns `true` if this number holds an integer.
-    [[nodiscard]] bool is_integer() const noexcept
+    [[nodiscard]] constexpr bool is_integer() const noexcept
     {
         return std::holds_alternative<std::int64_t>(value_);
     }
 
     /// Returns `true` if this number holds a real.
-    [[nodiscard]] bool is_real() const noexcept
+    [[nodiscard]] constexpr bool is_real() const noexcept
     {
         return std::holds_alternative<double>(value_);
     }
 
     /// Returns the value as `std::int64_t`, truncating if the value was
     /// originally a real.
-    [[nodiscard]] std::int64_t as_integer() const noexcept
+    [[nodiscard]] constexpr std::int64_t as_integer() const noexcept
     {
         return is_integer() ? std::get<std::int64_t>(value_) : static_cast<std::int64_t>(as_real());
     }
 
     /// Returns the value as `double`, widening if the value was originally
     /// an integer.
-    [[nodiscard]] double as_real() const noexcept
+    [[nodiscard]] constexpr double as_real() const noexcept
     {
         return is_real() ? std::get<double>(value_)
                          : static_cast<double>(std::get<std::int64_t>(value_));
