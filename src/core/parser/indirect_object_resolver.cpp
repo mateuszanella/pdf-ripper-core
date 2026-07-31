@@ -146,7 +146,7 @@ std::string indirect_object_resolver::resolve_uncompressed(indirect_reference re
         static_cast<std::size_t>(obj_token.lexeme.data() + obj_token.lexeme.size() - source.data());
     /// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
-    const auto endobj_pos = source.rfind("endobj");
+    const auto endobj_pos = text::find_endobj(source);
     if (endobj_pos == std::string::npos)
         throw parse_exception{"Missing endobj marker for indirect object " +
                               std::to_string(ref.object_number()) + " (offset " +

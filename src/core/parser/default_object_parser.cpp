@@ -52,9 +52,11 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
 
             // Determine the stream content boundary.
             //
-            // Per PDF spec §7.3.8, /Length is the authoritative source. We cross-
-            // validate it against the actual "endstream" position and fall back
-            // to searching for "endstream" when they disagree (malformed /Length).
+            // Per PDF spec §7.3.8, /Length is the authoritative source.
+            // We use it when present and non-negative, cross-validating that
+            // "endstream" appears at the expected position.  When /Length is
+            // absent or the cross-validation fails (malformed /Length), we
+            // fall back to searching for the "endstream" keyword.
             std::size_t end_of_stream = std::string_view::npos;
 
             const auto* length_ptr = dict->get_number("Length");
@@ -63,17 +65,23 @@ indirect_object default_object_parser::parse(document& doc, indirect_reference r
                 const auto length = static_cast<std::size_t>(length_ptr->as_integer());
                 const auto length_end = stream_bytes_start_offset + length;
 
-                std::size_t check = length_end;
-                while (check < content_sv.size() &&
-                       (content_sv[check] == '\r' || content_sv[check] == '\n' ||
-                        content_sv[check] == ' '))
+                // Clamp to available content in case /Length overruns
+                if (length_end <= content_sv.size())
                 {
-                    ++check;
-                }
+                    // Look for "endstream" at the expected boundary
+                    std::size_t check = length_end;
+                    while (check < content_sv.size() &&
+                           (content_sv[check] == '\r' || content_sv[check] == '\n' ||
+                            content_sv[check] == ' '))
+                    {
+                        ++check;
+                    }
 
-                if (check + 9 <= content_sv.size() && content_sv.substr(check, 9) == "endstream")
-                {
-                    end_of_stream = length_end;
+                    if (check + 9 <= content_sv.size() &&
+                        content_sv.substr(check, 9) == "endstream")
+                    {
+                        end_of_stream = length_end;
+                    }
                 }
             }
 

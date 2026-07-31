@@ -59,6 +59,59 @@ namespace ripper::pdf::core::text
     return line.starts_with(token);
 }
 
+/// Find the last occurrence of "endobj" in source, verifying that the
+/// character after the match is a token boundary (whitespace, PDF
+/// delimiter, or end-of-buffer).  Returns `npos` if not found.
+///
+/// This prevents false matches inside string literals, name objects,
+/// and other content that may contain the raw bytes \c e,n,d,o,b,j.
+[[nodiscard]] inline std::size_t find_endobj(std::string_view source) noexcept
+{
+    constexpr auto is_boundary = [](char c) noexcept -> bool
+    {
+        switch (c)
+        {
+            case '\0':
+            case '\t':
+            case '\n':
+            case '\r':
+            case '\f':
+            case ' ':
+            case '(':
+            case ')':
+            case '<':
+            case '>':
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+            case '/':
+            case '%':
+                return true;
+            default:
+                return false;
+        }
+    };
+
+    constexpr std::string_view needle{"endobj"};
+
+    std::size_t search_from = source.size();
+    while (search_from >= needle.size())
+    {
+        const auto pos = source.rfind(needle, search_from - 1);
+        if (pos == std::string_view::npos)
+            return std::string_view::npos;
+
+        const auto after = pos + needle.size();
+        if (after >= source.size() || is_boundary(source[after]))
+            return pos;
+
+        search_from = pos;
+    }
+
+    return std::string_view::npos;
+}
+
 [[nodiscard]] inline std::optional<std::size_t> parse_size_t(std::string_view s) noexcept
 {
     s = trim_ascii(strip_line_endings(s));
