@@ -198,7 +198,7 @@ std::string_view extract_object_body(std::string_view content)
                                                       obj_token.lexeme.size() - content.data());
     /// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
-    const auto endobj_pos = content.rfind("endobj");
+    const auto endobj_pos = text::find_endobj(content);
     if (endobj_pos == std::string_view::npos)
         throw parse_exception{"Missing endobj keyword"};
 
