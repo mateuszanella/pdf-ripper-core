@@ -23,7 +23,8 @@ namespace
 
 } // namespace
 
-std::vector<std::byte> flate_decode_filter::decode(std::span<const std::byte> input) const
+std::vector<std::byte> flate_decode_filter::decode(std::span<const std::byte> input,
+                                                   const dictionary_object* /*params*/) const
 {
     if (input.empty())
     {
@@ -65,7 +66,8 @@ std::vector<std::byte> flate_decode_filter::decode(std::span<const std::byte> in
     }
 }
 
-std::vector<std::byte> flate_decode_filter::encode(std::span<const std::byte> input) const
+std::vector<std::byte> flate_decode_filter::encode(std::span<const std::byte> input,
+                                                   const dictionary_object* /*params*/) const
 {
     if (input.empty())
     {

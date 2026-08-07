@@ -1,7 +1,10 @@
 #include "ripper/pdf/core/filter/filter_manager.hpp"
 
 #include "ripper/pdf/core/exceptions/exception.hpp"
+#include "ripper/pdf/core/filter/ascii_85_decode_filter.hpp"
+#include "ripper/pdf/core/filter/ascii_hex_decode_filter.hpp"
 #include "ripper/pdf/core/filter/flate_decode_filter.hpp"
+#include "ripper/pdf/core/filter/lzw_decode_filter.hpp"
 
 #include <unordered_map>
 
@@ -10,9 +13,18 @@ namespace ripper::pdf::core
 namespace
 {
 
-using filter_chain_t = std::vector<const stream_filter*>;
+struct filter_step
+{
+    const stream_filter* filter;
+    const dictionary_object* decode_params;
+};
 
-filter_chain_t build_chain(const dictionary_object& dict)
+struct filter_chain
+{
+    std::vector<filter_step> steps;
+};
+
+filter_chain build_chain(const dictionary_object& dict)
 {
     const auto* filter_entry = dict.get("Filter");
     if (filter_entry == nullptr)
@@ -20,7 +32,7 @@ filter_chain_t build_chain(const dictionary_object& dict)
         return {};
     }
 
-    filter_chain_t chain;
+    filter_chain chain;
 
     const auto* filter_name = filter_entry->as_name();
     if (filter_name != nullptr)
@@ -30,7 +42,9 @@ filter_chain_t build_chain(const dictionary_object& dict)
         {
             throw parse_exception{std::string{"Unknown filter: "} + filter_name->value};
         }
-        chain.push_back(filter);
+        const auto* decode_parms = dict.get("DecodeParms");
+        chain.steps.push_back(
+            {filter, decode_parms != nullptr ? decode_parms->as_dictionary() : nullptr});
         return chain;
     }
 
@@ -40,9 +54,25 @@ filter_chain_t build_chain(const dictionary_object& dict)
         throw parse_exception{"/Filter must be a name or an array of names"};
     }
 
-    chain.reserve(filter_array->size());
-    for (const auto& entry : *filter_array)
+    const std::size_t filter_count = filter_array->size();
+
+    const auto* decode_parms_entry = dict.get("DecodeParms");
+    const dictionary_object* shared_decode_parms = nullptr;
+    const array_object* decode_parms_array = nullptr;
+
+    if (decode_parms_entry != nullptr)
     {
+        shared_decode_parms = decode_parms_entry->as_dictionary();
+        if (shared_decode_parms == nullptr)
+        {
+            decode_parms_array = decode_parms_entry->as_array();
+        }
+    }
+
+    chain.steps.reserve(filter_count);
+    for (std::size_t i = 0; i < filter_count; ++i)
+    {
+        const auto& entry = (*filter_array)[i];
         const auto* name = entry.as_name();
         if (name == nullptr)
         {
@@ -53,7 +83,18 @@ filter_chain_t build_chain(const dictionary_object& dict)
         {
             throw parse_exception{std::string{"Unknown filter: "} + name->value};
         }
-        chain.push_back(filter);
+
+        const dictionary_object* step_params = nullptr;
+        if (shared_decode_parms != nullptr)
+        {
+            step_params = shared_decode_parms;
+        }
+        else if (decode_parms_array != nullptr && i < decode_parms_array->size())
+        {
+            step_params = (*decode_parms_array)[i].as_dictionary();
+        }
+
+        chain.steps.push_back({filter, step_params});
     }
 
     return chain;
@@ -72,6 +113,9 @@ void filter_manager::ensure_defaults()
     static bool initialized = []
     {
         register_filter("FlateDecode", std::make_unique<flate_decode_filter>());
+        register_filter("LZWDecode", std::make_unique<lzw_decode_filter>());
+        register_filter("ASCII85Decode", std::make_unique<ascii_85_decode_filter>());
+        register_filter("ASCIIHexDecode", std::make_unique<ascii_hex_decode_filter>());
         return true;
     }();
     (void)initialized;
@@ -103,15 +147,15 @@ std::vector<std::byte> filter_manager::decode(const dictionary_object& dict,
                                               std::span<const std::byte> raw)
 {
     const auto chain = build_chain(dict);
-    if (chain.empty())
+    if (chain.steps.empty())
     {
         return {raw.begin(), raw.end()};
     }
 
-    auto result = chain[0]->decode(raw);
-    for (std::size_t i = 1; i < chain.size(); ++i)
+    auto result = chain.steps[0].filter->decode(raw, chain.steps[0].decode_params);
+    for (std::size_t i = 1; i < chain.steps.size(); ++i)
     {
-        result = chain[i]->decode(result);
+        result = chain.steps[i].filter->decode(result, chain.steps[i].decode_params);
     }
     return result;
 }
@@ -120,15 +164,15 @@ std::vector<std::byte> filter_manager::encode(const dictionary_object& dict,
                                               std::span<const std::byte> decoded)
 {
     const auto chain = build_chain(dict);
-    if (chain.empty())
+    if (chain.steps.empty())
     {
         return {decoded.begin(), decoded.end()};
     }
 
-    auto result = chain.back()->encode(decoded);
-    for (auto it = chain.rbegin() + 1; it != chain.rend(); ++it)
+    auto result = chain.steps.back().filter->encode(decoded, chain.steps.back().decode_params);
+    for (auto it = chain.steps.rbegin() + 1; it != chain.steps.rend(); ++it)
     {
-        result = (*it)->encode(result);
+        result = it->filter->encode(result, it->decode_params);
     }
     return result;
 }
