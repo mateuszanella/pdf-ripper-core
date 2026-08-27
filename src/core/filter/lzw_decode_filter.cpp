@@ -80,6 +80,15 @@ std::vector<std::byte> lzw_decode_filter::decode(std::span<const std::byte> inpu
         return static_cast<std::uint16_t>(code);
     };
 
+    auto maybe_increase_code_size = [&]()
+    {
+        if (code_size < 12 && next_code >= static_cast<std::uint16_t>(code_limit))
+        {
+            ++code_size;
+            update_limit();
+        }
+    };
+
     auto add_entry = [&](std::uint16_t prefix, std::byte suffix)
     {
         if (next_code <= max_code)
@@ -120,16 +129,9 @@ std::vector<std::byte> lzw_decode_filter::decode(std::span<const std::byte> inpu
     if (old_code != clear_code)
         output_code(old_code);
 
-    bool has_reset = false;
-
     for (;;)
     {
-        const int threshold = code_limit - (has_reset ? 0 : 1);
-        if (next_code >= static_cast<std::uint16_t>(threshold) && code_size < 12)
-        {
-            ++code_size;
-            update_limit();
-        }
+        maybe_increase_code_size();
 
         const std::uint16_t code = read_code();
 
@@ -138,7 +140,6 @@ std::vector<std::byte> lzw_decode_filter::decode(std::span<const std::byte> inpu
 
         if (code == clear_code)
         {
-            has_reset = true;
             next_code = first_code;
             code_size = 9;
             update_limit();
@@ -219,9 +220,6 @@ std::vector<std::byte> lzw_decode_filter::encode(std::span<const std::byte> inpu
 
     int code_size = 9;
     std::uint16_t next_code = first_code;
-    int code_limit = 0;
-    auto update_limit = [&]() { code_limit = (1 << code_size) - (early_change ? 1 : 0); };
-    update_limit();
 
     auto emit_code = [&](std::uint16_t code)
     {
@@ -242,11 +240,33 @@ std::vector<std::byte> lzw_decode_filter::encode(std::span<const std::byte> inpu
 
     auto maybe_increase_code_size = [&]()
     {
-        if (next_code == static_cast<std::uint16_t>(code_limit) && code_size < 12)
-        {
+        if (code_size >= 12)
+            return;
+
+        const std::uint32_t x =
+            static_cast<std::uint32_t>(next_code) + (early_change ? 1U : 0U) - 1U;
+        if (x != 0 && (x & (x - 1U)) == 0U)
             ++code_size;
-            update_limit();
-        }
+    };
+
+    auto maybe_increase_code_size_for_final = [&]()
+    {
+        if (code_size >= 12)
+            return;
+
+        // The decoder appends a table entry for the last data code as well, so
+        // its code-size increase that applies to the following EOD code is based
+        // on one entry beyond the encoder's current table.
+        const std::uint32_t x = static_cast<std::uint32_t>(next_code) + (early_change ? 1U : 0U);
+        if (x != 0 && (x & (x - 1U)) == 0U)
+            ++code_size;
+    };
+
+    auto reset_table = [&]()
+    {
+        dict.clear();
+        next_code = first_code;
+        code_size = 9;
     };
 
     emit_code(clear_code);
@@ -262,29 +282,28 @@ std::vector<std::byte> lzw_decode_filter::encode(std::span<const std::byte> inpu
         if (it != dict.end())
         {
             prefix = it->second;
+            continue;
         }
-        else
-        {
-            if (next_code > max_code)
-            {
-                emit_code(clear_code);
-                dict.clear();
-                next_code = first_code;
-                code_size = 9;
-                update_limit();
-                prefix = byte_val;
-                continue;
-            }
 
-            emit_code(prefix);
+        emit_code(prefix);
+
+        if (next_code <= max_code)
+        {
             dict[key] = next_code;
             ++next_code;
             maybe_increase_code_size();
-            prefix = byte_val;
         }
+        else
+        {
+            emit_code(clear_code);
+            reset_table();
+        }
+
+        prefix = byte_val;
     }
 
     emit_code(prefix);
+    maybe_increase_code_size_for_final();
     emit_code(eod_code);
 
     return output;
