@@ -199,7 +199,7 @@ std::vector<std::byte> lzw_decode_filter::decode(std::span<const std::byte> inpu
 }
 
 std::vector<std::byte> lzw_decode_filter::encode(std::span<const std::byte> input,
-                                                  const dictionary_object* params) const
+                                                 const dictionary_object* params) const
 {
     if (input.empty())
         return {};
