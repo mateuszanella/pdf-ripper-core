@@ -3,8 +3,14 @@
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/filter/ascii_85_decode_filter.hpp"
 #include "ripper/pdf/core/filter/ascii_hex_decode_filter.hpp"
+#include "ripper/pdf/core/filter/ccitt_fax_decode_filter.hpp"
+#include "ripper/pdf/core/filter/crypt_filter.hpp"
+#include "ripper/pdf/core/filter/dct_decode_filter.hpp"
 #include "ripper/pdf/core/filter/flate_decode_filter.hpp"
+#include "ripper/pdf/core/filter/jbig2_decode_filter.hpp"
+#include "ripper/pdf/core/filter/jpx_decode_filter.hpp"
 #include "ripper/pdf/core/filter/lzw_decode_filter.hpp"
+#include "ripper/pdf/core/filter/run_length_decode_filter.hpp"
 
 #include <unordered_map>
 
@@ -116,6 +122,12 @@ void filter_manager::ensure_defaults()
         register_filter("LZWDecode", std::make_unique<lzw_decode_filter>());
         register_filter("ASCII85Decode", std::make_unique<ascii_85_decode_filter>());
         register_filter("ASCIIHexDecode", std::make_unique<ascii_hex_decode_filter>());
+        register_filter("RunLengthDecode", std::make_unique<run_length_decode_filter>());
+        register_filter("CCITTFaxDecode", std::make_unique<ccitt_fax_decode_filter>());
+        register_filter("DCTDecode", std::make_unique<dct_decode_filter>());
+        register_filter("JPXDecode", std::make_unique<jpx_decode_filter>());
+        register_filter("JBIG2Decode", std::make_unique<jbig2_decode_filter>());
+        register_filter("Crypt", std::make_unique<crypt_filter>());
         return true;
     }();
     (void)initialized;
