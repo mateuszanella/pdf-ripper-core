@@ -5,7 +5,7 @@
 namespace ripper::pdf::core
 {
 
-class flate_decode_filter final : public stream_filter
+class crypt_filter final : public stream_filter
 {
 public:
     [[nodiscard]] std::vector<std::byte>
