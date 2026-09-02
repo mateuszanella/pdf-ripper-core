@@ -127,6 +127,49 @@ TEST_CASE("parse_value parses dictionary_object with escaped name keys", "[parse
     REQUIRE(v->value == "Value");
 }
 
+TEST_CASE("parse_value decodes hex strings", "[parser][value][string]")
+{
+    SECTION("valid even-length hex string")
+    {
+        pdf_lexer lexer{"<414243>"};
+
+        const auto value = parse_value(lexer);
+
+        REQUIRE(value.is_string());
+        const auto* s = value.as_string();
+        REQUIRE(s != nullptr);
+        REQUIRE(s->is_hex());
+        REQUIRE(s->as_string() == "ABC");
+    }
+
+    SECTION("odd number of hex digits pads trailing nibble with zero")
+    {
+        pdf_lexer lexer{"<414>"};
+
+        const auto value = parse_value(lexer);
+
+        REQUIRE(value.is_string());
+        REQUIRE(value.as_string()->as_string() == std::string{"A\x40", 2});
+    }
+
+    SECTION("whitespace between hex digits is ignored")
+    {
+        pdf_lexer lexer{"<41 42 43>"};
+
+        const auto value = parse_value(lexer);
+
+        REQUIRE(value.is_string());
+        REQUIRE(value.as_string()->as_string() == "ABC");
+    }
+
+    SECTION("invalid hex digit throws")
+    {
+        pdf_lexer lexer{"<41Z2>"};
+
+        REQUIRE_THROWS_AS((void)parse_value(lexer), parse_exception);
+    }
+}
+
 TEST_CASE("parse_value roundtrips escaped names through serializer", "[parser][value][name]")
 {
     pdf_lexer lexer{"<< /Key#28parens#29 /#3C#3E /Percent#25 /Slash#2F >>"};

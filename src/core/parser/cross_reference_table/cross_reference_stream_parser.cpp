@@ -12,6 +12,12 @@ cross_reference_section cross_reference_stream_parser::parse(const stream_object
     const auto& dict = stream_obj.dictionary();
     const auto content = stream_obj.raw();
 
+    // PDF 32000-1 §7.5.8: an xref stream must be /Type /XRef. Rejecting anything
+    // else prevents a lookalike stream from being misinterpreted as a table.
+    const auto* type_ptr = dict.get_name("Type");
+    if (type_ptr == nullptr || type_ptr->value != "XRef")
+        throw parse_exception{"Object is not an xref stream (/Type /XRef required)"};
+
     const auto* size_ptr = dict.get_number("Size");
     if (size_ptr == nullptr || size_ptr->as_integer() <= 0)
         throw parse_exception{"Xref stream missing required /Size"};

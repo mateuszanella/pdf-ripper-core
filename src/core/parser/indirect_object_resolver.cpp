@@ -7,6 +7,7 @@
 #include "ripper/pdf/core/document/objstm.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/lexer/pdf_lexer.hpp"
+#include "ripper/pdf/core/parser/value_parsing.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
 #include <cstddef>
@@ -131,10 +132,12 @@ std::string indirect_object_resolver::resolve_uncompressed(indirect_reference re
 
     const auto parsed_gen = text::parse_u16(g_token.lexeme);
 
-    if (!parsed_gen.has_value() && ref.generation() != 0)
-        throw parse_exception{"Generation number mismatch in indirect object header"};
+    // Generation number paranoia: a malformed generation field is an error
+    // regardless of the expected value.
+    if (!parsed_gen.has_value())
+        throw parse_exception{"Malformed generation number in indirect object header"};
 
-    if (parsed_gen.has_value() && *parsed_gen != ref.generation())
+    if (*parsed_gen != ref.generation())
         throw parse_exception{"Generation number mismatch in indirect object header"};
 
     auto obj_token = lexer.next();
@@ -146,12 +149,74 @@ std::string indirect_object_resolver::resolve_uncompressed(indirect_reference re
         static_cast<std::size_t>(obj_token.lexeme.data() + obj_token.lexeme.size() - source.data());
     /// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
-    const auto endobj_pos = text::find_endobj(source);
+    auto endobj_pos = text::find_endobj(source);
     if (endobj_pos == std::string::npos)
         throw parse_exception{"Missing endobj marker for indirect object " +
                               std::to_string(ref.object_number()) + " (offset " +
                               std::to_string(target_offset) + ", bound " +
                               std::to_string(read_end) + ")"};
+
+    // When the object is a /Type /Stream with an authoritative /Length, use it to
+    // locate `endobj` precisely (PDF 32000-1 §7.3.8) instead of relying on the
+    // keyword search, which can misfire when the raw stream bytes contain
+    // `endobj`-like sequences. Falls back to the keyword boundary on any error.
+    try
+    {
+        auto value = parse_value(lexer);
+        if (value.is_dictionary())
+        {
+            auto peek_result = lexer.peek();
+            if (peek_result.type == lexer_token_type::keyword && peek_result.lexeme == "stream")
+            {
+                auto stream_tok = lexer.next();
+
+                /// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                auto data_start = static_cast<std::size_t>(
+                    stream_tok.lexeme.data() + stream_tok.lexeme.size() - source.data());
+                /// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+                while (data_start < source.size() &&
+                       (source[data_start] == '\r' || source[data_start] == '\n' ||
+                        source[data_start] == ' '))
+                {
+                    ++data_start;
+                }
+
+                const auto* length_ptr = value.as_dictionary()->get_number("Length");
+                if (length_ptr != nullptr && length_ptr->as_integer() >= 0)
+                {
+                    const auto length = static_cast<std::size_t>(length_ptr->as_integer());
+                    const auto length_end = data_start + length;
+
+                    std::size_t pos = length_end;
+                    while (pos < source.size() &&
+                           (source[pos] == '\r' || source[pos] == '\n' || source[pos] == ' '))
+                    {
+                        ++pos;
+                    }
+
+                    if (pos + 9 <= source.size() && source.substr(pos, 9) == "endstream")
+                    {
+                        pos += 9;
+                        while (pos < source.size() &&
+                               (source[pos] == '\r' || source[pos] == '\n' || source[pos] == ' '))
+                        {
+                            ++pos;
+                        }
+
+                        if (pos + 6 <= source.size() && source.substr(pos, 6) == "endobj")
+                            endobj_pos = pos;
+                    }
+                }
+            }
+        }
+    }
+    // Best-effort refinement: a malformed /Length is intentionally ignored in
+    // favor of the keyword-derived boundary computed above.
+    // NOLINTNEXTLINE(bugprone-empty-catch)
+    catch (const parse_exception&)
+    {
+    }
 
     return source.substr(value_start, endobj_pos - value_start);
 }

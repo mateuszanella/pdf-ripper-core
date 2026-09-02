@@ -216,4 +216,29 @@ TEST_CASE("unescape_name decodes multiple hex sequences", "[util][text][name]")
     const auto result = unescape_name("#48#65#6C#6C#6F");
     REQUIRE(result == "Hello");
 }
+
+// ── starts_with_token word boundary ───────────────────────────────────────
+
+TEST_CASE("starts_with_token requires a token boundary after the keyword", "[util][text][token]")
+{
+    REQUIRE(starts_with_token("startxref 42", "startxref"));
+    REQUIRE(starts_with_token("startxref\n42", "startxref"));
+    REQUIRE(starts_with_token("startxref", "startxref"));
+    REQUIRE(starts_with_token("  xref ", "xref"));
+    REQUIRE(starts_with_token("trailer\n<<", "trailer"));
+
+    REQUIRE_FALSE(starts_with_token("startxrefGarbage", "startxref"));
+    REQUIRE_FALSE(starts_with_token("startxref42", "startxref"));
+    REQUIRE_FALSE(starts_with_token("startxrefx", "startxref"));
+    REQUIRE_FALSE(starts_with_token("xrefy", "xref"));
+    REQUIRE_FALSE(starts_with_token("trailerfoo", "trailer"));
+}
+
+TEST_CASE("starts_with_token trims surrounding whitespace and line endings", "[util][text][token]")
+{
+    REQUIRE(starts_with_token("\n\n startxref 7", "startxref"));
+    REQUIRE(starts_with_token("startxref 7 \r\n", "startxref"));
+    REQUIRE_FALSE(starts_with_token("", "startxref"));
+    REQUIRE_FALSE(starts_with_token("start", "startxref"));
+}
 } // namespace ripper::pdf::core::text

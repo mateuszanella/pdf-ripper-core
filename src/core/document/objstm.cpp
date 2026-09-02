@@ -2,6 +2,7 @@
 
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/object/helpers/indirect_object.hpp"
+#include "ripper/pdf/core/document/object/indirect_reference.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/parser/object_stream_parser.hpp"
@@ -51,6 +52,9 @@ std::optional<class objstm> objstm::extension()
     const auto* ext_ref = d->get_indirect_reference("Extends");
     if (ext_ref == nullptr)
         return std::nullopt;
+
+    if (*ext_ref == obj().identity().reference())
+        throw parse_exception{"Cyclic /Extends chain detected in object stream"};
 
     auto& doc = obj().identity().owner();
     auto* resolved = doc.resolve_object(*ext_ref);

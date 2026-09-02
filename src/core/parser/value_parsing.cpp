@@ -3,12 +3,69 @@
 #include "ripper/pdf/core/exceptions/exception.hpp"
 #include "ripper/pdf/core/util/text.hpp"
 
+#include <cctype>
 #include <charconv>
+#include <cstddef>
 #include <limits>
 #include <string>
+#include <vector>
 
 namespace ripper::pdf::core
 {
+namespace
+{
+
+/// Decode the raw contents of a hex string (`<...>`) into bytes.
+///
+/// Whitespace between hex digits is ignored. A trailing lone nibble is padded
+/// with a low zero per PDF 32000-1 §7.3.4.3.
+[[nodiscard]] std::vector<std::byte> decode_hex_string(std::string_view lexeme)
+{
+    constexpr auto hex_value = [](unsigned char c) noexcept -> int
+    {
+        if (c >= '0' && c <= '9')
+            return c - '0';
+        if (c >= 'A' && c <= 'F')
+            return c - 'A' + 10;
+        if (c >= 'a' && c <= 'f')
+            return c - 'a' + 10;
+        return -1;
+    };
+
+    std::vector<std::byte> decoded;
+    decoded.reserve(lexeme.size() / 2 + 1);
+
+    int high = -1;
+    for (const char raw : lexeme)
+    {
+        const auto c = static_cast<unsigned char>(raw);
+        if (std::isspace(c) != 0)
+            continue;
+
+        const int value = hex_value(c);
+        if (value < 0)
+            throw parse_exception{"Invalid hex digit in hex string"};
+
+        if (high < 0)
+        {
+            high = value;
+        }
+        else
+        {
+            decoded.push_back(
+                static_cast<std::byte>(static_cast<unsigned char>((high << 4) | value)));
+            high = -1;
+        }
+    }
+
+    if (high >= 0)
+        decoded.push_back(static_cast<std::byte>(static_cast<unsigned char>(high << 4)));
+
+    return decoded;
+}
+
+} // namespace
+
 indirect_reference parse_indirect_reference(pdf_lexer& lexer)
 {
     auto obj = lexer.next();
@@ -137,7 +194,14 @@ object parse_value(pdf_lexer& lexer)
     if (p.type == lexer_token_type::hex_string)
     {
         const auto tok = lexer.next();
-        return object{std::string{tok.lexeme}};
+
+        std::vector<std::byte> original;
+        original.reserve(tok.lexeme.size());
+        for (const char c : tok.lexeme)
+            original.push_back(static_cast<std::byte>(static_cast<unsigned char>(c)));
+
+        return object{string_object{decode_hex_string(tok.lexeme), std::move(original),
+                                    string_object::encoding::utf8, string_object::form::hex}};
     }
 
     if (p.type == lexer_token_type::keyword)
