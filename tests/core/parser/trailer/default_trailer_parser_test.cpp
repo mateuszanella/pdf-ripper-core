@@ -36,9 +36,9 @@ trailer
 
     const auto id = result.id();
     REQUIRE(id.has_value());
-    REQUIRE(id->original() == "0123456789ABCDEF");
+    REQUIRE(id->original() == std::string{"\x01\x23\x45\x67\x89\xAB\xCD\xEF", 8});
     REQUIRE(id->current().has_value());
-    REQUIRE(id->current().value() == "FEDCBA9876543210");
+    REQUIRE(id->current().value() == std::string{"\xFE\xDC\xBA\x98\x76\x54\x32\x10", 8});
 }
 
 TEST_CASE("default_trailer_parser parses minimal trailer", "[parser][trailer]")
@@ -94,7 +94,7 @@ trailer
 
     const auto id = result.id();
     REQUIRE(id.has_value());
-    REQUIRE(id->original() == "0123456789ABCDEF");
+    REQUIRE(id->original() == std::string{"\x01\x23\x45\x67\x89\xAB\xCD\xEF", 8});
     REQUIRE_FALSE(id->current().has_value());
 }
 
@@ -208,7 +208,8 @@ trailer
 
     const auto id = result.id();
     REQUIRE(id.has_value());
-    REQUIRE(id->original() == "ABC");
+    // Lone trailing nibble 'C' is padded with a low zero -> byte 0xC0.
+    REQUIRE(id->original() == std::string{"\xAB\xC0", 2});
     REQUIRE_FALSE(id->current().has_value());
 }
 

@@ -37,6 +37,9 @@ public:
     ///
     /// Resolves the indirect reference through the document's cross-reference
     /// table and returns a typed `objstm` view.
+    ///
+    /// @throws parse_exception if /Extends points back at this object stream
+    ///         (self-referential extension detected).
     [[nodiscard]] std::optional<class objstm> extension();
 
     /// Finds the byte range of a specific object within the decoded stream.

@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 namespace ripper::pdf::core
 {
@@ -37,9 +38,16 @@ std::optional<class page> pages::page(std::uint64_t index)
 
     std::uint64_t remaining = index;
 
+    std::unordered_set<indirect_reference> visited;
+
     std::function<std::optional<class page>(page_tree_node)> find;
     find = [&](page_tree_node node) -> std::optional<class page>
     {
+        const auto node_ref = node.obj().identity().reference();
+        if (!visited.insert(node_ref).second)
+            throw logic_exception{"Cyclic page tree detected at object " +
+                                  std::to_string(node_ref.object_number())};
+
         for (auto kid : node.children())
         {
             if (kid.is_leaf())
@@ -86,9 +94,16 @@ void pages::each(const std::function<void(class page&)>& callback)
     if (!callback)
         throw logic_exception{"Pages::each callback cannot be empty"};
 
+    std::unordered_set<indirect_reference> visited;
+
     std::function<void(page_tree_node)> walk;
     walk = [&](page_tree_node node)
     {
+        const auto node_ref = node.obj().identity().reference();
+        if (!visited.insert(node_ref).second)
+            throw logic_exception{"Cyclic page tree detected at object " +
+                                  std::to_string(node_ref.object_number())};
+
         for (auto kid : node.children())
         {
             if (kid.is_leaf())

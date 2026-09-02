@@ -47,6 +47,35 @@ namespace ripper::pdf::core::text
     return s;
 }
 
+/// Returns `true` if `c` is a PDF token boundary: whitespace, a PDF delimiter,
+/// or end-of-buffer. Used to prevent false keyword matches embedded in larger
+/// tokens (e.g. `startxref` inside `startxrefGarbage`).
+[[nodiscard]] constexpr bool is_token_boundary(char c) noexcept
+{
+    switch (c)
+    {
+        case '\0':
+        case '\t':
+        case '\n':
+        case '\r':
+        case '\f':
+        case ' ':
+        case '(':
+        case ')':
+        case '<':
+        case '>':
+        case '[':
+        case ']':
+        case '{':
+        case '}':
+        case '/':
+        case '%':
+            return true;
+        default:
+            return false;
+    }
+}
+
 [[nodiscard]] inline bool starts_with_token(std::string_view line, std::string_view token) noexcept
 {
     line = trim_ascii(strip_line_endings(line));
@@ -56,7 +85,14 @@ namespace ripper::pdf::core::text
         return false;
     }
 
-    return line.starts_with(token);
+    if (!line.starts_with(token))
+    {
+        return false;
+    }
+
+    // The character after the token must be a token boundary so we do not
+    // match keywords that are merely prefixes of a longer token.
+    return line.size() == token.size() || is_token_boundary(line[token.size()]);
 }
 
 /// Find the last occurrence of "endobj" in source, verifying that the
@@ -67,32 +103,6 @@ namespace ripper::pdf::core::text
 /// and other content that may contain the raw bytes \c e,n,d,o,b,j.
 [[nodiscard]] inline std::size_t find_endobj(std::string_view source) noexcept
 {
-    constexpr auto is_boundary = [](char c) noexcept -> bool
-    {
-        switch (c)
-        {
-            case '\0':
-            case '\t':
-            case '\n':
-            case '\r':
-            case '\f':
-            case ' ':
-            case '(':
-            case ')':
-            case '<':
-            case '>':
-            case '[':
-            case ']':
-            case '{':
-            case '}':
-            case '/':
-            case '%':
-                return true;
-            default:
-                return false;
-        }
-    };
-
     constexpr std::string_view needle{"endobj"};
 
     std::size_t search_from = source.size();
@@ -103,7 +113,7 @@ namespace ripper::pdf::core::text
             return std::string_view::npos;
 
         const auto after = pos + needle.size();
-        if (after >= source.size() || is_boundary(source[after]))
+        if (after >= source.size() || is_token_boundary(source[after]))
             return pos;
 
         search_from = pos;

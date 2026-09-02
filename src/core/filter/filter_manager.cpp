@@ -10,6 +10,7 @@
 #include "ripper/pdf/core/filter/jbig2_decode_filter.hpp"
 #include "ripper/pdf/core/filter/jpx_decode_filter.hpp"
 #include "ripper/pdf/core/filter/lzw_decode_filter.hpp"
+#include "ripper/pdf/core/filter/predictor.hpp"
 #include "ripper/pdf/core/filter/run_length_decode_filter.hpp"
 
 #include <unordered_map>
@@ -161,14 +162,27 @@ std::vector<std::byte> filter_manager::decode(const dictionary_object& dict,
     const auto chain = build_chain(dict);
     if (chain.steps.empty())
     {
-        return {raw.begin(), raw.end()};
+        auto result = std::vector<std::byte>{raw.begin(), raw.end()};
+        const auto* decode_params = dict.get("DecodeParms");
+        const auto* params = decode_params != nullptr ? decode_params->as_dictionary() : nullptr;
+
+        if (params != nullptr && has_predictor(params))
+            result = apply_predictor(result, *params);
+
+        return result;
     }
 
     auto result = chain.steps[0].filter->decode(raw, chain.steps[0].decode_params);
+    if (has_predictor(chain.steps[0].decode_params))
+        result = apply_predictor(result, *chain.steps[0].decode_params);
+
     for (std::size_t i = 1; i < chain.steps.size(); ++i)
     {
         result = chain.steps[i].filter->decode(result, chain.steps[i].decode_params);
+        if (has_predictor(chain.steps[i].decode_params))
+            result = apply_predictor(result, *chain.steps[i].decode_params);
     }
+
     return result;
 }
 
