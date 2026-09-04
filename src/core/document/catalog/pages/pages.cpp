@@ -169,8 +169,13 @@ class page pages::add_page()
     d->set("Count", object{static_cast<std::int64_t>(count + 1)});
 
     auto node = page_tree_node{obj()};
+    std::unordered_set<indirect_reference> visited;
     while (true)
     {
+        const auto node_ref = node.obj().identity().reference();
+        if (!visited.insert(node_ref).second)
+            throw logic_exception{"Cyclic /Parent chain detected while climbing the page tree"};
+
         node.rebind_to_active_revision();
 
         auto up = node.parent();
@@ -218,8 +223,13 @@ void pages::delete_page(std::uint64_t page_index)
 
     // Decrement /Count on the immediate parent and every ancestor up to the root
     auto ancestor = *maybe_parent;
+    std::unordered_set<indirect_reference> visited;
     while (true)
     {
+        const auto ancestor_ref = ancestor.obj().identity().reference();
+        if (!visited.insert(ancestor_ref).second)
+            throw logic_exception{"Cyclic /Parent chain detected while climbing the page tree"};
+
         ancestor.rebind_to_active_revision();
 
         auto* d = ancestor.obj().dictionary();
@@ -242,10 +252,10 @@ void pages::delete_page(std::uint64_t page_index)
         ancestor = *up;
     }
 
-    // Mark the xref entry as deleted so it is pruned on full rewrite
+    // Mark the xref entry as deleted so it is pruned on full rewrite and
+    // threaded into the §7.5.4 free list for incremental saves.
     auto& xref = pg->obj().identity().owner().cross_reference_table();
-    if (auto* entry = xref.find(page_ref))
-        entry->mark_deleted();
+    xref.mark_deleted(page_ref);
 }
 
 void pages::prune_page(std::uint64_t page_index)

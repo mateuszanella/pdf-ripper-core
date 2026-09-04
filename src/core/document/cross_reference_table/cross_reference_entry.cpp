@@ -122,6 +122,16 @@ std::uint16_t cross_reference_entry::reuse_generation() const noexcept
     return static_cast<std::uint16_t>(field2_);
 }
 
+void cross_reference_entry::set_next_free_object(std::uint32_t next_free) noexcept
+{
+    field1_ = next_free;
+}
+
+void cross_reference_entry::set_reuse_generation(std::uint16_t generation) noexcept
+{
+    field2_ = generation;
+}
+
 bool cross_reference_entry::is_resolved() const noexcept
 {
     return object_ != nullptr;
@@ -151,7 +161,18 @@ indirect_object* cross_reference_entry::resolve(std::unique_ptr<class indirect_o
 
 void cross_reference_entry::mark_deleted() noexcept
 {
+    // PDF 32000-1 §7.5.4: a freed object's generation number is incremented so
+    // a recycled slot can never be mistaken for the object that previously
+    // lived there. Object 0 is the free-list head and is never incremented.
+    if (reference_.object_number() != 0)
+    {
+        reference_ = indirect_reference{reference_.object_number(),
+                                        static_cast<std::uint16_t>(reference_.generation() + 1)};
+    }
+
     type_ = xref_entry_type::free;
+    field1_ = 0;                       // next-free object: linked by the section's free-list logic
+    field2_ = reference_.generation(); // reuse generation for §7.5.4 recycling
 }
 
 } // namespace ripper::pdf::core

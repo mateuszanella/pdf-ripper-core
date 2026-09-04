@@ -99,8 +99,10 @@ public:
 
     /// Reserve a slot for a new indirect object and return its assigned indirect reference.
     ///
-    /// Computes the next available object number across all revisions, creates a pending
-    /// entry in the active revision's section, and returns the assigned indirect reference.
+    /// Prefers recycling a free slot from the active revision's free list (PDF
+    /// §7.5.4); when no free slot exists it computes the next available object
+    /// number across all revisions. Creates a pending entry in the active
+    /// revision's section, and returns the assigned indirect reference.
     /// The entry must be committed via `commit()` before it is usable.
     ///
     /// Use `allocate()` for the simpler single-step case.
@@ -120,11 +122,24 @@ public:
 
     /// Allocate and immediately commit a new in-memory indirect object.
     ///
-    /// Combines `reserve()` and `commit()` into a single step. Assigns the next globally
-    /// available object number, adds the resolved entry to the active revision's section,
-    /// and returns the assigned indirect reference.
+    /// Combines `reserve()` and `commit()` into a single step. Prefers recycling
+    /// a free slot from the active revision's free list (PDF §7.5.4); when no
+    /// free slot exists it computes the next available object number across all
+    /// revisions. Adds the resolved entry to the active revision's section, and
+    /// returns the assigned indirect reference.
     [[nodiscard]] indirect_reference
     allocate(std::unique_ptr<class indirect_object> object) override;
+
+    /// Mark the object referenced by `ref` as deleted (PDF 32000-1 §7.5.4).
+    ///
+    /// If the object is represented in the active revision's section, it is
+    /// marked free there and threaded into that section's free list. If it only
+    /// exists in an older on-disk revision, a fresh free entry is recorded in
+    /// the active section so an incremental save persists the deletion. Object 0
+    /// (the free-list head) is never modified.
+    ///
+    /// This is a no-op when `ref` cannot be found or is already free.
+    void mark_deleted(const indirect_reference& ref) noexcept;
 
     /// Return a compiled flat non-owning pointer map of all entries across all revisions.
     ///

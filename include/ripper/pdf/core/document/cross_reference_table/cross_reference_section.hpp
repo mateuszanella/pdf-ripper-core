@@ -76,8 +76,10 @@ public:
 
     /// Reserve a slot for a new indirect object within this section.
     ///
-    /// Assigns the next available object number within this section's scope, creates a
-    /// pending entry via `add_entry()`, and returns the assigned indirect reference.
+    /// Prefers recycling a free slot from this section's free list (PDF
+    /// §7.5.4); only when no free slot exists does it assign one greater than
+    /// the highest object number present. Creates a pending entry via
+    /// `add_entry()` and returns the assigned indirect reference.
     /// The entry must be committed via `commit()` before it is usable.
     ///
     /// Use `allocate()` for the simpler single-step case.
@@ -97,9 +99,11 @@ public:
 
     /// Allocate and immediately commit a new in-memory indirect object within this section.
     ///
-    /// Combines `reserve()` and `commit()` into a single step. Assigns the next available
-    /// object number within this section's scope, creates and resolves the entry in one
-    /// operation, and returns the assigned indirect reference.
+    /// Combines `reserve()` and `commit()` into a single step. Prefers recycling
+    /// a free slot from this section's free list (PDF §7.5.4); only when no free
+    /// slot exists does it assign one greater than the highest object number
+    /// present. Creates and resolves the entry in one operation, and returns the
+    /// assigned indirect reference.
     [[nodiscard]] indirect_reference
     allocate(std::unique_ptr<class indirect_object> object) override;
 
@@ -170,6 +174,28 @@ public:
     /// its contiguous run. If there is a gap, or if this section has no subsections yet,
     /// a new subsection is created starting at the entry's object number.
     void add_entry(cross_reference_entry entry);
+
+    /// Take a free slot from this section's free list (PDF §7.5.4).
+    ///
+    /// Follows the free list starting at the head (object 0), removes the first
+    /// free entry from this section, and relinks the list. Returns the recycled
+    /// reference (object number + reuse generation) so the caller can create the
+    /// replacement entry, or `std::nullopt` when no free slot is available.
+    ///
+    /// The head is object 0; if it is missing or the free list is malformed this
+    /// is a no-op returning `std::nullopt`.
+    [[nodiscard]] std::optional<indirect_reference> take_free_slot() noexcept;
+
+    /// Link the entry at `object_number` into this section's free list (§7.5.4).
+    ///
+    /// The entry must already be marked free (see `cross_reference_entry::mark_deleted`).
+    /// A no-op if object 0 or the entry is missing.
+    void link_free(std::uint32_t object_number) noexcept;
+
+    /// Mark `ref` as deleted in this section, threading the free list (§7.5.4).
+    ///
+    /// A no-op if the entry does not exist in this section or is the object-0 head.
+    void mark_deleted(const indirect_reference& ref) noexcept;
 
     /// Create a new entry in this section as a deep copy of `source`.
     ///

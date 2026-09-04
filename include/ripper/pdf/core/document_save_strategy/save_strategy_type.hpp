@@ -18,10 +18,10 @@ enum class save_strategy_type
     /// This is the default save strategy.
     consolidate,
 
-    /// Raw resolve-and-dump strategy.
+    /// Dump resolve-and-dump strategy.
     ///
     /// Resolves all entries and writes the document to the writer backend.
-    raw,
+    dump,
 
     /// Incremental update strategy.
     ///

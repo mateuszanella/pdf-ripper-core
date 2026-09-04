@@ -78,6 +78,12 @@ void cross_reference_section::add_entry(cross_reference_entry entry)
 
 indirect_reference cross_reference_section::reserve()
 {
+    if (auto slot = take_free_slot())
+    {
+        add_entry(cross_reference_entry{*slot});
+        return *slot;
+    }
+
     const std::uint32_t number = next_object_number();
 
     indirect_reference ref{number, 0};
@@ -103,6 +109,12 @@ cross_reference_section::commit(const indirect_reference& ref,
 
 indirect_reference cross_reference_section::allocate(std::unique_ptr<class indirect_object> object)
 {
+    if (auto slot = take_free_slot())
+    {
+        add_entry(cross_reference_entry{*slot, std::move(object)});
+        return *slot;
+    }
+
     const std::uint32_t number = next_object_number();
 
     indirect_reference ref{number, 0};
@@ -110,6 +122,61 @@ indirect_reference cross_reference_section::allocate(std::unique_ptr<class indir
     add_entry(cross_reference_entry{ref, std::move(object)});
 
     return ref;
+}
+
+std::optional<indirect_reference> cross_reference_section::take_free_slot() noexcept
+{
+    auto* head = find(0);
+    if (head == nullptr)
+        return std::nullopt;
+
+    const auto next = head->next_free_object();
+    if (next == 0)
+        return std::nullopt;
+
+    auto* free_entry = find(next);
+    if (free_entry == nullptr || free_entry->in_use())
+        return std::nullopt;
+
+    const auto recycled = indirect_reference{next, free_entry->reuse_generation()};
+    const auto recycled_next = free_entry->next_free_object();
+
+    for (auto& sub : subsections_)
+    {
+        if (sub.find(next) != nullptr)
+        {
+            sub.entries().erase(next);
+            break;
+        }
+    }
+
+    head->set_next_free_object(recycled_next);
+
+    return recycled;
+}
+
+void cross_reference_section::link_free(std::uint32_t object_number) noexcept
+{
+    auto* head = find(0);
+    auto* entry = find(object_number);
+    if (head == nullptr || entry == nullptr || entry->in_use())
+        return;
+
+    entry->set_next_free_object(head->next_free_object());
+    head->set_next_free_object(object_number);
+}
+
+void cross_reference_section::mark_deleted(const indirect_reference& ref) noexcept
+{
+    if (ref.object_number() == 0)
+        return;
+
+    auto* entry = find(ref);
+    if (entry == nullptr)
+        return;
+
+    entry->mark_deleted();
+    link_free(ref.object_number());
 }
 
 cross_reference_entry* cross_reference_section::add_entry_from(const cross_reference_entry& source)

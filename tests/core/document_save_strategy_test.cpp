@@ -3,8 +3,8 @@
 #include "ripper/pdf/core/document.hpp"
 #include "ripper/pdf/core/document/object/object.hpp"
 #include "ripper/pdf/core/document_save_strategy/consolidate_document_save_strategy.hpp"
+#include "ripper/pdf/core/document_save_strategy/dump_document_save_strategy.hpp"
 #include "ripper/pdf/core/document_save_strategy/incremental_document_save_strategy.hpp"
-#include "ripper/pdf/core/document_save_strategy/raw_document_save_strategy.hpp"
 #include "test_fixture.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -33,9 +33,9 @@ TEST_CASE("consolidate save strategy writes and re-opens a created PDF",
     REQUIRE(read_back.catalog().pages().count() == 2);
 }
 
-TEST_CASE("raw save strategy writes and re-opens a created PDF", "[document][e2e][save][raw]")
+TEST_CASE("dump save strategy writes and re-opens a created PDF", "[document][e2e][save][dump]")
 {
-    test_fixture::scoped_temp_file output{"pdf_ripper_core_raw_save_test.pdf"};
+    test_fixture::scoped_temp_file output{"pdf_ripper_core_dump_save_test.pdf"};
 
     auto doc = document::create(output.path());
 
@@ -43,7 +43,7 @@ TEST_CASE("raw save strategy writes and re-opens a created PDF", "[document][e2e
     (void)pages.add_page();
     (void)pages.add_page();
 
-    raw_document_save_strategy strategy;
+    dump_document_save_strategy strategy;
     REQUIRE_NOTHROW(strategy.save(doc));
     REQUIRE(std::filesystem::exists(output.path()));
 
@@ -114,7 +114,7 @@ TEST_CASE("save with enum ignores injected strategy", "[document][e2e][save][enu
     (void)pages.add_page();
     (void)pages.add_page();
 
-    doc.set_save_strategy(std::make_unique<raw_document_save_strategy>());
+    doc.set_save_strategy(std::make_unique<dump_document_save_strategy>());
     REQUIRE_NOTHROW(doc.save(save_strategy_type::consolidate));
     REQUIRE(std::filesystem::exists(output.path()));
 
@@ -122,9 +122,9 @@ TEST_CASE("save with enum ignores injected strategy", "[document][e2e][save][enu
     REQUIRE(read_back.catalog().pages().count() == 2);
 }
 
-TEST_CASE("raw save preserves existing PDF", "[document][e2e][save][raw]")
+TEST_CASE("dump save preserves existing PDF", "[document][e2e][save][dump]")
 {
-    test_fixture::scoped_temp_file output{"pdf_ripper_core_raw_edit_test.pdf"};
+    test_fixture::scoped_temp_file output{"pdf_ripper_core_dump_edit_test.pdf"};
 
     const auto input_path = test_fixture::fixture_pdf_path();
     REQUIRE(std::filesystem::exists(input_path));
@@ -133,7 +133,7 @@ TEST_CASE("raw save preserves existing PDF", "[document][e2e][save][raw]")
     auto writer = std::make_unique<ripper::io::core::file_writer>(output.path());
     document doc{std::move(reader), std::move(writer)};
 
-    raw_document_save_strategy strategy;
+    dump_document_save_strategy strategy;
     REQUIRE_NOTHROW(strategy.save(doc));
     REQUIRE(std::filesystem::exists(output.path()));
 
@@ -160,11 +160,11 @@ TEST_CASE("consolidate save preserves existing PDF", "[document][e2e][save][cons
     REQUIRE(read_back.catalog().pages().count() == 3);
 }
 
-TEST_CASE("raw save throws without writer", "[document][save][error]")
+TEST_CASE("dump save throws without writer", "[document][save][error]")
 {
     auto doc = document::open(test_fixture::fixture_pdf_path());
 
-    raw_document_save_strategy strategy;
+    dump_document_save_strategy strategy;
     REQUIRE_THROWS_AS(strategy.save(doc), logic_exception);
 }
 

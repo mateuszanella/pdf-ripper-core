@@ -153,6 +153,16 @@ public:
     /// Valid only for free (type-0) entries.
     [[nodiscard]] std::uint16_t reuse_generation() const noexcept;
 
+    /// Set the next-free object number used for free-list linkage (§7.5.4).
+    ///
+    /// Only meaningful for free entries.
+    void set_next_free_object(std::uint32_t next_free) noexcept;
+
+    /// Set the generation number to use if this free entry is reused (§7.5.4).
+    ///
+    /// Only meaningful for free entries.
+    void set_reuse_generation(std::uint16_t generation) noexcept;
+
     /// Returns whether the indirect object has been loaded or constructed in memory.
     [[nodiscard]] bool is_resolved() const noexcept;
 
@@ -176,12 +186,17 @@ public:
     [[nodiscard]] class indirect_object*
     resolve(std::unique_ptr<class indirect_object> obj) noexcept;
 
-    /// Marks this entry as deleted.
+    /// Marks this entry as deleted (PDF 32000-1 §7.5.4).
     ///
-    /// This sets the entry type to free. The actual logic on whether the entry is removed from
-    /// the document or kept as a free entry is up to the save logic. On full rewrites the entry
-    /// will be pruned from the final object. On incremental updates the entry will be kept but
-    /// marked as free.
+    /// This sets the entry type to free, increments its generation number, and
+    /// assigns the free-entry fields (`next_free_object` and `reuse_generation`)
+    /// needed to participate in the section's free list. The caller links the
+    /// entry into that list via the section; until then `next_free_object` is 0.
+    ///
+    /// The actual logic on whether the entry is removed from the document or
+    /// kept as a free entry is up to the save logic. On full rewrites the entry
+    /// will be pruned from the final object. On incremental updates the entry
+    /// will be kept but marked as free.
     void mark_deleted() noexcept;
 
 private:

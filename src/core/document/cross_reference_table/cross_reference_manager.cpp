@@ -63,11 +63,19 @@ cross_reference_manager::find(const indirect_reference& ref) const noexcept
 
 indirect_reference cross_reference_manager::reserve()
 {
+    auto& active = active_section();
+
+    if (auto slot = active.take_free_slot())
+    {
+        active.add_entry(cross_reference_entry{*slot});
+        return *slot;
+    }
+
     const std::uint32_t number = next_object_number();
 
     indirect_reference ref{number, 0};
 
-    active_section().add_entry(cross_reference_entry{ref});
+    active.add_entry(cross_reference_entry{ref});
 
     return ref;
 }
@@ -88,13 +96,54 @@ cross_reference_manager::commit(const indirect_reference& ref,
 
 indirect_reference cross_reference_manager::allocate(std::unique_ptr<class indirect_object> object)
 {
+    auto& active = active_section();
+
+    if (auto slot = active.take_free_slot())
+    {
+        active.add_entry(cross_reference_entry{*slot, std::move(object)});
+        return *slot;
+    }
+
     const std::uint32_t number = next_object_number();
 
     indirect_reference ref{number, 0};
 
-    active_section().add_entry(cross_reference_entry{ref, std::move(object)});
+    active.add_entry(cross_reference_entry{ref, std::move(object)});
 
     return ref;
+}
+
+void cross_reference_manager::mark_deleted(const indirect_reference& ref) noexcept
+{
+    if (ref.object_number() == 0)
+        return;
+
+    auto& active = active_section();
+
+    if (auto* active_entry = active.find(ref.object_number()))
+    {
+        if (active_entry->in_use() && active_entry->reference().generation() == ref.generation())
+        {
+            active.mark_deleted(ref);
+        }
+        return;
+    }
+
+    // The object only exists in an older on-disk revision. Record the deletion
+    // as a fresh free entry in the active section so an incremental save
+    // persists it (§7.5.4).
+    const auto reuse_generation = static_cast<std::uint16_t>(ref.generation() + 1);
+
+    cross_reference_entry free_entry{indirect_reference{ref.object_number(), reuse_generation}};
+    free_entry.set_reuse_generation(reuse_generation);
+
+    if (auto* head = active.find(0))
+    {
+        free_entry.set_next_free_object(head->next_free_object());
+        head->set_next_free_object(ref.object_number());
+    }
+
+    active.add_entry(std::move(free_entry));
 }
 
 std::map<std::uint32_t, cross_reference_entry*> cross_reference_manager::entries()
